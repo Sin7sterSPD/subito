@@ -1,7 +1,7 @@
 import { Geist, Geist_Mono, Inter } from "next/font/google"
 
 import "@subito/ui/globals.css"
-// import { ThemeProvider } from "@subito/ui/components/theme-provider"
+import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@subito/ui/lib/utils"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
@@ -27,7 +27,9 @@ export default function RootLayout({
         inter.variable
       )}
     >
-      <body>{children}</body>
+      <body>
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   )
 }
