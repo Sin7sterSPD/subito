@@ -1,24 +1,25 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+import { Stack } from "expo-router"
+import { HeroUINativeProvider } from "heroui-native"
+import { GestureHandlerRootView } from "react-native-gesture-handler"
+import type { HeroUINativeConfig } from "heroui-native"
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+const config: HeroUINativeConfig = {
+  textProps: {
+    // Disable font scaling for accessibility
+    allowFontScaling: false,
+    // Auto-adjust font size to fit container
+    adjustsFontSizeToFit: false,
+    // Maximum font size multiplier when scaling
+    maxFontSizeMultiplier: 1.5,
+  },
+}
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
-  );
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <HeroUINativeProvider config={config}>
+        <Stack />
+      </HeroUINativeProvider>
+    </GestureHandlerRootView>
+  )
 }
