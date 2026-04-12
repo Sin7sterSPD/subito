@@ -1,98 +1,103 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { useCallback, useEffect } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  RefreshControl,
+  ActivityIndicator,
+} from "react-native";
+import { router, useFocusEffect } from "expo-router";
+import { useJobsStore, useAuthStore } from "../../src/store";
+import type { PartnerBookingListItem } from "../../src/types/api";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
-
-export default function HomeScreen() {
+function JobRow({ item }: { item: PartnerBookingListItem }) {
+  const addr = item.address;
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <Pressable
+      style={styles.row}
+      onPress={() => router.push(`/job/${item.id}` as never)}
+    >
+      <View style={styles.rowTop}>
+        <Text style={styles.bookingNo}>{item.bookingNumber}</Text>
+        <Text style={styles.status}>{item.status}</Text>
+      </View>
+      {item.cancellationAwaitingPartnerAck ? (
+        <Text style={styles.badge}>Customer cancel — action needed</Text>
+      ) : null}
+      {addr ? (
+        <Text style={styles.sub} numberOfLines={2}>
+          {addr.addressLine1}, {addr.city}
+        </Text>
+      ) : null}
+    </Pressable>
+  );
+}
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+export default function JobsScreen() {
+  const { bookings, isLoading, error, fetchBookings } = useJobsStore();
+  const { isAuthenticated, user, partnerProfile } = useAuthStore();
+
+  useFocusEffect(
+    useCallback(() => {
+      if (isAuthenticated && user?.role === "partner" && partnerProfile) {
+        void fetchBookings();
+      }
+    }, [isAuthenticated, user?.role, partnerProfile, fetchBookings])
+  );
+
+  useEffect(() => {
+    if (!isAuthenticated || user?.role !== "partner" || !partnerProfile) {
+      router.replace("/(auth)/login");
+    }
+  }, [isAuthenticated, user, partnerProfile]);
+
+  return (
+    <View style={styles.container}>
+      {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
+      {isLoading && bookings.length === 0 ? (
+        <ActivityIndicator style={styles.loader} size="large" />
+      ) : null}
+      <FlatList
+        data={bookings}
+        keyExtractor={(i) => i.id}
+        renderItem={({ item }) => <JobRow item={item} />}
+        refreshControl={
+          <RefreshControl refreshing={isLoading} onRefresh={() => void fetchBookings()} />
+        }
+        ListEmptyComponent={
+          !isLoading ? (
+            <Text style={styles.empty}>No active assignments.</Text>
+          ) : null
+        }
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: { flex: 1, backgroundColor: "#f8fafc" },
+  loader: { marginTop: 24 },
+  errorBanner: { backgroundColor: "#fee2e2", color: "#991b1b", padding: 12 },
+  row: {
+    backgroundColor: "#fff",
+    marginHorizontal: 16,
+    marginTop: 12,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  rowTop: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6 },
+  bookingNo: { fontWeight: "700", fontSize: 16 },
+  status: { color: "#64748b", textTransform: "capitalize" },
+  badge: {
+    color: "#b45309",
+    fontWeight: "600",
+    marginBottom: 6,
+    fontSize: 13,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
+  sub: { color: "#475569", fontSize: 14 },
+  empty: { textAlign: "center", marginTop: 48, color: "#64748b" },
 });

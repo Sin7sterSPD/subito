@@ -30,21 +30,21 @@ Production alignment: **TanStack Query + Zustand**, **Expo Router**, **single `/
 
 ### Mobile (`apps/mobile`)
 
-- [ ] **API base** — `API_BASE_URL` ends with `/v1` (or equivalent) so all module paths stay relative.
-- [ ] **TanStack Query** — `QueryClientProvider`, global defaults (`staleTime`: listings 10m, bookings 1m, addresses 5m, **cart 0**).
-- [ ] **SecureStore** — access + refresh tokens only; **no tokens in AsyncStorage**; Zustand persist for non-secret prefs only.
-- [ ] **API client**
-  - [ ] Timeouts: reads 10–15s, mutations 20–30s, checkout/payment 45–60s.
-  - [ ] Retries: max 3, exponential backoff, network + 502/503/504 + 429 (`Retry-After`).
-  - [ ] **401** — single-flight refresh, retry once, else logout.
-  - [ ] **Headers**: `Authorization`, `X-Platform`, `X-App-Version` (expo-constants), `X-Device-ID` (stable install id, e.g. `expo-application`).
-  - [ ] **Safe JSON parse** — check `Content-Type` before `json()`.
-  - [ ] **`post/patch` with extra headers** — `Idempotency-Key` on checkout, bookings, extend.
-  - [ ] Error shape — **only** backend `{ success, error: { code, message, details? } }` (no fake `data: null`).
-- [ ] **Payment UX** — after HyperSDK: **Processing** + poll `GET /v1/payments/status?orderId=` until success / failure / timeout + fallback UI.
-- [ ] **Logout coordinator** — clear Zustand user-bound state, **invalidate** user-scoped queries; **retain** anonymous-safe cache only (coarse location + listings), per product spec.
-- [ ] **Sentry** — `@sentry/react-native`, DSN from env for staging + production; dev console-only.
-- [ ] **CleverTap** — `onUserLogin` with `userId` + phone; **`onUserLogout`** on logout.
+- [x] **API base** — `EXPO_PUBLIC_API_BASE_URL` / `extra.apiBaseUrl`; paths relative to **`…/v1`** (`getApiBaseUrl()`).
+- [x] **TanStack Query** — `QueryClientProvider` in `app/_layout.tsx` + shared `queryClient` (per-query `staleTime` can be tuned as screens migrate to `useQuery`).
+- [x] **SecureStore** — access + refresh in SecureStore; Zustand persist holds **`user` only** (legacy token snapshot migrated once on launch).
+- [x] **API client**
+  - [x] Timeouts: reads 15s, mutations 30s, payment/checkout paths 60s.
+  - [x] Retries: max 3, exponential backoff, network + 502/503/504 + 429.
+  - [x] **401** — single-flight refresh + one retry; else session invalid → logout.
+  - [x] **Headers**: `Authorization`, `X-Platform`, `X-App-Version`, `X-Device-ID` (`expo-application` + fallback).
+  - [x] **Safe JSON** — JSON only when `Content-Type` indicates JSON.
+  - [x] **`Idempotency-Key`** — `apiClient.post` options; wired for cart checkout + bookings create/extend.
+  - [x] Errors — no fabricated `data`; `ApiResponse.data` optional on failure.
+- [x] **Payment UX** — `POST /process-order` then **`waitForPaymentTerminal`** (polls `GET /payments/status`) + timeout copy.
+- [x] **Logout coordinator** — `runLogoutSideEffects`: clears user-scoped queries + cart/bookings/payments/user stores; **keeps** listings + location + app prefs.
+- [x] **Sentry** — `src/analytics/sentry.ts`; DSN via `EXPO_PUBLIC_SENTRY_DSN` / `extra` (skipped in `__DEV__` unless you set DSN).
+- [x] **CleverTap** — `cleverTapOnUserLogin` after verify + `cleverTapOnUserLogout` in coordinator (native SDK optional via `require`).
 - [ ] **Firebase Analytics** — session + key events (minimal Phase 1 wiring).
 
 ### Infra / docs

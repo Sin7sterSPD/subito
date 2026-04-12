@@ -7,6 +7,7 @@ import {
   recurringBookings,
   bookingStatusHistory,
   partnerLocations,
+  partners,
   refunds,
   catalogs,
   coupons,
@@ -108,33 +109,77 @@ export async function getBookingsV2(userId: string, query: BookingsQuery) {
   };
 }
 
-export async function getBookingById(userId: string, bookingId: string) {
-  const booking = await db.query.bookings.findFirst({
-    where: and(eq(bookings.id, bookingId), eq(bookings.userId, userId)),
+const bookingDetailWith = {
+  items: {
     with: {
-      items: {
+      catalog: {
         with: {
-          catalog: {
-            with: {
-              listing: true,
-            },
-          },
-        },
-      },
-      address: true,
-      partner: {
-        with: {
-          user: true,
-        },
-      },
-      hub: true,
-      coupon: true,
-      recurringConfig: {
-        with: {
-          instances: true,
+          listing: true,
         },
       },
     },
+  },
+  address: true,
+  partner: {
+    with: {
+      user: true,
+    },
+  },
+  hub: true,
+  coupon: true,
+  recurringConfig: {
+    with: {
+      instances: true,
+    },
+  },
+} as const;
+
+export async function getBookingById(userId: string, bookingId: string) {
+  const booking = await db.query.bookings.findFirst({
+    where: and(eq(bookings.id, bookingId), eq(bookings.userId, userId)),
+    with: bookingDetailWith,
+  });
+
+  if (!booking) {
+    throw new NotFoundError("Booking");
+  }
+
+  return booking;
+}
+
+/** Partner (or admin) viewing an assigned job — scoped by `bookings.partnerId`. */
+export async function getBookingByIdForPartnerUser(
+  userId: string,
+  bookingId: string,
+  role: "customer" | "partner" | "admin"
+) {
+  if (role === "customer") {
+    return getBookingById(userId, bookingId);
+  }
+
+  if (role === "admin") {
+    const booking = await db.query.bookings.findFirst({
+      where: eq(bookings.id, bookingId),
+      with: bookingDetailWith,
+    });
+    if (!booking) {
+      throw new NotFoundError("Booking");
+    }
+    return booking;
+  }
+
+  const partner = await db.query.partners.findFirst({
+    where: eq(partners.userId, userId),
+    columns: { id: true },
+  });
+
+  if (!partner) {
+    throw new NotFoundError("Booking");
+  }
+
+  const booking = await db.query.bookings.findFirst({
+    where: and(eq(bookings.id, bookingId), eq(bookings.partnerId, partner.id)),
+    with: bookingDetailWith,
   });
 
   if (!booking) {

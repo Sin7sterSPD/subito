@@ -88,14 +88,19 @@ export const bookingsApi = {
   createBooking: (data: CreateBookingData, idempotencyKey?: string) =>
     apiClient.post<{ booking: { id: string; bookingNumber: string; status: string; totalAmount: string }; order: { id: string; orderNumber: string; amount: string } | null }>(
       '/bookings',
-      data
+      data,
+      idempotencyKey ? { idempotencyKey } : {}
     ),
 
   cancelBooking: (data: CancelBookingData) =>
     apiClient.post<{ cancelled: boolean; bookingId: string }>('/bookings/cancel', data),
 
   extendBooking: (data: { bookingId: string; additionalItems: { catalogId: string; quantity: number }[]; paymentMethodId?: string }, idempotencyKey?: string) =>
-    apiClient.post<{ bookingId: string; extensionOrder: { id: string; orderNumber: string; amount: string }; newTotal: string }>('/bookings/extend', data),
+    apiClient.post<{ bookingId: string; extensionOrder: { id: string; orderNumber: string; amount: string }; newTotal: string }>(
+      '/bookings/extend',
+      data,
+      idempotencyKey ? { idempotencyKey } : {}
+    ),
 
   rescheduleInstance: (instanceId: string, data: RescheduleData) =>
     apiClient.post<{ rescheduled: boolean; instanceId: string }>(`/bookings/instance/${instanceId}/reschedule`, data),

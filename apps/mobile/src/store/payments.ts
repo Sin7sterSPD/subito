@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { PaymentMethod, PaymentStatus } from '../types/api';
-import { paymentsApi } from '../services/api';
+import { PaymentMethod } from '../types/api';
+import { paymentsApi, type PaymentStatusPayload } from '../services/api/payments';
 
 interface PaymentOptions {
   upi: PaymentMethod[];
@@ -13,17 +13,30 @@ interface PaymentsState {
   paymentOptions: PaymentOptions | null;
   selectedPaymentMethod: PaymentMethod | null;
   currentOrderId: string | null;
-  paymentStatus: PaymentStatus | null;
+  paymentStatus: string | null;
   isLoading: boolean;
 
   fetchPaymentOptions: (platform?: 'android' | 'ios') => Promise<void>;
   verifyUpi: (upiId: string) => Promise<{ isVerified: boolean; customerName?: string }>;
   initiatePayment: (orderId: string, amount: number, paymentMethodId?: string) => Promise<{ clientAuthToken: string | null }>;
-  processOrder: (orderId: string, status?: string, txnId?: string) => Promise<{ success: boolean; bookingId?: string }>;
-  checkPaymentStatus: (orderId: string) => Promise<PaymentStatus | null>;
+  processOrder: (
+    orderId: string,
+    status: 'SUCCESS' | 'CHARGED' | 'FAILED' | 'PENDING',
+    txnId?: string
+  ) => Promise<{ success: boolean; bookingId?: string }>;
+  checkPaymentStatus: (orderId: string) => Promise<PaymentStatusPayload | null>;
+  /** Poll until `terminal` or timeout (ms). */
+  waitForPaymentTerminal: (
+    orderId: string,
+    options?: { intervalMs?: number; timeoutMs?: number }
+  ) => Promise<{ ok: boolean; payload?: PaymentStatusPayload; timedOut?: boolean }>;
   setSelectedPaymentMethod: (method: PaymentMethod | null) => void;
   setCurrentOrderId: (orderId: string | null) => void;
   reset: () => void;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
 }
 
 export const usePaymentsStore = create<PaymentsState>((set) => ({
@@ -89,11 +102,8 @@ export const usePaymentsStore = create<PaymentsState>((set) => ({
         status,
         txnId,
       });
-      if (response.success && response.data?.status?.success) {
-        return {
-          success: true,
-          bookingId: response.data.data.bookingId,
-        };
+      if (response.success && response.data?.success) {
+        return { success: true };
       }
       return { success: false };
     } catch {
@@ -108,12 +118,36 @@ export const usePaymentsStore = create<PaymentsState>((set) => ({
       const response = await paymentsApi.getPaymentStatus(orderId);
       if (response.success && response.data) {
         set({ paymentStatus: response.data.status });
-        return response.data.status;
+        return response.data;
       }
       return null;
     } catch {
       return null;
     }
+  },
+
+  waitForPaymentTerminal: async (
+    orderId,
+    options = {}
+  ): Promise<{ ok: boolean; payload?: PaymentStatusPayload; timedOut?: boolean }> => {
+    const intervalMs = options.intervalMs ?? 2500;
+    const timeoutMs = options.timeoutMs ?? 120_000;
+    const start = Date.now();
+
+    while (Date.now() - start < timeoutMs) {
+      const response = await paymentsApi.getPaymentStatus(orderId);
+      const payload =
+        response.success && response.data ? response.data : null;
+      if (payload?.terminal) {
+        if (payload.status) {
+          set({ paymentStatus: payload.status });
+        }
+        return { ok: payload.status === 'COMPLETED', payload };
+      }
+      await sleep(intervalMs);
+    }
+
+    return { ok: false, timedOut: true };
   },
 
   setSelectedPaymentMethod: (method) => set({ selectedPaymentMethod: method }),

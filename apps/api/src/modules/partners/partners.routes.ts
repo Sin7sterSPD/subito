@@ -62,6 +62,26 @@ partnersRouter.post(
   }
 );
 
+partnersRouter.get("/me/bookings", requirePartner, async (c) => {
+  const userId = c.get("userId")!;
+  const rows = await partnersService.listBookingsForPartnerUser(userId);
+
+  return c.json({
+    success: true,
+    data: rows,
+  });
+});
+
+partnersRouter.get("/me", requirePartner, async (c) => {
+  const userId = c.get("userId")!;
+  const partner = await partnersService.getPartnerByUserId(userId);
+
+  return c.json({
+    success: true,
+    data: partner,
+  });
+});
+
 const acknowledgeReleaseSchema = z.object({
   bookingId: z.string().uuid(),
 });

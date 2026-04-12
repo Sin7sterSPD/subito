@@ -187,8 +187,13 @@ bookingsRouter.get("/bridging/context/instance/:id", requireAuth, async (c) => {
 
 bookingsRouter.get("/:id", requireAuth, async (c) => {
   const userId = c.get("userId")!;
+  const role = c.get("user")!.role;
   const bookingId = c.req.param("id");
-  const booking = await bookingsService.getBookingById(userId, bookingId);
+  const booking = await bookingsService.getBookingByIdForPartnerUser(
+    userId,
+    bookingId,
+    role
+  );
 
   return c.json({
     success: true,

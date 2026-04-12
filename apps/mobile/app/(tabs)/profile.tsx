@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { Text, Card, Avatar, Divider } from '../../src/components/ui';
 import { colors, semantic } from '../../src/theme/colors';
 import { spacing, borderRadius } from '../../src/theme/spacing';
-import { useAuthStore, useUserStore, useCartStore, useBookingsStore, useAppStore } from '../../src/store';
+import { useAuthStore, useUserStore, useAppStore } from '../../src/store';
 import { Ionicons } from '@expo/vector-icons';
 
 interface MenuItemProps {
@@ -58,9 +58,7 @@ function MenuSection({ children, title }: { children: React.ReactNode; title?: s
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
-  const { referralSummary, reset: resetUser } = useUserStore();
-  const { reset: resetCart } = useCartStore();
-  const { reset: resetBookings } = useBookingsStore();
+  const { referralSummary } = useUserStore();
   const { settings } = useAppStore();
 
   const handleLogout = () => {
@@ -74,9 +72,6 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             await logout();
-            resetUser();
-            resetCart();
-            resetBookings();
             router.replace('/(auth)/login');
           },
         },

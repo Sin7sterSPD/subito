@@ -1,16 +1,15 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { User } from '../types/api';
-import { apiClient } from '../services/api-client';
-import { authApi, usersApi } from '../services/api';
-import { clearSecureTokens, loadSecureTokens, saveSecureTokens } from '../lib/secure-tokens';
-import { runLogoutSideEffects } from '../lib/logout-coordinator';
-import { queryClient } from '../lib/query-client';
-import { cleverTapOnUserLogin } from '../analytics/clevertap';
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import type { PartnerProfile, User } from "../types/api";
+import { apiClient } from "../services/api-client";
+import { authApi, partnersApi } from "../services/api";
+import { clearSecureTokens, loadSecureTokens, saveSecureTokens } from "../lib/secure-tokens";
+import { signOutFirebase } from "../config/firebase";
 
 interface AuthState {
   user: User | null;
+  partnerProfile: PartnerProfile | null;
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
@@ -18,15 +17,11 @@ interface AuthState {
   verificationToken: string | null;
   mobileNumber: string | null;
 
-  setUser: (user: User | null) => void;
-  setTokens: (accessToken: string, refreshToken: string) => Promise<void>;
-  setVerification: (token: string, mobileNumber: string) => void;
   login: (mobileNumber: string) => Promise<{ success: boolean; isExistingUser: boolean }>;
-  verify: (idtoken: string, referralCode?: string) => Promise<{ success: boolean; isNewUser: boolean }>;
+  verify: (idToken: string) => Promise<{ success: boolean; error?: string }>;
   refreshAccessToken: () => Promise<boolean>;
-  /** Load tokens from SecureStore (and one-time migrate from legacy AsyncStorage persist). */
   syncSessionFromSecureStorage: () => Promise<void>;
-  fetchUser: () => Promise<void>;
+  loadPartnerProfile: () => Promise<void>;
   logout: () => Promise<void>;
   clearVerification: () => void;
 }
@@ -35,23 +30,13 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
+      partnerProfile: null,
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
       isLoading: false,
       verificationToken: null,
       mobileNumber: null,
-
-      setUser: (user) => set({ user, isAuthenticated: !!(user && get().accessToken) }),
-
-      setTokens: async (accessToken, refreshToken) => {
-        await saveSecureTokens(accessToken, refreshToken);
-        apiClient.setAuthToken(accessToken);
-        set({ accessToken, refreshToken, isAuthenticated: true });
-      },
-
-      setVerification: (token, mobileNumber) =>
-        set({ verificationToken: token, mobileNumber }),
 
       clearVerification: () => set({ verificationToken: null, mobileNumber: null }),
 
@@ -74,39 +59,64 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      verify: async (idtoken, referralCode) => {
+      verify: async (idToken) => {
         const { verificationToken, mobileNumber } = get();
         if (!verificationToken || !mobileNumber) {
-          return { success: false, isNewUser: false };
+          return { success: false, error: "Session expired. Start again." };
         }
 
         set({ isLoading: true });
         try {
           const response = await authApi.verify({
             token: verificationToken,
-            idtoken,
+            idtoken: idToken,
             mobileNumber,
-            referralCode,
           });
 
-          if (response.success && response.data) {
-            const { jwt_token, refreshToken, userData, isNewUser } = response.data;
-            await saveSecureTokens(jwt_token, refreshToken);
-            apiClient.setAuthToken(jwt_token);
-            cleverTapOnUserLogin({ userId: userData.id, phone: userData.phone });
-            set({
-              user: userData,
-              accessToken: jwt_token,
-              refreshToken,
-              isAuthenticated: true,
-              verificationToken: null,
-              mobileNumber: null,
-            });
-            return { success: true, isNewUser };
+          if (!response.success || !response.data) {
+            return {
+              success: false,
+              error: response.error?.message || "Verification failed",
+            };
           }
-          return { success: false, isNewUser: false };
+
+          const { jwt_token, refreshToken, userData } = response.data;
+
+          if (userData.role !== "partner") {
+            return {
+              success: false,
+              error: "This app is for partner accounts only. Use the customer app instead.",
+            };
+          }
+
+          await saveSecureTokens(jwt_token, refreshToken);
+          apiClient.setAuthToken(jwt_token);
+
+          const me = await partnersApi.getMe();
+          if (!me.success || !me.data) {
+            await clearSecureTokens();
+            apiClient.setAuthToken(null);
+            return {
+              success: false,
+              error:
+                me.error?.message ||
+                "No partner profile found. Contact support to be onboarded as a partner.",
+            };
+          }
+
+          set({
+            user: userData,
+            partnerProfile: me.data,
+            accessToken: jwt_token,
+            refreshToken,
+            isAuthenticated: true,
+            verificationToken: null,
+            mobileNumber: null,
+          });
+
+          return { success: true };
         } catch {
-          return { success: false, isNewUser: false };
+          return { success: false, error: "Something went wrong" };
         } finally {
           set({ isLoading: false });
         }
@@ -115,17 +125,13 @@ export const useAuthStore = create<AuthState>()(
       refreshAccessToken: async () => {
         const { refreshToken } = get();
         if (!refreshToken) return false;
-
         try {
           const response = await authApi.refresh(refreshToken);
           if (response.success && response.data) {
-            const { jwt_token, refreshToken: newRefreshToken } = response.data;
-            await saveSecureTokens(jwt_token, newRefreshToken);
+            const { jwt_token, refreshToken: next } = response.data;
+            await saveSecureTokens(jwt_token, next);
             apiClient.setAuthToken(jwt_token);
-            set({
-              accessToken: jwt_token,
-              refreshToken: newRefreshToken,
-            });
+            set({ accessToken: jwt_token, refreshToken: next });
             return true;
           }
           await get().logout();
@@ -140,7 +146,6 @@ export const useAuthStore = create<AuthState>()(
         const stored = await loadSecureTokens();
         let access = stored.accessToken;
         let refresh = stored.refreshToken;
-
         if (!access || !refresh) {
           const legacyA = get().accessToken;
           const legacyR = get().refreshToken;
@@ -150,7 +155,6 @@ export const useAuthStore = create<AuthState>()(
             refresh = legacyR;
           }
         }
-
         if (access && refresh) {
           apiClient.setAuthToken(access);
           set({
@@ -160,27 +164,27 @@ export const useAuthStore = create<AuthState>()(
           });
           return;
         }
-
         apiClient.setAuthToken(null);
         set({
           accessToken: null,
           refreshToken: null,
           isAuthenticated: false,
           user: null,
+          partnerProfile: null,
         });
       },
 
-      fetchUser: async () => {
-        set({ isLoading: true });
-        try {
-          const response = await usersApi.getUser();
-          if (response.success && response.data) {
-            set({ user: response.data });
-          }
-        } catch {
-          // Silent fail
-        } finally {
-          set({ isLoading: false });
+      loadPartnerProfile: async () => {
+        const { accessToken, user } = get();
+        if (!accessToken || user?.role !== "partner") return;
+        const me = await partnersApi.getMe();
+        if (me.success && me.data) {
+          set({ partnerProfile: me.data });
+          return;
+        }
+        const code = me.error?.code;
+        if (code === "UNAUTHORIZED" || code === "NOT_FOUND") {
+          await get().logout();
         }
       },
 
@@ -188,27 +192,26 @@ export const useAuthStore = create<AuthState>()(
         try {
           await authApi.logout();
         } catch {
-          // Continue logout even if API fails
+          /* ignore */
         }
+        await signOutFirebase();
         await clearSecureTokens();
         apiClient.setAuthToken(null);
         set({
           user: null,
+          partnerProfile: null,
           accessToken: null,
           refreshToken: null,
           isAuthenticated: false,
           verificationToken: null,
           mobileNumber: null,
         });
-        runLogoutSideEffects(queryClient);
       },
     }),
     {
-      name: 'auth-storage',
+      name: "partner-auth",
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({
-        user: state.user,
-      }),
+      partialize: (s) => ({ user: s.user }),
     }
   )
 );

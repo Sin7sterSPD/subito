@@ -7,7 +7,7 @@ import {
   bookingStatusHistory,
   ratings,
 } from "@subito/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, ne } from "drizzle-orm";
 import {
   NotFoundError,
   BadRequestError,
@@ -147,19 +147,23 @@ export async function assignPartner(data: {
   return { assigned: true, bookingId: data.bookingId, partnerId: data.partnerId };
 }
 
-export async function getPartnerById(partnerId: string) {
-  const partner = await db.query.partners.findFirst({
-    where: eq(partners.id, partnerId),
-    with: {
-      user: true,
-      services: true,
-    },
-  });
-
-  if (!partner) {
-    throw new NotFoundError("Partner");
-  }
-
+function mapPartnerRow(partner: {
+  id: string;
+  userId: string;
+  status: string;
+  availabilityStatus: string;
+  averageRating: string | null;
+  totalRatings: number | null;
+  totalBookings: number | null;
+  completedBookings: number | null;
+  user: {
+    firstName: string | null;
+    lastName: string | null;
+    phone: string;
+    profileImage: string | null;
+  };
+  services: { id: string; partnerId: string; serviceId: string; isActive: boolean }[];
+}) {
   return {
     id: partner.id,
     userId: partner.userId,
@@ -174,6 +178,64 @@ export async function getPartnerById(partnerId: string) {
     completedBookings: partner.completedBookings,
     services: partner.services,
   };
+}
+
+export async function getPartnerById(partnerId: string) {
+  const partner = await db.query.partners.findFirst({
+    where: eq(partners.id, partnerId),
+    with: {
+      user: true,
+      services: true,
+    },
+  });
+
+  if (!partner) {
+    throw new NotFoundError("Partner");
+  }
+
+  return mapPartnerRow(partner);
+}
+
+/** Partner app: resolve partner record from auth user id. */
+export async function getPartnerByUserId(userId: string) {
+  const partner = await db.query.partners.findFirst({
+    where: eq(partners.userId, userId),
+    with: {
+      user: true,
+      services: true,
+    },
+  });
+
+  if (!partner) {
+    throw new NotFoundError("Partner");
+  }
+
+  return mapPartnerRow(partner);
+}
+
+/** Active assignments for the logged-in partner (excludes cancelled). */
+export async function listBookingsForPartnerUser(userId: string) {
+  const partner = await db.query.partners.findFirst({
+    where: eq(partners.userId, userId),
+    columns: { id: true },
+  });
+
+  if (!partner) {
+    throw new NotFoundError("Partner");
+  }
+
+  return db.query.bookings.findMany({
+    where: and(
+      eq(bookings.partnerId, partner.id),
+      ne(bookings.status, "CANCELLED")
+    ),
+    orderBy: [desc(bookings.updatedAt)],
+    limit: 50,
+    with: {
+      address: true,
+      items: { limit: 40 },
+    },
+  });
 }
 
 export async function acknowledgePartnerRelease(

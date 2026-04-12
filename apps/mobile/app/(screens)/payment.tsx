@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { Text, Button, Spinner, Card } from '../../src/components/ui';
 import { colors, semantic } from '../../src/theme/colors';
 import { spacing } from '../../src/theme/spacing';
@@ -14,78 +14,128 @@ export default function PaymentScreen() {
     bookingId: string;
     amount: string;
   }>();
-  
-  const { initiatePayment, processOrder, isLoading } = usePaymentsStore();
-  const { clearCart } = useCartStore();
+
+  const initiatePayment = usePaymentsStore((s) => s.initiatePayment);
+  const processOrder = usePaymentsStore((s) => s.processOrder);
+  const waitForPaymentTerminal = usePaymentsStore((s) => s.waitForPaymentTerminal);
+  const isLoading = usePaymentsStore((s) => s.isLoading);
+  const clearCart = useCartStore((s) => s.clearCart);
+
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'processing' | 'success' | 'failed'>('pending');
   const [error, setError] = useState<string | null>(null);
+  const [attemptKey, setAttemptKey] = useState(0);
 
   useEffect(() => {
-    handlePaymentInitiation();
-  }, []);
+    let cancelled = false;
 
-  const handlePaymentInitiation = async () => {
-    setPaymentStatus('processing');
-    
-    try {
-      const result = await initiatePayment(orderId, parseFloat(amount));
-      
-      if (result.clientAuthToken) {
-        // In a real implementation, you would launch Juspay HyperSDK here
-        // For now, we'll simulate a successful payment
-        await simulatePayment();
-      } else {
-        setPaymentStatus('failed');
-        setError('Failed to initiate payment. Please try again.');
+    const run = async () => {
+      if (!orderId || !amount) {
+        if (!cancelled) {
+          setPaymentStatus('failed');
+          setError('Missing order information.');
+        }
+        return;
       }
-    } catch {
-      setPaymentStatus('failed');
-      setError('Something went wrong. Please try again.');
-    }
-  };
 
-  const simulatePayment = async () => {
-    // Simulate payment processing time
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    
-    // Process the order
-    const result = await processOrder(orderId, 'SUCCESS', `TXN_${Date.now()}`);
-    
-    if (result.success) {
-      setPaymentStatus('success');
-      clearCart();
-      
-      // Navigate to success screen
-      setTimeout(() => {
-        router.replace({
-          pathname: '/(screens)/payment-success',
-          params: { bookingId, bookingNumber: orderId },
+      if (!cancelled) {
+        setPaymentStatus('processing');
+        setError(null);
+      }
+
+      try {
+        const result = await initiatePayment(orderId, parseFloat(amount));
+        if (cancelled) return;
+
+        if (!result.clientAuthToken) {
+          setPaymentStatus('failed');
+          setError('Failed to initiate payment. Please try again.');
+          return;
+        }
+
+        // TODO: Launch Juspay HyperSDK; on completion call processOrder + poll (or webhook + poll only).
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        if (cancelled) return;
+
+        await processOrder(orderId, 'SUCCESS', `TXN_${Date.now()}`);
+        if (cancelled) return;
+
+        setPaymentStatus('processing');
+
+        const { ok, payload, timedOut } = await waitForPaymentTerminal(orderId, {
+          intervalMs: 2500,
+          timeoutMs: 120_000,
         });
-      }, 1000);
-    } else {
-      setPaymentStatus('failed');
-      setError('Payment verification failed. Please contact support.');
-    }
-  };
+        if (cancelled) return;
+
+        if (ok && payload?.bookingId) {
+          setPaymentStatus('success');
+          clearCart();
+          setTimeout(() => {
+            router.replace({
+              pathname: '/(screens)/payment-success',
+              params: {
+                bookingId: payload.bookingId!,
+                bookingNumber: payload.bookingNumber || bookingId || orderId,
+              },
+            } as unknown as Href);
+          }, 800);
+          return;
+        }
+
+        if (payload?.status === 'FAILED') {
+          setPaymentStatus('failed');
+          setError('Payment was not successful. Please try again or contact support.');
+          return;
+        }
+
+        if (timedOut) {
+          setPaymentStatus('failed');
+          setError(
+            'We could not confirm payment in time. If money was debited, check Payment history or contact support.'
+          );
+          return;
+        }
+
+        setPaymentStatus('failed');
+        setError('Payment verification failed. Please contact support.');
+      } catch {
+        if (!cancelled) {
+          setPaymentStatus('failed');
+          setError('Something went wrong. Please try again.');
+        }
+      }
+    };
+
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    orderId,
+    amount,
+    bookingId,
+    attemptKey,
+    initiatePayment,
+    processOrder,
+    waitForPaymentTerminal,
+    clearCart,
+  ]);
 
   const handleRetry = () => {
     setError(null);
-    handlePaymentInitiation();
+    setPaymentStatus('pending');
+    setAttemptKey((k) => k + 1);
   };
 
   const handleCancel = () => {
-    Alert.alert(
-      'Cancel Payment',
-      'Are you sure you want to cancel this payment?',
-      [
-        { text: 'No', style: 'cancel' },
-        {
-          text: 'Yes',
-          style: 'destructive',
-          onPress: () => router.back(),
-        },
-      ]
-    );
+    Alert.alert('Cancel Payment', 'Are you sure you want to cancel this payment?', [
+      { text: 'No', style: 'cancel' },
+      {
+        text: 'Yes',
+        style: 'destructive',
+        onPress: () => router.back(),
+      },
+    ]);
   };
 
   return (
@@ -95,13 +145,13 @@ export default function PaymentScreen() {
           <View style={styles.processing}>
             <Spinner size="large" />
             <Text variant="h5" color="textPrimary" weight="600" style={styles.processingTitle}>
-              Processing Payment
+              {paymentStatus === 'processing' ? 'Confirming payment…' : 'Processing Payment'}
             </Text>
             <Text variant="bodyMedium" color="textSecondary" align="center">
-              Please wait while we process your payment of ₹{amount}
+              Please wait while we confirm your payment of ₹{amount}
             </Text>
-            <Text variant="captionMedium" color="textMuted" align="center" style={styles.warning}>
-              Please don't press back or close the app
+            <Text variant="caption" color="textMuted" align="center" style={styles.warning}>
+              Please don’t press back or close the app
             </Text>
           </View>
         ) : paymentStatus === 'failed' ? (
@@ -116,7 +166,7 @@ export default function PaymentScreen() {
               {error || 'Your payment could not be processed.'}
             </Text>
             <View style={styles.failedActions}>
-              <Button variant="primary" fullWidth onPress={handleRetry}>
+              <Button variant="primary" fullWidth onPress={handleRetry} disabled={isLoading}>
                 Try Again
               </Button>
               <Button variant="ghost" fullWidth onPress={handleCancel}>
@@ -133,7 +183,7 @@ export default function PaymentScreen() {
               Payment Successful!
             </Text>
             <Text variant="bodyMedium" color="textSecondary" align="center">
-              Redirecting to your booking...
+              Redirecting to your booking…
             </Text>
           </View>
         )}

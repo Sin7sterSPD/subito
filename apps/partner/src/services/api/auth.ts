@@ -1,5 +1,5 @@
-import { apiClient } from '../api-client';
-import { User } from '../../types/api';
+import { apiClient } from "../api-client";
+import type { User } from "../../types/api";
 
 interface LoginResponse {
   token: string;
@@ -21,22 +21,22 @@ interface RefreshTokenResponse {
 
 export const authApi = {
   login: (mobileNumber: string) =>
-    apiClient.post<LoginResponse>('/auth/login', { mobileNumber }, { skipAuthRefresh: true }),
+    apiClient.post<LoginResponse>("/auth/login", { mobileNumber }, { skipAuthRefresh: true }),
 
   verify: (data: {
     token: string;
     idtoken: string;
     mobileNumber: string;
     referralCode?: string;
-  }) => apiClient.post<VerifyResponse>('/auth/verify', data, { skipAuthRefresh: true }),
+  }) => apiClient.post<VerifyResponse>("/auth/verify", data, { skipAuthRefresh: true }),
 
   refresh: (refreshToken: string) =>
     apiClient.post<RefreshTokenResponse>(
-      '/auth/refresh',
+      "/auth/refresh",
       { refreshToken },
       { skipAuthRefresh: true }
     ),
 
   logout: () =>
-    apiClient.post<{ loggedOut: boolean }>('/auth/logout', {}, { skipAuthRefresh: true }),
+    apiClient.post<{ loggedOut: boolean }>("/auth/logout", {}, { skipAuthRefresh: true }),
 };

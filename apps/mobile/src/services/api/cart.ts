@@ -68,16 +68,12 @@ export const cartApi = {
 
   removeInactiveItems: () => apiClient.post<Cart>('/cart/remove-inactive', {}),
 
-  checkout: (data: CheckoutData, idempotencyKey?: string) => {
-    const headers: Record<string, string> = {};
-    if (idempotencyKey) {
-      headers['Idempotency-Key'] = idempotencyKey;
-    }
-    return apiClient.post<{ orderId: string; amount: string; currency: string; status: string }>(
+  checkout: (data: CheckoutData, idempotencyKey?: string) =>
+    apiClient.post<{ orderId: string; amount: string; currency: string; status: string }>(
       '/cart/checkout',
-      data
-    );
-  },
+      data,
+      idempotencyKey ? { idempotencyKey } : {}
+    ),
 
   checkoutV2: (data: CheckoutV2Data, idempotencyKey?: string) =>
     apiClient.post<{
@@ -87,7 +83,7 @@ export const cartApi = {
       amount: string;
       currency: string;
       status: string;
-    }>('/cart/checkout-v2', data),
+    }>('/cart/checkout-v2', data, idempotencyKey ? { idempotencyKey } : {}),
 
   extendedCheckout: (data: ExtendedCheckoutData, idempotencyKey?: string) =>
     apiClient.post<{
@@ -95,7 +91,7 @@ export const cartApi = {
       extensionOrderId: string;
       extensionAmount: string;
       newTotalAmount: string;
-    }>('/cart/checkout/extended', data),
+    }>('/cart/checkout/extended', data, idempotencyKey ? { idempotencyKey } : {}),
 
   verifyPayment: (data: VerifyPaymentData) =>
     apiClient.post<{ verified: boolean; orderId: string }>('/cart/verify-payment', data),

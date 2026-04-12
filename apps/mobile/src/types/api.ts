@@ -1,10 +1,11 @@
 // Common API response wrapper
 export interface ApiResponse<T> {
   success: boolean;
-  data: T;
+  data?: T;
   error?: {
     code: string;
     message: string;
+    details?: unknown;
   };
   meta?: {
     page: number;
