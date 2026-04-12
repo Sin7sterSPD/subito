@@ -31,7 +31,7 @@ export async function generateAccessToken(payload: {
 }
 
 export async function generateRefreshToken(userId: string): Promise<string> {
-  const jwt = await new jose.SignJWT({ type: "refresh" })
+  const jwt = await new jose.SignJWT({ type: "refresh", userId })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(userId)
     .setIssuedAt()
@@ -60,6 +60,25 @@ export async function verifyToken(token: string): Promise<JWTPayload | null> {
     };
   } catch (error) {
     console.error("JWT verification failed:", error);
+    return null;
+  }
+}
+
+export async function verifyRefreshToken(
+  token: string
+): Promise<{ userId: string } | null> {
+  try {
+    const { payload } = await jose.jwtVerify(token, JWT_SECRET, {
+      issuer: JWT_ISSUER,
+      audience: JWT_AUDIENCE,
+    });
+
+    if (payload.type !== "refresh") {
+      return null;
+    }
+
+    return { userId: payload.userId as string };
+  } catch {
     return null;
   }
 }

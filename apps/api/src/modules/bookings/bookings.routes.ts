@@ -3,6 +3,7 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import type { AppEnv } from "../../lib/types";
 import { requireAuth } from "../../middleware/auth";
+import { bookingIdempotency, paymentIdempotency } from "../../middleware/idempotency";
 import * as bookingsService from "./bookings.service";
 
 export const bookingsRouter = new Hono<AppEnv>();
@@ -22,9 +23,37 @@ const slotsQuerySchema = z.object({
   days: z.string().transform(Number).default("7"),
 });
 
+const createBookingSchema = z.object({
+  addressId: z.string().uuid(),
+  items: z.array(
+    z.object({
+      catalogId: z.string().uuid(),
+      quantity: z.number().min(1),
+      propertyConfig: z.record(z.any()).optional(),
+    })
+  ),
+  bookingType: z.enum(["INSTANT", "SCHEDULED", "RECURRING"]),
+  scheduledDate: z.string().optional(),
+  scheduledTime: z.string().optional(),
+  recurringType: z.enum(["WEEKLY", "BIWEEKLY", "MONTHLY"]).optional(),
+  couponCode: z.string().optional(),
+  customerNotes: z.string().optional(),
+});
+
 const cancelSchema = z.object({
   bookingId: z.string().uuid(),
   reason: z.string(),
+});
+
+const extendBookingSchema = z.object({
+  bookingId: z.string().uuid(),
+  additionalItems: z.array(
+    z.object({
+      catalogId: z.string().uuid(),
+      quantity: z.number().min(1),
+    })
+  ),
+  paymentMethodId: z.string().optional(),
 });
 
 const rescheduleSchema = z.object({
@@ -99,7 +128,10 @@ bookingsRouter.get("/get-user-latest-booking/:userId", requireAuth, async (c) =>
   const userId = c.get("userId")!;
 
   if (targetUserId !== userId) {
-    return c.json({ success: false, error: { code: "FORBIDDEN", message: "Access denied" } }, 403);
+    return c.json(
+      { success: false, error: { code: "FORBIDDEN", message: "Access denied" } },
+      403
+    );
   }
 
   const booking = await bookingsService.getLatestBooking(userId);
@@ -165,6 +197,24 @@ bookingsRouter.get("/:id", requireAuth, async (c) => {
 });
 
 bookingsRouter.post(
+  "/",
+  requireAuth,
+  bookingIdempotency,
+  zValidator("json", createBookingSchema),
+  async (c) => {
+    const userId = c.get("userId")!;
+    const idempotencyKey = c.req.header("Idempotency-Key");
+    const data = c.req.valid("json");
+    const result = await bookingsService.createBooking(userId, data, idempotencyKey);
+
+    return c.json({
+      success: true,
+      data: result,
+    });
+  }
+);
+
+bookingsRouter.post(
   "/cancel",
   requireAuth,
   zValidator("json", cancelSchema),
@@ -181,6 +231,24 @@ bookingsRouter.post(
 );
 
 bookingsRouter.post(
+  "/extend",
+  requireAuth,
+  paymentIdempotency,
+  zValidator("json", extendBookingSchema),
+  async (c) => {
+    const userId = c.get("userId")!;
+    const idempotencyKey = c.req.header("Idempotency-Key");
+    const data = c.req.valid("json");
+    const result = await bookingsService.extendBooking(userId, data, idempotencyKey);
+
+    return c.json({
+      success: true,
+      data: result,
+    });
+  }
+);
+
+bookingsRouter.post(
   "/instance/:id/reschedule",
   requireAuth,
   zValidator("json", rescheduleSchema),
@@ -188,7 +256,11 @@ bookingsRouter.post(
     const userId = c.get("userId")!;
     const instanceId = c.req.param("id");
     const data = c.req.valid("json");
-    const result = await bookingsService.rescheduleInstance(userId, instanceId, data);
+    const result = await bookingsService.rescheduleInstance(
+      userId,
+      instanceId,
+      data
+    );
 
     return c.json({
       success: true,

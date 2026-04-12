@@ -44,6 +44,7 @@ export const cancellationReasonEnum = pgEnum("cancellation_reason", [
 export const bookings = pgTable("bookings", {
   id: uuid("id").primaryKey().defaultRandom(),
   bookingNumber: varchar("booking_number", { length: 50 }).unique().notNull(),
+  idempotencyKey: varchar("idempotency_key", { length: 255 }),
   userId: uuid("user_id")
     .notNull()
     .references(() => users.id),
@@ -56,24 +57,28 @@ export const bookings = pgTable("bookings", {
   bundleId: uuid("bundle_id").references(() => bundles.id),
   couponId: uuid("coupon_id").references(() => coupons.id),
   parentBookingId: uuid("parent_booking_id"),
+  orderId: uuid("order_id"),
   
   status: bookingStatusEnum("status").default("PENDING_PAYMENT").notNull(),
   bookingType: bookingTypeEnum("booking_type").default("SCHEDULED").notNull(),
   recurringType: recurringTypeEnum("recurring_type"),
   
   scheduledDate: timestamp("scheduled_date"),
-  scheduledTime: varchar("scheduled_time", { length: 20 }),
+  scheduledStartTime: varchar("scheduled_start_time", { length: 20 }),
+  scheduledEndTime: varchar("scheduled_end_time", { length: 20 }),
   startedAt: timestamp("started_at"),
   completedAt: timestamp("completed_at"),
   cancelledAt: timestamp("cancelled_at"),
   cancellationReason: cancellationReasonEnum("cancellation_reason"),
   cancellationNote: text("cancellation_note"),
   
-  totalPrice: decimal("total_price", { precision: 12, scale: 2 }).notNull(),
+  subtotal: decimal("subtotal", { precision: 12, scale: 2 }),
+  totalPrice: decimal("total_price", { precision: 12, scale: 2 }),
   discountAmount: decimal("discount_amount", { precision: 12, scale: 2 }).default("0"),
   gstAmount: decimal("gst_amount", { precision: 12, scale: 2 }).default("0"),
-  surgePrice: decimal("surge_price", { precision: 12, scale: 2 }).default("0"),
-  finalAmount: decimal("final_amount", { precision: 12, scale: 2 }).notNull(),
+  surgeAmount: decimal("surge_amount", { precision: 12, scale: 2 }).default("0"),
+  totalAmount: decimal("total_amount", { precision: 12, scale: 2 }),
+  finalAmount: decimal("final_amount", { precision: 12, scale: 2 }),
   paidAmount: decimal("paid_amount", { precision: 12, scale: 2 }).default("0"),
   
   estimatedDuration: integer("estimated_duration"),
@@ -86,6 +91,22 @@ export const bookings = pgTable("bookings", {
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// DB-level idempotency tracking (Layer 2 safety net)
+export const idempotencyKeys = pgTable("idempotency_keys", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  key: varchar("key", { length: 255 }).notNull(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id),
+  resourceType: varchar("resource_type", { length: 50 }).notNull(), // booking, payment, order
+  resourceId: uuid("resource_id"),
+  requestHash: varchar("request_hash", { length: 64 }).notNull(),
+  responseCode: integer("response_code"),
+  responseBody: jsonb("response_body"),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const bookingItems = pgTable("booking_items", {
@@ -267,3 +288,10 @@ export const bookingInstancesRelations = relations(
     }),
   })
 );
+
+export const idempotencyKeysRelations = relations(idempotencyKeys, ({ one }) => ({
+  user: one(users, {
+    fields: [idempotencyKeys.userId],
+    references: [users.id],
+  }),
+}));

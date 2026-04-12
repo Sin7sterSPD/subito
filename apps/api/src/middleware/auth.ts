@@ -1,6 +1,7 @@
 import { createMiddleware } from "hono/factory";
 import { verifyToken } from "../lib/jwt";
 import { UnauthorizedError } from "../lib/errors";
+import { isTokenBlacklisted } from "../modules/auth/auth.service";
 import type { AppEnv } from "../lib/types";
 
 export const requireAuth = createMiddleware<AppEnv>(async (c, next) => {
@@ -11,6 +12,12 @@ export const requireAuth = createMiddleware<AppEnv>(async (c, next) => {
   }
 
   const token = authHeader.substring(7);
+
+  const isBlacklisted = await isTokenBlacklisted(token);
+  if (isBlacklisted) {
+    throw new UnauthorizedError("Token has been revoked");
+  }
+
   const payload = await verifyToken(token);
 
   if (!payload) {
@@ -28,11 +35,15 @@ export const optionalAuth = createMiddleware<AppEnv>(async (c, next) => {
 
   if (authHeader && authHeader.startsWith("Bearer ")) {
     const token = authHeader.substring(7);
-    const payload = await verifyToken(token);
 
-    if (payload) {
-      c.set("user", payload);
-      c.set("userId", payload.userId);
+    const isBlacklisted = await isTokenBlacklisted(token);
+    if (!isBlacklisted) {
+      const payload = await verifyToken(token);
+
+      if (payload) {
+        c.set("user", payload);
+        c.set("userId", payload.userId);
+      }
     }
   }
 

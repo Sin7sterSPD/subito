@@ -206,3 +206,74 @@ export async function getExtensions(bookingId: string) {
 
   return { extensions: extensionAddOns };
 }
+
+export async function getServiceById(id: string) {
+  const cacheKey = `service:${id}`;
+  const cached = await cacheGet<unknown>(cacheKey);
+  if (cached) return cached;
+
+  const listing = await db.query.listings.findFirst({
+    where: eq(listings.id, id),
+    with: {
+      category: true,
+      catalogs: {
+        where: eq(catalogs.isActive, true),
+        with: {
+          pricing: true,
+        },
+        orderBy: (catalogs, { asc }) => [asc(catalogs.sortOrder)],
+      },
+      addOns: {
+        where: eq(addOns.isActive, true),
+      },
+    },
+  });
+
+  if (!listing) {
+    throw new NotFoundError("Service");
+  }
+
+  const service = {
+    id: listing.id,
+    name: listing.name,
+    slug: listing.slug,
+    description: listing.description,
+    shortDescription: listing.shortDescription,
+    image: listing.image,
+    images: listing.images,
+    basePrice: listing.basePrice,
+    duration: listing.duration,
+    tags: listing.tags,
+    faqs: listing.faqs,
+    highlights: listing.highlights,
+    howItWorks: listing.howItWorks,
+    category: listing.category,
+    catalogs: listing.catalogs.map((catalog) => ({
+      id: catalog.id,
+      name: catalog.name,
+      description: catalog.description,
+      price: catalog.price,
+      discountedPrice: catalog.discountedPrice,
+      unit: catalog.unit,
+      minQuantity: catalog.minQuantity,
+      maxQuantity: catalog.maxQuantity,
+      stepQuantity: catalog.stepQuantity,
+      dependentOn: catalog.dependentOn,
+      pricing: catalog.pricing.map((p) => ({
+        dependentOn: p.dependentOn,
+        dependentValue: p.dependentValue,
+        price: p.price,
+      })),
+    })),
+    addOns: listing.addOns.map((addOn) => ({
+      id: addOn.id,
+      name: addOn.name,
+      description: addOn.description,
+      price: addOn.price,
+      image: addOn.image,
+    })),
+  };
+
+  await cacheSet(cacheKey, service, 600);
+  return service;
+}

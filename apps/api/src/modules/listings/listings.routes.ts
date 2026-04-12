@@ -90,3 +90,13 @@ listingsRouter.get("/categories/:id", optionalAuth, async (c) => {
     data: category,
   });
 });
+
+listingsRouter.get("/services/:id", optionalAuth, async (c) => {
+  const id = c.req.param("id");
+  const service = await listingsService.getServiceById(id);
+
+  return c.json({
+    success: true,
+    data: service,
+  });
+});

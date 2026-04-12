@@ -1,5 +1,10 @@
 import { db } from "@subito/db";
-import { users, referralCodes, referralRewards } from "@subito/db/schema";
+import {
+  users,
+  referralCodes,
+  referralRewards,
+  refreshTokens,
+} from "@subito/db/schema";
 import { eq, and } from "drizzle-orm";
 import { verifyFirebaseToken } from "../../lib/firebase";
 import {
@@ -7,9 +12,14 @@ import {
   generateRefreshToken,
   generateVerificationToken,
   verifyVerificationToken,
+  verifyRefreshToken,
 } from "../../lib/jwt";
 import { BadRequestError, UnauthorizedError } from "../../lib/errors";
 import { generateReferralCode } from "../../utils/helpers";
+import { redis } from "../../lib/redis";
+
+const TOKEN_BLACKLIST_PREFIX = "token:blacklist:";
+const TOKEN_BLACKLIST_TTL = 60 * 60 * 24 * 7; // 7 days
 
 export async function login(mobileNumber: string) {
   const token = await generateVerificationToken(mobileNumber);
@@ -123,6 +133,15 @@ export async function verify(data: {
 
   const refreshToken = await generateRefreshToken(user.id);
 
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 30);
+
+  await db.insert(refreshTokens).values({
+    userId: user.id,
+    token: refreshToken,
+    expiresAt,
+  });
+
   return {
     jwt_token: accessToken,
     refreshToken,
@@ -139,4 +158,72 @@ export async function verify(data: {
     },
     isNewUser,
   };
+}
+
+export async function refreshAccessToken(refreshToken: string) {
+  const payload = await verifyRefreshToken(refreshToken);
+  if (!payload) {
+    throw new UnauthorizedError("Invalid refresh token");
+  }
+
+  const storedToken = await db.query.refreshTokens.findFirst({
+    where: and(
+      eq(refreshTokens.token, refreshToken),
+      eq(refreshTokens.userId, payload.userId)
+    ),
+  });
+
+  if (!storedToken) {
+    throw new UnauthorizedError("Refresh token not found or revoked");
+  }
+
+  if (storedToken.expiresAt < new Date()) {
+    await db.delete(refreshTokens).where(eq(refreshTokens.id, storedToken.id));
+    throw new UnauthorizedError("Refresh token has expired");
+  }
+
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, payload.userId),
+  });
+
+  if (!user) {
+    throw new UnauthorizedError("User not found");
+  }
+
+  const newAccessToken = await generateAccessToken({
+    userId: user.id,
+    role: user.role,
+    phone: user.phone,
+  });
+
+  const newRefreshToken = await generateRefreshToken(user.id);
+
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 30);
+
+  await db.delete(refreshTokens).where(eq(refreshTokens.id, storedToken.id));
+
+  await db.insert(refreshTokens).values({
+    userId: user.id,
+    token: newRefreshToken,
+    expiresAt,
+  });
+
+  return {
+    jwt_token: newAccessToken,
+    refreshToken: newRefreshToken,
+  };
+}
+
+export async function logout(accessToken: string) {
+  await redis.setex(
+    `${TOKEN_BLACKLIST_PREFIX}${accessToken}`,
+    TOKEN_BLACKLIST_TTL,
+    "1"
+  );
+}
+
+export async function isTokenBlacklisted(token: string): Promise<boolean> {
+  const result = await redis.get(`${TOKEN_BLACKLIST_PREFIX}${token}`);
+  return result !== null;
 }

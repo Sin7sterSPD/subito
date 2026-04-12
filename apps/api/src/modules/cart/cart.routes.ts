@@ -3,6 +3,8 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import type { AppEnv } from "../../lib/types";
 import { requireAuth } from "../../middleware/auth";
+import { checkoutIdempotency, paymentIdempotency } from "../../middleware/idempotency";
+import { checkoutRateLimit } from "../../middleware/rate-limit";
 import * as cartService from "./cart.service";
 
 export const cartRouter = new Hono<AppEnv>();
@@ -62,6 +64,17 @@ const verifyPaymentSchema = z.object({
   orderId: z.string(),
   paymentId: z.string(),
   signature: z.string(),
+});
+
+const extendedCheckoutSchema = z.object({
+  bookingId: z.string().uuid(),
+  additionalItems: z.array(
+    z.object({
+      catalogId: z.string().uuid(),
+      quantity: z.number().min(1),
+    })
+  ),
+  cartVersion: z.number(),
 });
 
 cartRouter.get("/v2", requireAuth, async (c) => {
@@ -161,11 +174,14 @@ cartRouter.post("/remove-inactive", requireAuth, async (c) => {
 cartRouter.post(
   "/checkout",
   requireAuth,
+  checkoutRateLimit,
+  checkoutIdempotency,
   zValidator("json", checkoutSchema),
   async (c) => {
     const userId = c.get("userId")!;
+    const idempotencyKey = c.req.header("Idempotency-Key");
     const data = c.req.valid("json");
-    const result = await cartService.checkout(userId, data);
+    const result = await cartService.checkout(userId, data, idempotencyKey);
 
     return c.json({
       success: true,
@@ -177,11 +193,33 @@ cartRouter.post(
 cartRouter.post(
   "/checkout-v2",
   requireAuth,
+  checkoutRateLimit,
+  checkoutIdempotency,
   zValidator("json", checkoutV2Schema),
   async (c) => {
     const userId = c.get("userId")!;
+    const idempotencyKey = c.req.header("Idempotency-Key");
     const data = c.req.valid("json");
-    const result = await cartService.checkoutV2(userId, data);
+    const result = await cartService.checkoutV2(userId, data, idempotencyKey);
+
+    return c.json({
+      success: true,
+      data: result,
+    });
+  }
+);
+
+cartRouter.post(
+  "/checkout/extended",
+  requireAuth,
+  checkoutRateLimit,
+  paymentIdempotency,
+  zValidator("json", extendedCheckoutSchema),
+  async (c) => {
+    const userId = c.get("userId")!;
+    const idempotencyKey = c.req.header("Idempotency-Key");
+    const data = c.req.valid("json");
+    const result = await cartService.extendedCheckout(userId, data, idempotencyKey);
 
     return c.json({
       success: true,
@@ -193,6 +231,7 @@ cartRouter.post(
 cartRouter.post(
   "/verify-payment",
   requireAuth,
+  paymentIdempotency,
   zValidator("json", verifyPaymentSchema),
   async (c) => {
     const userId = c.get("userId")!;

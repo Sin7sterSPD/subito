@@ -8,8 +8,10 @@ import {
   bookings,
   bookingItems,
   orders,
+  idempotencyKeys,
 } from "@subito/db/schema";
 import { eq, and } from "drizzle-orm";
+import { createHash } from "crypto";
 import {
   NotFoundError,
   BadRequestError,
@@ -22,6 +24,68 @@ import {
   calculateGST,
 } from "../../utils/helpers";
 import { cacheDel } from "../../lib/redis";
+
+async function checkIdempotencyKey(
+  userId: string,
+  idempotencyKey: string | undefined,
+  resourceType: string,
+  requestData: unknown
+): Promise<{ existingResourceId: string | null; requestHash: string }> {
+  if (!idempotencyKey) {
+    return { existingResourceId: null, requestHash: "" };
+  }
+
+  const requestHash = createHash("sha256")
+    .update(JSON.stringify(requestData))
+    .digest("hex");
+
+  const existing = await db.query.idempotencyKeys.findFirst({
+    where: and(
+      eq(idempotencyKeys.key, idempotencyKey),
+      eq(idempotencyKeys.userId, userId),
+      eq(idempotencyKeys.resourceType, resourceType)
+    ),
+  });
+
+  if (existing) {
+    if (existing.requestHash !== requestHash) {
+      throw new ConflictError(
+        "Idempotency key has already been used with a different request payload"
+      );
+    }
+
+    if (existing.resourceId) {
+      return { existingResourceId: existing.resourceId, requestHash };
+    }
+  }
+
+  return { existingResourceId: null, requestHash };
+}
+
+async function storeIdempotencyKey(
+  userId: string,
+  idempotencyKey: string | undefined,
+  resourceType: string,
+  resourceId: string,
+  requestHash: string,
+  responseBody: unknown
+) {
+  if (!idempotencyKey) return;
+
+  const expiresAt = new Date();
+  expiresAt.setHours(expiresAt.getHours() + 6);
+
+  await db.insert(idempotencyKeys).values({
+    key: idempotencyKey,
+    userId,
+    resourceType,
+    resourceId,
+    requestHash,
+    responseCode: 200,
+    responseBody,
+    expiresAt,
+  });
+}
 
 export async function getCart(userId: string) {
   let cart = await db.query.carts.findFirst({
@@ -294,8 +358,32 @@ export async function checkout(
     amount?: number;
     meta?: { orderSource: string };
     cartVersion: number;
-  }
+  },
+  idempotencyKey?: string
 ) {
+  const { existingResourceId, requestHash } = await checkIdempotencyKey(
+    userId,
+    idempotencyKey,
+    "checkout",
+    { cartVersion: data.cartVersion, userId }
+  );
+
+  if (existingResourceId) {
+    const existingOrder = await db.query.orders.findFirst({
+      where: eq(orders.id, existingResourceId),
+    });
+
+    if (existingOrder) {
+      return {
+        orderId: existingOrder.orderNumber,
+        amount: existingOrder.amount,
+        currency: "INR",
+        status: existingOrder.status,
+        idempotent: true,
+      };
+    }
+  }
+
   const cart = await getOrCreateCart(userId);
 
   if (cart.version !== data.cartVersion) {
@@ -314,25 +402,55 @@ export async function checkout(
   const [order] = await db
     .insert(orders)
     .values({
-      orderId,
+      orderNumber: orderId,
       userId,
       amount: cart.finalAmount,
       status: "CREATED",
     })
     .returning();
 
-  return {
-    orderId: order.orderId,
+  const result = {
+    orderId: order.orderNumber,
     amount: cart.finalAmount,
     currency: "INR",
     status: "CREATED",
   };
+
+  await storeIdempotencyKey(userId, idempotencyKey, "checkout", order.id, requestHash, result);
+
+  return result;
 }
 
 export async function checkoutV2(
   userId: string,
-  data: { cartVersion: number }
+  data: { cartVersion: number },
+  idempotencyKey?: string
 ) {
+  const { existingResourceId, requestHash } = await checkIdempotencyKey(
+    userId,
+    idempotencyKey,
+    "checkout_v2",
+    { cartVersion: data.cartVersion, userId }
+  );
+
+  if (existingResourceId) {
+    const existingBooking = await db.query.bookings.findFirst({
+      where: eq(bookings.id, existingResourceId),
+    });
+
+    if (existingBooking) {
+      return {
+        bookingId: existingBooking.id,
+        bookingNumber: existingBooking.bookingNumber,
+        orderId: null,
+        amount: existingBooking.finalAmount,
+        currency: "INR",
+        status: existingBooking.status,
+        idempotent: true,
+      };
+    }
+  }
+
   const cart = await getOrCreateCart(userId);
 
   if (cart.version !== data.cartVersion) {
@@ -354,6 +472,7 @@ export async function checkoutV2(
     .insert(bookings)
     .values({
       bookingNumber,
+      idempotencyKey,
       userId,
       addressId: cart.addressId,
       bundleId: cart.bundleId,
@@ -364,7 +483,7 @@ export async function checkoutV2(
       totalPrice: cart.totalPrice,
       discountAmount: cart.discountAmount,
       gstAmount: cart.gstAmount,
-      surgePrice: cart.surgePrice,
+      surgeAmount: cart.surgePrice,
       finalAmount: cart.finalAmount,
     })
     .returning();
@@ -390,7 +509,7 @@ export async function checkoutV2(
   const [order] = await db
     .insert(orders)
     .values({
-      orderId,
+      orderNumber: orderId,
       bookingId: booking.id,
       userId,
       amount: cart.finalAmount,
@@ -403,14 +522,18 @@ export async function checkoutV2(
     .set({ isActive: false })
     .where(eq(carts.id, cart.id));
 
-  return {
+  const result = {
     bookingId: booking.id,
     bookingNumber: booking.bookingNumber,
-    orderId: order.orderId,
+    orderId: order.orderNumber,
     amount: cart.finalAmount,
     currency: "INR",
     status: "PENDING_PAYMENT",
   };
+
+  await storeIdempotencyKey(userId, idempotencyKey, "checkout_v2", booking.id, requestHash, result);
+
+  return result;
 }
 
 export async function verifyPayment(
@@ -582,4 +705,139 @@ function formatCartResponse(cart: any) {
     finalTotalAmount: cart.finalAmount,
     version: cart.version,
   };
+}
+
+export async function extendedCheckout(
+  userId: string,
+  data: {
+    bookingId: string;
+    additionalItems: Array<{
+      catalogId: string;
+      quantity: number;
+    }>;
+    cartVersion: number;
+  },
+  idempotencyKey?: string
+) {
+  const { existingResourceId, requestHash } = await checkIdempotencyKey(
+    userId,
+    idempotencyKey,
+    "extended_checkout",
+    data
+  );
+
+  if (existingResourceId) {
+    const existingOrder = await db.query.orders.findFirst({
+      where: eq(orders.id, existingResourceId),
+    });
+
+    if (existingOrder) {
+      return {
+        bookingId: data.bookingId,
+        extensionOrderId: existingOrder.orderNumber,
+        extensionAmount: existingOrder.amount,
+        newTotalAmount: null,
+        currency: "INR",
+        status: existingOrder.status,
+        idempotent: true,
+      };
+    }
+  }
+
+  const booking = await db.query.bookings.findFirst({
+    where: and(eq(bookings.id, data.bookingId), eq(bookings.userId, userId)),
+    with: {
+      items: true,
+    },
+  });
+
+  if (!booking) {
+    throw new NotFoundError("Booking");
+  }
+
+  const extendableStatuses = ["STARTED"];
+  if (!extendableStatuses.includes(booking.status)) {
+    throw new BadRequestError(
+      `Booking in status ${booking.status} cannot be extended`
+    );
+  }
+
+  let additionalTotal = 0;
+  const itemsToAdd = [];
+
+  for (const item of data.additionalItems) {
+    const catalog = await db.query.catalogs.findFirst({
+      where: eq(catalogs.id, item.catalogId),
+      with: { listing: true },
+    });
+
+    if (!catalog) {
+      throw new NotFoundError(`Catalog item ${item.catalogId}`);
+    }
+
+    const unitPrice = parseFloat(catalog.discountedPrice || catalog.price);
+    const totalPrice = roundToTwoDecimals(unitPrice * item.quantity);
+    additionalTotal += totalPrice;
+
+    itemsToAdd.push({
+      bookingId: booking.id,
+      catalogId: item.catalogId,
+      name: catalog.name,
+      description: catalog.description,
+      quantity: item.quantity,
+      unitPrice: unitPrice.toString(),
+      totalPrice: totalPrice.toString(),
+      listingId: catalog.listingId,
+      metadata: { isExtension: true },
+    });
+  }
+
+  for (const item of itemsToAdd) {
+    await db.insert(bookingItems).values(item);
+  }
+
+  const additionalGst = calculateGST(additionalTotal);
+  const extensionTotal = roundToTwoDecimals(additionalTotal + additionalGst);
+
+  const orderId = generateOrderId();
+  const [extensionOrder] = await db
+    .insert(orders)
+    .values({
+      orderId,
+      bookingId: booking.id,
+      userId,
+      amount: extensionTotal.toString(),
+      status: "CREATED",
+      metadata: { type: "extension" },
+    })
+    .returning();
+
+  const currentTotal = parseFloat(booking.finalAmount || "0");
+  const newTotal = roundToTwoDecimals(currentTotal + extensionTotal);
+
+  await db
+    .update(bookings)
+    .set({
+      finalAmount: newTotal.toString(),
+      updatedAt: new Date(),
+      metadata: {
+        ...((booking.metadata as object) || {}),
+        hasExtension: true,
+        extensionOrderId: extensionOrder.id,
+      },
+    })
+    .where(eq(bookings.id, booking.id));
+
+  const result = {
+    bookingId: booking.id,
+    extensionOrderId: extensionOrder.orderNumber,
+    extensionAmount: extensionTotal.toString(),
+    newTotalAmount: newTotal.toString(),
+    currency: "INR",
+    status: "PENDING_PAYMENT",
+  };
+
+  await storeIdempotencyKey(userId, idempotencyKey, "extended_checkout", extensionOrder.id, requestHash, result);
+
+  return result;
 }
