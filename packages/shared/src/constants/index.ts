@@ -1,0 +1,72 @@
+export const BOOKING_STATUSES = {
+  PENDING_PAYMENT: "PENDING_PAYMENT",
+  PENDING_MATCH: "PENDING_MATCH",
+  MATCHED: "MATCHED",
+  ARRIVING: "ARRIVING",
+  STARTED: "STARTED",
+  COMPLETED: "COMPLETED",
+  CANCELLED: "CANCELLED",
+  REFUNDED: "REFUNDED",
+} as const;
+
+export const BOOKING_TYPES = {
+  INSTANT: "INSTANT",
+  SCHEDULED: "SCHEDULED",
+  RECURRING: "RECURRING",
+} as const;
+
+export const RECURRING_TYPES = {
+  WEEKLY: "WEEKLY",
+  BIWEEKLY: "BIWEEKLY",
+  MONTHLY: "MONTHLY",
+} as const;
+
+export const PARTNER_STATUSES = {
+  PENDING: "pending",
+  APPROVED: "approved",
+  REJECTED: "rejected",
+  SUSPENDED: "suspended",
+} as const;
+
+export const PARTNER_AVAILABILITY_STATUSES = {
+  ONLINE: "online",
+  OFFLINE: "offline",
+  BUSY: "busy",
+} as const;
+
+export const PARTNER_BOOKING_STATUSES = {
+  EN_ROUTE: "EN_ROUTE",
+  ARRIVED: "ARRIVED",
+  WORKING: "WORKING",
+  COMPLETED: "COMPLETED",
+} as const;
+
+export const ADDRESS_TYPES = {
+  HOME: "HOME",
+  OFFICE: "OFFICE",
+  OTHER: "OTHER",
+} as const;
+
+export const PAYMENT_METHODS = {
+  UPI: "UPI",
+  CARD: "CARD",
+  NETBANKING: "NETBANKING",
+  WALLET: "WALLET",
+  COD: "COD",
+  OTHER: "OTHER",
+} as const;
+
+export const ERROR_CODES = {
+  UNAUTHORIZED: "UNAUTHORIZED",
+  FORBIDDEN: "FORBIDDEN",
+  NOT_FOUND: "NOT_FOUND",
+  BAD_REQUEST: "BAD_REQUEST",
+  CONFLICT: "CONFLICT",
+  VALIDATION_ERROR: "VALIDATION_ERROR",
+  INTERNAL_ERROR: "INTERNAL_ERROR",
+  SERVICE_UNAVAILABLE: "SERVICE_UNAVAILABLE",
+} as const;
+
+export const GST_RATE = 0.18;
+export const DEFAULT_PAGE_SIZE = 10;
+export const MAX_PAGE_SIZE = 100;
