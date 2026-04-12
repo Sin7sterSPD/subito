@@ -1,12 +1,18 @@
 import * as jose from "jose";
 import type { JWTPayload } from "./types";
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "your-super-secret-jwt-key-change-in-production"
-);
+const JWT_SECRET_RAW = process.env.JWT_SECRET;
+if (!JWT_SECRET_RAW || JWT_SECRET_RAW.length < 32) {
+  throw new Error(
+    "FATAL: JWT_SECRET must be set in the environment (minimum 32 characters)."
+  );
+}
+
+const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_RAW);
 const JWT_ISSUER = process.env.JWT_ISSUER || "subito-api";
 const JWT_AUDIENCE = process.env.JWT_AUDIENCE || "subito-app";
-const ACCESS_TOKEN_EXPIRY = process.env.ACCESS_TOKEN_EXPIRY || "7d";
+/** Default 15m — override with ACCESS_TOKEN_EXPIRY in env for staging/production parity. */
+const ACCESS_TOKEN_EXPIRY = process.env.ACCESS_TOKEN_EXPIRY || "15m";
 const REFRESH_TOKEN_EXPIRY = process.env.REFRESH_TOKEN_EXPIRY || "30d";
 
 export async function generateAccessToken(payload: {

@@ -54,11 +54,23 @@ async function processPartnerMatching(job: Job<PartnerMatchingJobData>) {
     ),
     with: {
       user: true,
+      services: true,
     },
   });
 
+  const serviceIdSet =
+    (serviceIds?.length ?? 0) > 0 ? new Set(serviceIds) : null;
+
+  const capabilityFiltered = serviceIdSet
+    ? availablePartners.filter((p) =>
+        (p.services || []).some(
+          (s) => s.isActive && s.serviceId && serviceIdSet.has(s.serviceId)
+        )
+      )
+    : availablePartners;
+
   const partnersWithDistance = await Promise.all(
-    availablePartners.map(async (partner) => {
+    capabilityFiltered.map(async (partner) => {
       const location = await db.query.partnerLocations.findFirst({
         where: eq(partnerLocations.partnerId, partner.id),
         orderBy: [desc(partnerLocations.recordedAt)],

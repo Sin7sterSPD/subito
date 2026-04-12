@@ -87,6 +87,13 @@ export const bookings = pgTable("bookings", {
   customerNotes: text("customer_notes"),
   partnerNotes: text("partner_notes"),
   adminNotes: text("admin_notes"),
+
+  /** Customer requested cancel while partner assigned; partner must ack release. */
+  cancellationAwaitingPartnerAck: boolean("cancellation_awaiting_partner_ack")
+    .default(false)
+    .notNull(),
+  partnerReleaseAcknowledgedAt: timestamp("partner_release_acknowledged_at"),
+  cancellationRequestedAt: timestamp("cancellation_requested_at"),
   
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

@@ -215,12 +215,13 @@ export async function refreshAccessToken(refreshToken: string) {
   };
 }
 
-export async function logout(accessToken: string) {
+export async function logout(accessToken: string, userId: string) {
   await redis.setex(
     `${TOKEN_BLACKLIST_PREFIX}${accessToken}`,
     TOKEN_BLACKLIST_TTL,
     "1"
   );
+  await db.delete(refreshTokens).where(eq(refreshTokens.userId, userId));
 }
 
 export async function isTokenBlacklisted(token: string): Promise<boolean> {

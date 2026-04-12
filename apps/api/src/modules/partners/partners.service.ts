@@ -8,7 +8,11 @@ import {
   ratings,
 } from "@subito/db/schema";
 import { eq, and, desc } from "drizzle-orm";
-import { NotFoundError, BadRequestError } from "../../lib/errors";
+import {
+  NotFoundError,
+  BadRequestError,
+  ForbiddenError,
+} from "../../lib/errors";
 import { calculateDistance } from "../../utils/helpers";
 
 interface AvailablePartnersQuery {
@@ -170,6 +174,61 @@ export async function getPartnerById(partnerId: string) {
     completedBookings: partner.completedBookings,
     services: partner.services,
   };
+}
+
+export async function acknowledgePartnerRelease(
+  partnerRecordId: string,
+  bookingId: string,
+  actingUserId: string,
+  actingRole: "customer" | "partner" | "admin"
+) {
+  if (actingRole !== "admin") {
+    const partner = await db.query.partners.findFirst({
+      where: eq(partners.id, partnerRecordId),
+    });
+    if (!partner || partner.userId !== actingUserId) {
+      throw new ForbiddenError();
+    }
+  }
+
+  const booking = await db.query.bookings.findFirst({
+    where: and(
+      eq(bookings.id, bookingId),
+      eq(bookings.partnerId, partnerRecordId),
+      eq(bookings.cancellationAwaitingPartnerAck, true)
+    ),
+  });
+
+  if (!booking) {
+    throw new NotFoundError("Booking");
+  }
+
+  const prevStatus = booking.status;
+
+  await db
+    .update(bookings)
+    .set({
+      status: "CANCELLED",
+      cancelledAt: new Date(),
+      cancellationAwaitingPartnerAck: false,
+      partnerReleaseAcknowledgedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(bookings.id, bookingId));
+
+  await db
+    .update(partners)
+    .set({ availabilityStatus: "online", updatedAt: new Date() })
+    .where(eq(partners.id, partnerRecordId));
+
+  await db.insert(bookingStatusHistory).values({
+    bookingId,
+    fromStatus: prevStatus,
+    toStatus: "CANCELLED",
+    reason: "Partner acknowledged release; customer cancellation completed",
+  });
+
+  return { acknowledged: true, bookingId };
 }
 
 export async function updatePartnerStatus(

@@ -311,11 +311,50 @@ export async function cancelBooking(
     throw new NotFoundError("Booking");
   }
 
-  const cancellableStatuses = ["PENDING_PAYMENT", "PENDING_MATCH", "MATCHED"];
+  if (booking.status === "CANCELLED") {
+    throw new BadRequestError("Booking is already cancelled");
+  }
+
+  const cancellableStatuses = [
+    "PENDING_PAYMENT",
+    "PENDING_MATCH",
+    "MATCHED",
+    "ARRIVING",
+    "STARTED",
+  ];
   if (!cancellableStatuses.includes(booking.status)) {
     throw new BadRequestError(
       `Booking in status ${booking.status} cannot be cancelled`
     );
+  }
+
+  const needsPartnerAck =
+    Boolean(booking.partnerId) &&
+    ["MATCHED", "ARRIVING", "STARTED"].includes(booking.status);
+
+  if (needsPartnerAck) {
+    if (booking.cancellationAwaitingPartnerAck) {
+      return {
+        awaitingPartnerAck: true,
+        bookingId: data.bookingId,
+      };
+    }
+
+    await db
+      .update(bookings)
+      .set({
+        cancellationAwaitingPartnerAck: true,
+        cancellationRequestedAt: new Date(),
+        cancellationReason: "USER_REQUESTED",
+        cancellationNote: data.reason,
+        updatedAt: new Date(),
+      })
+      .where(eq(bookings.id, data.bookingId));
+
+    return {
+      awaitingPartnerAck: true,
+      bookingId: data.bookingId,
+    };
   }
 
   await db
@@ -325,6 +364,7 @@ export async function cancelBooking(
       cancelledAt: new Date(),
       cancellationReason: "USER_REQUESTED",
       cancellationNote: data.reason,
+      cancellationAwaitingPartnerAck: false,
       updatedAt: new Date(),
     })
     .where(eq(bookings.id, data.bookingId));

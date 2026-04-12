@@ -62,6 +62,32 @@ partnersRouter.post(
   }
 );
 
+const acknowledgeReleaseSchema = z.object({
+  bookingId: z.string().uuid(),
+});
+
+partnersRouter.post(
+  "/:id/acknowledge-release",
+  requirePartner,
+  zValidator("json", acknowledgeReleaseSchema),
+  async (c) => {
+    const partnerId = c.req.param("id");
+    const user = c.get("user")!;
+    const { bookingId } = c.req.valid("json");
+    const result = await partnersService.acknowledgePartnerRelease(
+      partnerId,
+      bookingId,
+      user.userId,
+      user.role
+    );
+
+    return c.json({
+      success: true,
+      data: result,
+    });
+  }
+);
+
 partnersRouter.get("/:id", requireAuth, async (c) => {
   const partnerId = c.req.param("id");
   const partner = await partnersService.getPartnerById(partnerId);

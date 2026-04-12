@@ -3,6 +3,7 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import type { AppEnv } from "../../lib/types";
 import { authRateLimit } from "../../middleware/rate-limit";
+import { requireAuth } from "../../middleware/auth";
 import * as authService from "./auth.service";
 
 export const authRouter = new Hono<AppEnv>();
@@ -67,12 +68,11 @@ authRouter.post(
   }
 );
 
-authRouter.post("/logout", async (c) => {
-  const authHeader = c.req.header("Authorization");
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    const token = authHeader.substring(7);
-    await authService.logout(token);
-  }
+authRouter.post("/logout", requireAuth, async (c) => {
+  const userId = c.get("userId")!;
+  const authHeader = c.req.header("Authorization")!;
+  const token = authHeader.substring(7);
+  await authService.logout(token, userId);
 
   return c.json({
     success: true,

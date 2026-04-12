@@ -21,9 +21,9 @@ const initiatePaymentSchema = z.object({
   paymentMethodId: z.string().optional(),
 });
 
-const processOrderSchema = z.object({
+export const processOrderSchema = z.object({
   orderId: z.string(),
-  status: z.string(),
+  status: z.enum(["SUCCESS", "CHARGED", "FAILED", "PENDING"]),
   txnId: z.string().optional(),
 });
 

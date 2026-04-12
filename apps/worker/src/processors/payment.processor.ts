@@ -1,8 +1,9 @@
 import { Worker, Job } from "bullmq";
 import { db } from "@subito/db";
-import { orders, payments, bookings } from "@subito/db/schema";
+import { orders, bookings } from "@subito/db/schema";
 import { eq } from "drizzle-orm";
 import { redis } from "../lib/redis";
+import { enqueuePartnerMatchingJob } from "../lib/enqueue-partner-match";
 import type { PaymentReconciliationJobData } from "../queues";
 import { notificationQueue } from "../queues";
 
@@ -30,7 +31,13 @@ async function processPaymentReconciliation(
     return { status: order.status, alreadyProcessed: true };
   }
 
-  const paymentStatus = await checkPaymentStatusWithGateway(order.juspayOrderId || orderId);
+  const dbCaptured =
+    order.status === "CAPTURED" ||
+    (order.payments?.some((p) => p.status === "CAPTURED") ?? false);
+
+  const paymentStatus = dbCaptured
+    ? ({ status: "SUCCESS" } as const)
+    : await checkPaymentStatusWithGateway(order.juspayOrderId || orderId);
 
   if (paymentStatus.status === "SUCCESS") {
     await db
@@ -59,6 +66,8 @@ async function processPaymentReconciliation(
           orderId,
         },
       });
+
+      await enqueuePartnerMatchingJob(order.bookingId);
     }
 
     return { status: "COMPLETED", orderId };

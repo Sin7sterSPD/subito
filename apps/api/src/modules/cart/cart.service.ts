@@ -23,6 +23,7 @@ import {
   roundToTwoDecimals,
   calculateGST,
 } from "../../utils/helpers";
+import { enqueuePartnerMatchingJob } from "../../lib/enqueue-partner-match";
 import { cacheDel } from "../../lib/redis";
 
 async function checkIdempotencyKey(
@@ -553,11 +554,13 @@ export async function verifyPayment(
     .set({ status: "COMPLETED", updatedAt: new Date() })
     .where(eq(orders.id, order.id));
 
-  if (order.bookingId) {
+   if (order.bookingId) {
     await db
       .update(bookings)
       .set({ status: "PENDING_MATCH", updatedAt: new Date() })
       .where(eq(bookings.id, order.bookingId));
+
+    await enqueuePartnerMatchingJob(order.bookingId);
   }
 
   return { verified: true, orderId: data.orderId };

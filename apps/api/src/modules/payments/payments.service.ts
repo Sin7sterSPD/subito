@@ -3,6 +3,8 @@ import { orders, payments, bookings, refunds } from "@subito/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { NotFoundError, BadRequestError } from "../../lib/errors";
 import { generatePaymentId } from "../../utils/helpers";
+import { enqueuePartnerMatchingJob } from "../../lib/enqueue-partner-match";
+import { paymentReconciliationQueue } from "../../lib/queues";
 
 const JUSPAY_API_KEY = process.env.JUSPAY_API_KEY;
 const JUSPAY_MERCHANT_ID = process.env.JUSPAY_MERCHANT_ID;
@@ -137,11 +139,25 @@ export async function getPaymentStatus(userId: string, orderId: string) {
     throw new NotFoundError("Order");
   }
 
+  const booking = order.bookingId
+    ? await db.query.bookings.findFirst({
+        where: eq(bookings.id, order.bookingId),
+        columns: { id: true, status: true, bookingNumber: true },
+      })
+    : null;
+
+  const terminalOrder = ["COMPLETED", "FAILED", "CANCELLED"].includes(order.status);
+
   return {
     orderId: order.orderId,
     status: order.status,
     amount: order.amount,
     latestPayment: order.payments[0] || null,
+    bookingId: order.bookingId,
+    bookingStatus: booking?.status ?? null,
+    bookingNumber: booking?.bookingNumber ?? null,
+    /** True when order is in a terminal state (polling can stop). */
+    terminal: terminalOrder,
   };
 }
 
@@ -253,6 +269,8 @@ export async function processOrder(
           updatedAt: new Date(),
         })
         .where(eq(bookings.id, order.bookingId));
+
+      await enqueuePartnerMatchingJob(order.bookingId);
     }
 
     return {
@@ -290,10 +308,38 @@ export async function processOrder(
   }
 }
 
+/**
+ * Juspay (and similar) webhooks: enqueue server-side reconciliation.
+ * Do not trust payload alone — reconciliation worker / gateway verify is source of truth.
+ */
 export async function handleWebhook(body: unknown) {
-  console.log("Received Juspay webhook:", JSON.stringify(body));
+  const record = body && typeof body === "object" ? (body as Record<string, unknown>) : {};
+  const orderId =
+    (typeof record.order_id === "string" && record.order_id) ||
+    (typeof record.orderId === "string" && record.orderId) ||
+    (typeof record.id === "string" && record.id) ||
+    undefined;
 
-  return { received: true };
+  if (!orderId) {
+    console.warn("Webhook missing order id", JSON.stringify(body).slice(0, 500));
+    return { received: true, enqueued: false };
+  }
+
+  const order = await db.query.orders.findFirst({
+    where: eq(orders.orderId, orderId),
+  });
+
+  if (!order) {
+    console.warn(`Webhook order not found: ${orderId}`);
+    return { received: true, enqueued: false };
+  }
+
+  await paymentReconciliationQueue.add("reconcile-payment", {
+    orderId: order.orderId,
+    userId: order.userId,
+  });
+
+  return { received: true, enqueued: true };
 }
 
 function generateMockClientAuthToken(orderId: string): string {
