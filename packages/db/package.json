@@ -1,0 +1,33 @@
+{
+  "name": "@subito/db",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "scripts": {
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "lint": "eslint",
+    "format": "prettier --write \"**/*.ts\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema/index.ts"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.2",
+    "pg": "^8.21.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.20.0",
+    "drizzle-kit": "^0.31.10",
+    "tsx": "^4.22.3"
+  }
+}
