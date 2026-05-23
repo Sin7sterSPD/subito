@@ -5,7 +5,8 @@
     "DATABASE_URL",
     "DB_POOL_MAX",
     "DB_POOL_IDLE_TIMEOUT_MS",
-    "DB_POOL_CONNECT_TIMEOUT_MS"
+    "DB_POOL_CONNECT_TIMEOUT_MS",
+    "NODE_ENV"
   ],
 
   "tasks": {
