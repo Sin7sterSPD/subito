@@ -7,7 +7,7 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL! })
 const db = drizzle(pool, { schema })
 
 
-// This file is created by claude and errors fixed by me , ignore the emojis
+//Note : This file is created by claude and errors fixed by me , ignore the emojis
 
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
