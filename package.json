@@ -6,14 +6,10 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "lint": "turbo lint",
+    "lint:staged": "turbo lint --continue",
     "format": "turbo format",
     "typecheck": "turbo typecheck",
     "prepare": "husky"
-  },
-  "lint-staged": {
-    "*.{ts,tsx,js,jsx}": [
-      "pnpm lint"
-    ]
   },
   "devDependencies": {
     "@subito/eslint-config": "workspace:*",
