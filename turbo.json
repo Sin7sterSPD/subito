@@ -1,7 +1,15 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
-  "globalEnv": ["DATABASE_URL"],
+  "globalEnv": [
+    "DATABASE_URL",
+    "DB_POOL_MAX",
+    "DB_POOL_IDLE_TIMEOUT_MS",
+    "DB_POOL_CONNECT_TIMEOUT_MS",
+    "REDIS_URL",
+    "NODE_ENV"
+  ],
+
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
