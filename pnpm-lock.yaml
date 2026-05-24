@@ -44,6 +44,9 @@ importers:
       '@subito/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@subito/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       bullmq:
         specifier: ^5.77.1
         version: 5.77.1
@@ -207,6 +210,18 @@ importers:
         specifier: ^8.54.0
         version: 8.55.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
 
+  packages/shared:
+    devDependencies:
+      '@subito/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@subito/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+
   packages/typescript-config: {}
 
   packages/ui:
@@ -275,6 +290,22 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+
+  packages/utils:
+    dependencies:
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@subito/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@subito/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
 
 packages:
 

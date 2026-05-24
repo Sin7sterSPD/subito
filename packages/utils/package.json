@@ -1,0 +1,25 @@
+{
+  "name": "@subito/utils",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "lint": "eslint",
+    "format": "prettier --write \"**/*.ts\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "exports": {
+    "./jwt-access": "./src/jwt-access.ts"
+  },
+  "dependencies": {
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@subito/eslint-config": "workspace:*",
+    "@subito/typescript-config": "workspace:*",
+    "typescript": "^6.0.3"
+  }
+}
