@@ -35,6 +35,7 @@ async function checkRateLimitBucket(
   return { allowed: true }
 }
 
+// Before the server sends an SMS, it checks all three buckets. If even one of those buckets is full, the server returns an error: allowed: false.
 export async function checkOtpSendAllowed(input: {
   phone: string
   deviceId: string | null
