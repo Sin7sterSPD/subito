@@ -1,3 +1,4 @@
+import "../env"
 import * as jose from "jose"
 
 import type { JWTPayload } from "./types"

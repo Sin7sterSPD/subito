@@ -1,3 +1,4 @@
+import "../env"
 import { randomUUID } from "crypto"
 import { and, db, eq } from "@subito/db"
 import { refreshTokens } from "@subito/db/schema"

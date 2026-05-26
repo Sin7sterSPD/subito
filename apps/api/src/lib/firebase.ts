@@ -1,3 +1,4 @@
+import "../env"
 import admin from "firebase-admin"
 import type { Auth } from "firebase-admin/auth"
 

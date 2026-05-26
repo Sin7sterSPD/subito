@@ -1,3 +1,4 @@
+import "../env"
 import Redis from "ioredis"
 import { log } from "./logger"
 
