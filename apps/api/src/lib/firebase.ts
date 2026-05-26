@@ -1,37 +1,39 @@
-// import admin from "firebase-admin"
+import admin from "firebase-admin"
+import type { Auth } from "firebase-admin/auth"
 
-// const getFirebaseApp = () => {
-//   if (admin.apps.length > 0) {
-//     return admin.apps[0]!
-//   }
-//   //add these to turbo json
-//   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT
+const getFirebaseApp = () => {
+  if (admin.apps.length > 0) {
+    return admin.apps[0]!
+  }
 
-//   if (serviceAccountJson) {
-//     const serviceAccount = JSON.parse(serviceAccountJson)
-//     return admin.initializeApp({
-//       credential: admin.credential.cert(serviceAccount),
-//     })
-//   }
+  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT
 
-//   return admin.initializeApp({
-//     credential: admin.credential.applicationDefault(),
-//   })
-// }
+  if (serviceAccountJson) {
+    const serviceAccount = JSON.parse(serviceAccountJson)
+    return admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    })
+  }
 
-// export const firebaseApp = getFirebaseApp()
-// export const firebaseAuth = firebaseApp.auth()
+  return admin.initializeApp({
+    credential: admin.credential.applicationDefault(),
+  })
+}
 
-// export async function verifyFirebaseToken(idToken: string) {
-//   try {
-//     const decodedToken = await firebaseAuth.verifyIdToken(idToken)
-//     return {
-//       uid: decodedToken.uid,
-//       phone: decodedToken.phone_number,
-//       email: decodedToken.email,
-//     }
-//   } catch (error) {
-//     console.error("Firebase token verification failed:", error)
-//     return null
-//   }
-// }
+
+export const firebaseApp = getFirebaseApp()
+export const firebaseAuth: Auth = firebaseApp.auth()
+
+export async function verifyFirebaseToken(idToken: string) {
+  try {
+    const decodedToken = await firebaseAuth.verifyIdToken(idToken)
+    return {
+      uid: decodedToken.uid,
+      phone: decodedToken.phone_number,
+      email: decodedToken.email,
+    }
+  } catch (error) {
+    console.error("Firebase token verification failed:", error)
+    return null
+  }
+}
