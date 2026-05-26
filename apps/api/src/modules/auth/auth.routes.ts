@@ -27,6 +27,7 @@ const refreshSchema = z.object({
   refreshToken: z.string(),
 })
 
+
 const changePhoneRequestSchema = z.object({
   newPhone: z.string().min(10).max(15),
 })
