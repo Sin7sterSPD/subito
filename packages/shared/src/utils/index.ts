@@ -1,3 +1,62 @@
+export function roundToTwoDecimals(num: number): number {
+  return Math.round(num * 100) / 100
+}
+
+export function calculateGST(amount: number, rate = 0.18): number {
+  return roundToTwoDecimals(amount * rate)
+}
+
+export function calculateDistance(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const R = 6371
+  const dLat = toRad(lat2 - lat1)
+  const dLon = toRad(lon2 - lon1)
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
+
+function toRad(deg: number): number {
+  return deg * (Math.PI / 180)
+}
+
+/**
+ * Partner list / matching: higher is better. Same formula for API (sorted partners) and worker (auto-assign).
+ * `distanceKm` is haversine distance; weighting matches legacy behavior (cap effective distance at 10km for score).
+ */
+export function calculatePartnerMatchScore(input: {
+  averageRating: string | null
+  completedBookings: number | null
+  distanceKm: number
+}): number {
+  const rating = input.averageRating ? parseFloat(input.averageRating) : 3
+  const completed = input.completedBookings || 0
+  const distanceScore = Math.max(0, 10 - input.distanceKm)
+  return rating * 2 + Math.min(completed / 10, 3) + distanceScore * 0.5
+}
+
+export function formatCurrency(
+  amount: number | string,
+  currency = "INR"
+): string {
+  const num = typeof amount === "string" ? parseFloat(amount) : amount
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(num)
+}
+
 export function formatPhone(phone: string): string {
   if (phone.startsWith("+91")) {
     return phone
@@ -11,6 +70,10 @@ export function formatPhone(phone: string): string {
   return phone
 }
 
+export function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 export function isValidEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   return emailRegex.test(email)
@@ -19,8 +82,4 @@ export function isValidEmail(email: string): boolean {
 export function isValidPhone(phone: string): boolean {
   const phoneRegex = /^(\+91)?[6-9]\d{9}$/
   return phoneRegex.test(phone.replace(/\s/g, ""))
-}
-
-export function roundToTwoDecimals(num: number): number {
-  return Math.round(num * 100) / 100
 }
