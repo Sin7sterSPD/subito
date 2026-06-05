@@ -7,7 +7,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const { isAuthenticated, accessToken } = useAuthStore()
 
   if (!isAuthenticated || !accessToken) {
-    return <Redirect href="/login" />
+    return <Redirect href="/(auth)/login" />
   }
 
   return <>{children}</>
