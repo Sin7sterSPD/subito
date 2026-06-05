@@ -6,7 +6,7 @@ export default function Index() {
   const { isOnboardingComplete } = useAppStore()
 
   if (!isAuthenticated) {
-    return <Redirect href="/login" />
+    return <Redirect href="/(auth)/login" />
   }
 
   if (!isOnboardingComplete && user && !user.isOnboarded) {
