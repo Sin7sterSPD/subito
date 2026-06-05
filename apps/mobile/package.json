@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
+    "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-firebase/app": "^24.0.0",
     "@react-native-firebase/auth": "^24.0.0",
     "@react-navigation/bottom-tabs": "^7.4.0",
@@ -48,7 +49,8 @@
     "tailwind-merge": "^3.4.0",
     "tailwind-variants": "^3.2.2",
     "tailwindcss": "^4.1.18",
-    "uniwind": "^1.7.0"
+    "uniwind": "^1.7.0",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
