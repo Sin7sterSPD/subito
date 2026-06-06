@@ -29,11 +29,12 @@ const getSizeValue = (size: AvatarSize): number => {
 
 const getInitials = (name?: string): string => {
   if (!name) return "?"
-  const parts = name.trim().split(" ")
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return "?"
   if (parts.length >= 2) {
     return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
   }
-  return name[0].toUpperCase()
+  return parts[0][0].toUpperCase()
 }
 
 export function Avatar({ source, name, size = "md" }: AvatarProps) {
