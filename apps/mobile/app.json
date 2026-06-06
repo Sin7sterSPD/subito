@@ -18,6 +18,8 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
+      "package": "com.subito.mobile",
+      "googleServicesFile": "./google-services.json",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
@@ -43,6 +45,8 @@
       ],
       "expo-secure-store"
     ],
+
+  
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
