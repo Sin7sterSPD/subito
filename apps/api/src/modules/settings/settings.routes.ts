@@ -8,11 +8,11 @@ import * as settingsService from "./settings.service"
 export const settingsRouter = new Hono<AppEnv>()
 
 const complaintSchema = z.object({
-  category: z.string().optional(),
-  subject: z.string().min(1),
-  description: z.string().min(1),
+  category: z.string().trim().max(64).optional(),
+  subject: z.string().trim().min(1).max(255),
+  description: z.string().trim().min(1).max(5000),
   bookingId: z.string().uuid().optional(),
-  attachments: z.array(z.string()).optional(),
+  attachments: z.array(z.string().max(2048)).max(5).optional(),
 })
 
 settingsRouter.get("/", optionalAuth, async (c) => {

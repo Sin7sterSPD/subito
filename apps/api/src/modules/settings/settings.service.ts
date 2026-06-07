@@ -14,9 +14,7 @@ export async function getAppSettings() {
     where: eq(appSettings.isPublic, true),
   })
 
-  const flags = await db.query.featureFlags.findMany({
-    where: eq(featureFlags.isEnabled, true),
-  })
+  const flags = await db.query.featureFlags.findMany()
 
   const settingsMap: Record<string, unknown> = {}
   for (const setting of settings) {
