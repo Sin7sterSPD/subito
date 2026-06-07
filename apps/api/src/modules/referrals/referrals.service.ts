@@ -81,12 +81,19 @@ export async function checkReferralCode(code: string) {
   }
 
   if (
-    referralCode.maxUsage &&
-    (referralCode.currentUsage || 0) >= referralCode.maxUsage
+    referralCode.maxUsage !== null &&
+    referralCode.maxUsage !== undefined &&
+    (referralCode.currentUsage ?? 0) >= referralCode.maxUsage
   ) {
     return { exists: false, reason: "Code usage limit reached" }
   }
 
+
+  if (referralCode.validFrom && new Date() < referralCode.validFrom) {
+     return { exists: false, reason: "Code is not active yet" }
+   }
+
+     
   if (referralCode.validTill && new Date() > referralCode.validTill) {
     return { exists: false, reason: "Code has expired" }
   }
