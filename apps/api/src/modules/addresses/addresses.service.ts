@@ -1,8 +1,8 @@
-import { db } from "@subito/db";
-import { addresses } from "@subito/db";
-import { eq, and } from "@subito/db";
-import { NotFoundError, ForbiddenError } from "@/lib/errors";
-import { calculateDistance } from "@subito/shared";
+import { db } from "@subito/db"
+import { addresses } from "@subito/db"
+import { eq, and } from "@subito/db"
+import { NotFoundError, ForbiddenError, InternalError } from "@/lib/errors"
+import { calculateDistance } from "@subito/shared"
 
 
 interface AddressInput {
@@ -82,6 +82,10 @@ export async function createAddress(userId: string, data: AddressInput) {
     })
     .returning()
 
+  if (!address) {
+    throw new InternalError("Failed to create address")
+  }
+
   return address
 }
 
@@ -108,6 +112,10 @@ export async function updateAddress(
     .where(eq(addresses.id, id))
     .returning()
 
+  if (!updated) {
+    throw new InternalError("Failed to update address")
+  }
+
   return updated
 }
 
@@ -127,17 +135,16 @@ export async function deleteAddress(userId: string, addressId: string) {
   await db.delete(addresses).where(eq(addresses.id, addressId))
 
   if (existing.isDefault) {
-    const remainingAddresses = await db.query.addresses.findMany({
+    const nextDefaultAddress = await db.query.addresses.findFirst({
       where: eq(addresses.userId, userId),
       orderBy: (addresses, { desc }) => [desc(addresses.createdAt)],
-      limit: 1,
     })
 
-    if (remainingAddresses.length > 0) {
+    if (nextDefaultAddress) {
       await db
         .update(addresses)
         .set({ isDefault: true })
-        .where(eq(addresses.id, remainingAddresses[0].id))
+        .where(eq(addresses.id, nextDefaultAddress.id))
     }
   }
 

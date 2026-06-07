@@ -4,6 +4,7 @@ import { z } from "zod"
 import type { AppEnv } from "@/lib/types"
 import { requireAuth } from "@/middleware/auth"
 import * as usersService from "./users.service"
+import { addressesRouter } from "../addresses/addresses.routes"
 
 export const usersRouter = new Hono<AppEnv>()
 
@@ -103,3 +104,5 @@ usersRouter.post(
     })
   }
 )
+
+usersRouter.route("/addresses", addressesRouter)
