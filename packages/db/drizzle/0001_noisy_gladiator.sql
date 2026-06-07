@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "addresses_user_default_unique" ON "addresses" USING btree ("user_id") WHERE "addresses"."is_default" IS TRUE;

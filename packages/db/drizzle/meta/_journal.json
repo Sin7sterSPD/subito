@@ -8,6 +8,13 @@
       "when": 1779511044684,
       "tag": "0000_normal_the_order",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1780827404964,
+      "tag": "0001_noisy_gladiator",
+      "breakpoints": true
     }
   ]
 }

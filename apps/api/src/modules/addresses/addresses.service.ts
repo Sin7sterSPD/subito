@@ -1,9 +1,8 @@
 import { db } from "@subito/db"
 import { addresses } from "@subito/db"
-import { eq, and } from "@subito/db"
+import { eq, and, desc } from "@subito/db"
 import { NotFoundError, ForbiddenError, InternalError } from "@/lib/errors"
 import { calculateDistance } from "@subito/shared"
-
 
 interface AddressInput {
   name?: string
@@ -40,7 +39,11 @@ export async function getUserAddresses(
     orderBy: (addresses, { desc }) => [desc(addresses.createdAt)],
   })
 
-  if (options?.lat && options?.lng && options?.nearestRequired) {
+  if (
+    options?.nearestRequired &&
+    options?.lat != null &&
+    options?.lng != null
+  ) {
     const addressesWithDistance = userAddresses.map((addr) => ({
       ...addr,
       distance: calculateDistance(
@@ -66,27 +69,30 @@ export async function getUserAddresses(
 }
 
 export async function createAddress(userId: string, data: AddressInput) {
-  const existingAddresses = await db.query.addresses.findMany({
-    where: eq(addresses.userId, userId),
-    columns: { id: true },
+  return db.transaction(async (tx) => {
+    const existingAddresses = await tx
+      .select({ id: addresses.id })
+      .from(addresses)
+      .where(eq(addresses.userId, userId))
+      .limit(1)
+
+    const isDefault = existingAddresses.length === 0
+
+    const [address] = await tx
+      .insert(addresses)
+      .values({
+        userId,
+        ...data,
+        isDefault,
+      })
+      .returning()
+
+    if (!address) {
+      throw new InternalError("Failed to create address")
+    }
+
+    return address
   })
-
-  const isDefault = existingAddresses.length === 0
-
-  const [address] = await db
-    .insert(addresses)
-    .values({
-      userId,
-      ...data,
-      isDefault,
-    })
-    .returning()
-
-  if (!address) {
-    throw new InternalError("Failed to create address")
-  }
-
-  return address
 }
 
 export async function updateAddress(
@@ -120,35 +126,41 @@ export async function updateAddress(
 }
 
 export async function deleteAddress(userId: string, addressId: string) {
-  const existing = await db.query.addresses.findFirst({
-    where: and(eq(addresses.id, addressId), eq(addresses.userId, userId)),
-  })
+  return db.transaction(async (tx) => {
+    const [existing] = await tx
+      .select()
+      .from(addresses)
+      .where(and(eq(addresses.id, addressId), eq(addresses.userId, userId)))
+      .limit(1)
 
-  if (!existing) {
-    throw new NotFoundError("Address")
-  }
-
-  if (!existing.canDelete) {
-    throw new ForbiddenError("This address cannot be deleted")
-  }
-
-  await db.delete(addresses).where(eq(addresses.id, addressId))
-
-  if (existing.isDefault) {
-    const nextDefaultAddress = await db.query.addresses.findFirst({
-      where: eq(addresses.userId, userId),
-      orderBy: (addresses, { desc }) => [desc(addresses.createdAt)],
-    })
-
-    if (nextDefaultAddress) {
-      await db
-        .update(addresses)
-        .set({ isDefault: true })
-        .where(eq(addresses.id, nextDefaultAddress.id))
+    if (!existing) {
+      throw new NotFoundError("Address")
     }
-  }
 
-  return { deleted: true }
+    if (!existing.canDelete) {
+      throw new ForbiddenError("This address cannot be deleted")
+    }
+
+    await tx.delete(addresses).where(eq(addresses.id, addressId))
+
+    if (existing.isDefault) {
+      const [nextDefaultAddress] = await tx
+        .select({ id: addresses.id })
+        .from(addresses)
+        .where(eq(addresses.userId, userId))
+        .orderBy(desc(addresses.createdAt))
+        .limit(1)
+
+      if (nextDefaultAddress) {
+        await tx
+          .update(addresses)
+          .set({ isDefault: true })
+          .where(eq(addresses.id, nextDefaultAddress.id))
+      }
+    }
+
+    return { deleted: true }
+  })
 }
 
 export async function getAddressById(userId: string, addressId: string) {
