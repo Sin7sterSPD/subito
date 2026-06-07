@@ -75,7 +75,7 @@ export async function getSupportContact() {
 
   return {
     email: (emailSetting?.value as string) || "support@subito.in",
-    phone: (phoneSetting?.value as string) || "+91-9876543210",
+    phone: (phoneSetting?.value as string) || "+91-9999999999",
     hours: "9 AM - 9 PM IST",
     days: "Monday - Saturday",
   }
