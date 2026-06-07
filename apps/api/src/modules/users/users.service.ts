@@ -7,7 +7,7 @@ import {
 } from "@subito/db"
 
 import { eq, and } from "@subito/db"
-import { NotFoundError, BadRequestError } from "@/lib/errors"
+import { NotFoundError, BadRequestError, InternalError } from "@/lib/errors"
 
 export async function getCurrentUser(userId: string) {
   const user = await db.query.users.findFirst({
@@ -122,16 +122,26 @@ export async function checkUserExists(phone: string): Promise<boolean> {
 }
 
 export async function getUserPreferences(userId: string) {
-  let prefs = await db.query.userPreferences.findFirst({
+  const existingPrefs = await db.query.userPreferences.findFirst({
     where: eq(userPreferences.userId, userId),
   })
 
+  if (existingPrefs) {
+    return {
+      notificationsEnabled: existingPrefs.notificationsEnabled,
+      smsEnabled: existingPrefs.smsEnabled,
+      emailEnabled: existingPrefs.emailEnabled,
+      language: existingPrefs.language,
+    }
+  }
+
+  const [prefs] = await db
+    .insert(userPreferences)
+    .values({ userId })
+    .returning()
+
   if (!prefs) {
-    const [newPrefs] = await db
-      .insert(userPreferences)
-      .values({ userId })
-      .returning()
-    prefs = newPrefs
+    throw new InternalError("Failed to create user preferences")
   }
 
   return {
