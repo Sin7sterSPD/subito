@@ -9,7 +9,7 @@ export default function AuthLayout() {
         contentStyle: { backgroundColor: "#FFFFFF" },
       }}
     >
-      <Stack.Screen name="Tabs" />
+      <Stack.Screen name="Index" />
     </Stack>
   )
 }

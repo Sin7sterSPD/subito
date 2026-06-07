@@ -16,8 +16,10 @@ export function getApiBaseUrl(): string {
   }
 
   if (__DEV__) {
-    return normalizeApiBase("http://localhost:4000")
+    return normalizeApiBase(
+      process.env.EXPO_PUBLIC_API_BASE_URL_DEV || "http://localhost:4000"
+    )
   }
 
-  return normalizeApiBase("https://api.subito.com")
+  return normalizeApiBase("https://api.subito.app")
 }
