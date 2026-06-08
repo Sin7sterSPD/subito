@@ -311,21 +311,23 @@ export async function acknowledgePartnerRelease(
     }
   }
 
-  const booking = await db.query.bookings.findFirst({
-    where: and(
-      eq(bookings.id, bookingId),
-      eq(bookings.partnerId, partnerRecordId),
-      eq(bookings.cancellationAwaitingPartnerAck, true)
-    ),
-  })
-
-  if (!booking) {
-    throw new NotFoundError("Booking")
-  }
-
-  const prevStatus = booking.status
-
   await db.transaction(async (tx) => {
+    const [booking] = await tx
+      .select()
+      .from(bookings)
+      .where(
+        and(
+          eq(bookings.id, bookingId),
+          eq(bookings.partnerId, partnerRecordId),
+          eq(bookings.cancellationAwaitingPartnerAck, true)
+        )
+      )
+      .for("update")
+
+    if (!booking) {
+      throw new NotFoundError("Booking")
+    }
+
     await tx
       .update(bookings)
       .set({
@@ -344,7 +346,7 @@ export async function acknowledgePartnerRelease(
 
     await tx.insert(bookingStatusHistory).values({
       bookingId,
-      fromStatus: prevStatus,
+      fromStatus: booking.status,
       toStatus: "CANCELLED",
       reason: "Partner acknowledged release; customer cancellation completed",
     })
@@ -360,17 +362,6 @@ export async function updatePartnerStatus(
     bookingId: string
   }
 ) {
-  const booking = await db.query.bookings.findFirst({
-    where: and(
-      eq(bookings.id, data.bookingId),
-      eq(bookings.partnerId, partnerId)
-    ),
-  })
-
-  if (!booking) {
-    throw new NotFoundError("Booking")
-  }
-
   const statusMap: Record<string, string> = {
     EN_ROUTE: "ARRIVING",
     ARRIVED: "ARRIVING",
@@ -395,6 +386,21 @@ export async function updatePartnerStatus(
   }
 
   await db.transaction(async (tx) => {
+    const [booking] = await tx
+      .select()
+      .from(bookings)
+      .where(
+        and(
+          eq(bookings.id, data.bookingId),
+          eq(bookings.partnerId, partnerId)
+        )
+      )
+      .for("update")
+
+    if (!booking) {
+      throw new NotFoundError("Booking")
+    }
+
     await tx
       .update(bookings)
       .set(updateData)
