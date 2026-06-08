@@ -118,7 +118,7 @@ export async function getListings(query: ListingsQuery) {
 
 export async function getListingById(id: string) {
   const listing = await db.query.listings.findFirst({
-    where: eq(listings.id, id),
+    where: and(eq(listings.id, id), eq(listings.isActive, true)),
     with: {
       category: true,
       catalogs: {
@@ -151,7 +151,7 @@ export async function getCategories() {
 
 export async function getCategoryById(id: string) {
   const category = await db.query.categories.findFirst({
-    where: eq(categories.id, id),
+    where: and(eq(categories.id, id), eq(categories.isActive, true)),
     with: {
       listings: {
         where: eq(listings.isActive, true),
@@ -171,9 +171,9 @@ export async function getCategoryById(id: string) {
   return category
 }
 
-export async function getExtensions(bookingId: string) {
+export async function getExtensions(userId: string, bookingId: string) {
   const booking = await db.query.bookings.findFirst({
-    where: eq(bookings.id, bookingId),
+    where: and(eq(bookings.id, bookingId), eq(bookings.userId, userId)),
     with: {
       items: {
         with: {
@@ -215,7 +215,7 @@ export async function getServiceById(id: string) {
   if (cached) return cached
 
   const listing = await db.query.listings.findFirst({
-    where: eq(listings.id, id),
+    where: and(eq(listings.id, id), eq(listings.isActive, true)),
     with: {
       category: true,
       catalogs: {

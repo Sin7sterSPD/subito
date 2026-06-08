@@ -17,6 +17,10 @@ const extensionsQuerySchema = z.object({
   bookingId: z.string().uuid(),
 })
 
+const idParamSchema = z.object({
+  id: z.string().uuid(),
+})
+
 listingsRouter.get(
   "/",
   requireAuth,
@@ -52,8 +56,9 @@ listingsRouter.get(
   requireAuth,
   zValidator("query", extensionsQuerySchema),
   async (c) => {
+    const userId = c.get("userId")!
     const { bookingId } = c.req.valid("query")
-    const extensions = await listingsService.getExtensions(bookingId)
+    const extensions = await listingsService.getExtensions(userId, bookingId)
 
     return c.json({
       success: true,
@@ -62,15 +67,20 @@ listingsRouter.get(
   }
 )
 
-listingsRouter.get("/:id", optionalAuth, async (c) => {
-  const id = c.req.param("id")
-  const listing = await listingsService.getListingById(id)
+listingsRouter.get(
+  "/:id",
+  optionalAuth,
+  zValidator("param", idParamSchema),
+  async (c) => {
+    const { id } = c.req.valid("param")
+    const listing = await listingsService.getListingById(id)
 
-  return c.json({
-    success: true,
-    data: listing,
-  })
-})
+    return c.json({
+      success: true,
+      data: listing,
+    })
+  }
+)
 
 listingsRouter.get("/categories", optionalAuth, async (c) => {
   const categories = await listingsService.getCategories()
@@ -81,22 +91,32 @@ listingsRouter.get("/categories", optionalAuth, async (c) => {
   })
 })
 
-listingsRouter.get("/categories/:id", optionalAuth, async (c) => {
-  const id = c.req.param("id")
-  const category = await listingsService.getCategoryById(id)
+listingsRouter.get(
+  "/categories/:id",
+  optionalAuth,
+  zValidator("param", idParamSchema),
+  async (c) => {
+    const { id } = c.req.valid("param")
+    const category = await listingsService.getCategoryById(id)
 
-  return c.json({
-    success: true,
-    data: category,
-  })
-})
+    return c.json({
+      success: true,
+      data: category,
+    })
+  }
+)
 
-listingsRouter.get("/services/:id", optionalAuth, async (c) => {
-  const id = c.req.param("id")
-  const service = await listingsService.getServiceById(id)
+listingsRouter.get(
+  "/services/:id",
+  optionalAuth,
+  zValidator("param", idParamSchema),
+  async (c) => {
+    const { id } = c.req.valid("param")
+    const service = await listingsService.getServiceById(id)
 
-  return c.json({
-    success: true,
-    data: service,
-  })
-})
+    return c.json({
+      success: true,
+      data: service,
+    })
+  }
+)
