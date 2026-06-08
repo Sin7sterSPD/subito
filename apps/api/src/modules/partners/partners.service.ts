@@ -6,7 +6,6 @@ import { encryptPii } from "@/lib/pii-crypto"
 import {
   partners,
   partnerLocations,
-  partnerServices,
   bookings,
   bookingStatusHistory,
   ratings,
@@ -105,8 +104,6 @@ export async function findAvailablePartners(query: AvailablePartnersQuery) {
   }
 }
 
-
-
 export async function assignPartner(data: {
   bookingId: string
   partnerId: string
@@ -135,6 +132,9 @@ export async function assignPartner(data: {
 
     if (!partner) {
       throw new NotFoundError("Partner")
+    }
+    if (partner.status !== "approved") {
+      throw new BadRequestError("Partner is not approved")
     }
 
     if (partner.availabilityStatus !== "online") {
@@ -390,16 +390,30 @@ export async function updatePartnerStatus(
       .select()
       .from(bookings)
       .where(
-        and(
-          eq(bookings.id, data.bookingId),
-          eq(bookings.partnerId, partnerId)
-        )
+        and(eq(bookings.id, data.bookingId), eq(bookings.partnerId, partnerId))
       )
       .for("update")
 
     if (!booking) {
       throw new NotFoundError("Booking")
     }
+    // chekc this later
+    //     const allowedTransitions = {
+    //       MATCHED: ["ARRIVING"],
+    //       ARRIVING: ["STARTED"],
+    //       STARTED: ["COMPLETED"],
+    //     } as const
+
+    //     if (
+    //       !allowedTransitions[
+    //         booking.status as keyof typeof allowedTransitions
+    //       ]?.includes(newBookingStatus)
+    //     ) {
+    //       throw new BadRequestError(
+    //         `Cannot transition from ${booking.status} to ${newBookingStatus}`
+    //       )
+    //     }
+    //     leaving here so come back again
 
     await tx
       .update(bookings)
@@ -460,7 +474,10 @@ export async function getPartnerRatings(partnerId: string) {
   }
 
   const partnerRatings = await db.query.ratings.findMany({
-    where: eq(ratings.partnerId, partnerId),
+    where: and(
+      eq(ratings.partnerId, partnerId),
+      eq(ratings.status, "SUBMITTED")
+    ),
     orderBy: [desc(ratings.createdAt)],
     limit: 50,
     with: {
