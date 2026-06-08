@@ -1,7 +1,12 @@
 import { eq, and } from "@subito/db"
-import { db } from "@subito/db"
+import { db, type Database, type Transaction } from "@subito/db"
 import { bookings, ratings, partners } from "@subito/db"
-import { BadRequestError, NotFoundError, ForbiddenError } from "@/lib/errors"
+import {
+  BadRequestError,
+  NotFoundError,
+  ForbiddenError,
+  InternalError,
+} from "@/lib/errors"
 
 export async function getRating(userId: string, bookingId: string) {
   const booking = await db.query.bookings.findFirst({
@@ -18,7 +23,9 @@ export async function getRating(userId: string, bookingId: string) {
 
   return {
     rating: existingRating,
-    canRate: booking.status === "COMPLETED" && !existingRating,
+    canRate:
+      booking.status === "COMPLETED" &&
+      (!existingRating || existingRating.status !== "SUBMITTED"),
     bookingCompleted: booking.status === "COMPLETED",
   }
 }
@@ -63,32 +70,38 @@ export async function submitRating(
 
   const partnerId = data.partnerId || booking.partnerId
 
-  const [newRating] = await db
-    .insert(ratings)
-    .values({
-      bookingId: data.bookingId,
-      userId,
-      partnerId,
-      status: "SUBMITTED",
-      rating: data.rating,
-      comment: data.comment,
-      tags: data.tags,
-      serviceQuality: data.serviceQuality,
-      punctuality: data.punctuality,
-      professionalism: data.professionalism,
-      cleanliness: data.cleanliness,
-      isAnonymous: data.isAnonymous,
-    })
-    .returning()
+  return db.transaction(async (tx) => {
+    const [newRating] = await tx
+      .insert(ratings)
+      .values({
+        bookingId: data.bookingId,
+        userId,
+        partnerId,
+        status: "SUBMITTED",
+        rating: data.rating,
+        comment: data.comment,
+        tags: data.tags,
+        serviceQuality: data.serviceQuality,
+        punctuality: data.punctuality,
+        professionalism: data.professionalism,
+        cleanliness: data.cleanliness,
+        isAnonymous: data.isAnonymous,
+      })
+      .returning()
 
-  if (partnerId) {
-    await updatePartnerRating(partnerId)
-  }
+    if (!newRating) {
+      throw new InternalError("Failed to create rating")
+    }
 
-  return {
-    submitted: true,
-    rating: newRating,
-  }
+    if (partnerId) {
+      await updatePartnerRatingInTx(tx, partnerId)
+    }
+
+    return {
+      submitted: true,
+      rating: newRating,
+    }
+  })
 }
 
 export async function discardRating(userId: string, ratingId: string) {
@@ -121,7 +134,14 @@ export async function discardRating(userId: string, ratingId: string) {
 }
 
 async function updatePartnerRating(partnerId: string) {
-  const partnerRatings = await db.query.ratings.findMany({
+  await updatePartnerRatingInTx(db, partnerId)
+}
+
+async function updatePartnerRatingInTx(
+  tx: Database | Transaction,
+  partnerId: string
+) {
+  const partnerRatings = await tx.query.ratings.findMany({
     where: and(
       eq(ratings.partnerId, partnerId),
       eq(ratings.status, "SUBMITTED")
@@ -133,7 +153,7 @@ async function updatePartnerRating(partnerId: string) {
   const totalRating = partnerRatings.reduce((sum, r) => sum + r.rating, 0)
   const averageRating = totalRating / partnerRatings.length
 
-  await db
+  await tx
     .update(partners)
     .set({
       averageRating: averageRating.toFixed(2),
