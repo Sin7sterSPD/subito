@@ -96,7 +96,8 @@ export async function getBestCoupon(
   for (const coupon of availableCoupons) {
     if (coupon.minCartValue && cartTotal < parseFloat(coupon.minCartValue)) {
       continue
-    }
+       }
+       
 
     const usageCount = await db
       .select({ count: sql<number>`count(*)` })
@@ -110,7 +111,14 @@ export async function getBestCoupon(
       Number(usageCount[0]?.count || 0) >= coupon.maxUsagePerUser
     ) {
       continue
-    }
+       }
+       
+       if (
+         coupon.maxUsageTotal &&
+         (coupon.currentUsageTotal || 0) >= coupon.maxUsageTotal
+       ) {
+         continue
+       }
 
     let discount = 0
     if (coupon.discountType === "PERCENTAGE") {

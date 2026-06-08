@@ -10,8 +10,12 @@ import * as couponsService from "./coupons.service"
 export const couponsRouter = new Hono<AppEnv>()
 
 const listCouponsSchema = z.object({
-  page: z.string().transform(Number).default("1"),
-  limit: z.string().transform(Number).default("20"),
+  page: z.string().transform(Number).pipe(z.number().int().min(1)).default("1"),
+  limit: z
+    .string()
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(100))
+    .default("20"),
 })
 
 const bestCouponSchema = z.object({
@@ -20,7 +24,7 @@ const bestCouponSchema = z.object({
 })
 
 const applyCouponSchema = z.object({
-  code: z.string().nullable(),
+  code: z.string().min(1).nullable(),
 })
 
 couponsRouter.get(
