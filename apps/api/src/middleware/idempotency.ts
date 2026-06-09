@@ -145,16 +145,20 @@ export function idempotency(options: IdempotencyOptions = {}) {
           responseBody = null
         }
       }
-
-      const completedRecord: IdempotencyRecord = {
-        status: "completed",
-        requestHash,
-        response: responseBody,
-        statusCode,
-        completedAt: new Date().toISOString(),
+      // Only cache successful responses (2xx)
+      if (statusCode >= 200 && statusCode < 300) {
+        const completedRecord: IdempotencyRecord = {
+          status: "completed",
+          requestHash,
+          response: responseBody,
+          statusCode,
+          completedAt: new Date().toISOString(),
+        }
+        await redis.setex(cacheKey, ttlSeconds, JSON.stringify(completedRecord))
+      } else {
+        // Remove lock for failed requests so they can be retried
+        await redis.del(cacheKey)
       }
-
-      await redis.setex(cacheKey, ttlSeconds, JSON.stringify(completedRecord))
     } catch (error) {
       await redis.del(cacheKey)
       throw error

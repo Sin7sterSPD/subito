@@ -62,7 +62,9 @@ async function checkIdempotencyKey(
   return { existingResourceId: null, requestHash }
 }
 
-type ResponseCart = NonNullable<Awaited<ReturnType<typeof findActiveCartForResponse>>>
+type ResponseCart = NonNullable<
+  Awaited<ReturnType<typeof findActiveCartForResponse>>
+>
 type CartResponseItem = ResponseCart["items"][number]
 
 async function findActiveCartForResponse(userId: string) {
@@ -111,27 +113,52 @@ export async function getCart(userId: string) {
   return formatCartResponse(cart)
 }
 
+// export async function createCart(userId: string) {
+//   await db
+//     .update(carts)
+//     .set({ isActive: false })
+//     .where(and(eq(carts.userId, userId), eq(carts.isActive, true)))
+
+//   const [newCart] = await db
+//     .insert(carts)
+//     .values({
+//       userId,
+//       bookingType: "SCHEDULED",
+//     })
+//     .returning()
+
+//   if (!newCart) {
+//     throw new BadRequestError("Failed to create cart")
+//   }
+
+//   return newCart
+// }
+
 export async function createCart(userId: string) {
-  await db
-    .update(carts)
-    .set({ isActive: false })
-    .where(and(eq(carts.userId, userId), eq(carts.isActive, true)))
-
-  const [newCart] = await db
-    .insert(carts)
-    .values({
-      userId,
-      bookingType: "SCHEDULED",
-    })
-    .returning()
-
-  if (!newCart) {
-    throw new BadRequestError("Failed to create cart")
-  }
-
-  return newCart
+  return db.transaction(async (tx) => {
+    // Lock any existing active cart
+    const existing = await tx
+      .select()
+      .from(carts)
+      .where(and(eq(carts.userId, userId), eq(carts.isActive, true)))
+      .for("update")
+    await tx
+      .update(carts)
+      .set({ isActive: false })
+      .where(and(eq(carts.userId, userId), eq(carts.isActive, true)))
+    const [newCart] = await tx
+      .insert(carts)
+      .values({
+        userId,
+        bookingType: "SCHEDULED",
+      })
+      .returning()
+    if (!newCart) {
+      throw new BadRequestError("Failed to create cart")
+    }
+    return newCart
+  })
 }
-
 export async function addItem(
   userId: string,
   data: {
@@ -372,12 +399,10 @@ export async function checkout(
     "checkout",
     { cartVersion: data.cartVersion, userId }
   )
-
   if (existingResourceId) {
     const existingOrder = await db.query.orders.findFirst({
       where: eq(orders.id, existingResourceId),
     })
-
     if (existingOrder) {
       return {
         orderId: existingOrder.orderId,
@@ -388,23 +413,17 @@ export async function checkout(
       }
     }
   }
-
   const cart = await getOrCreateCart(userId)
-
   if (cart.version !== data.cartVersion) {
     throw new ConflictError("Cart has been modified. Please refresh.")
   }
-
   if (!cart.items || cart.items.length === 0) {
     throw new BadRequestError("Cart is empty")
   }
-
   if (!cart.addressId) {
     throw new BadRequestError("Delivery address is required")
   }
-
   const orderId = generateOrderId()
-
   const result = await db.transaction(async (tx) => {
     const createdOrders = await tx
       .insert(orders)
@@ -416,11 +435,10 @@ export async function checkout(
       })
       .returning()
     const order = createdOrders[0]
-
     if (!order) {
       throw new BadRequestError("Failed to create order")
     }
-
+    await tx.update(carts).set({ isActive: false }).where(eq(carts.id, cart.id))
     if (idempotencyKey) {
       const expiresAt = new Date()
       expiresAt.setHours(expiresAt.getHours() + 6)
@@ -440,7 +458,6 @@ export async function checkout(
         expiresAt,
       })
     }
-
     return {
       orderId: order.orderId,
       amount: cart.finalAmount,
@@ -448,9 +465,9 @@ export async function checkout(
       status: "CREATED",
     }
   })
-
   return result
 }
+   
 
 export async function checkoutV2(
   userId: string,

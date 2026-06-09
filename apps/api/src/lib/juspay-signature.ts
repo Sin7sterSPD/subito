@@ -13,10 +13,11 @@ export function verifyPaymentResponseSignature(
   const secret = process.env.JUSPAY_RESPONSE_KEY
 
   if (!secret) {
-    if (process.env.NODE_ENV === "production") {
-      return false
-    }
-    return process.env.JUSPAY_ALLOW_UNSIGNED_VERIFY === "true"
+    const env = process.env.NODE_ENV
+    const allowUnsigned =
+      process.env.JUSPAY_ALLOW_UNSIGNED_VERIFY === "true" &&
+      (env === "development" || env === "test")
+    return allowUnsigned
   }
 
   const expected = createHmac("sha256", secret)

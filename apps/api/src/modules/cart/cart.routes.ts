@@ -48,14 +48,18 @@ const updateItemSchema = z.object({
   catalogItemId: z.string().uuid(),
   changeType: z.enum(["INCREMENT", "DECREMENT"]),
   isQuickAdd: z.boolean().default(false),
-  quantity: z.number().optional(),
+  quantity: z.number().int().min(1).optional(),
   listingItemId: z.string().optional(),
 })
 
-const removeItemSchema = z.object({
-  itemId: z.string().uuid().optional(),
-  bundleId: z.string().uuid().optional(),
-})
+const removeItemSchema = z
+  .object({
+    itemId: z.string().uuid().optional(),
+    bundleId: z.string().uuid().optional(),
+  })
+  .refine((v) => Boolean(v.itemId || v.bundleId), {
+    message: "Either itemId or bundleId is required",
+  })
 
 const checkoutSchema = z.object({
   paymentMethodId: z.string().optional(),
@@ -69,7 +73,7 @@ const checkoutSchema = z.object({
 })
 
 const checkoutV2Schema = z.object({
-  cartVersion: z.number(),
+  cartVersion: z.number().int().nonnegative(),
 })
 
 const verifyPaymentSchema = z.object({
