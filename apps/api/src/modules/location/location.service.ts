@@ -7,7 +7,6 @@ import { eq, and } from "@subito/db"
 import { calculateDistance } from "@subito/shared"
 import { ServiceabilityStatus } from "@/lib/types"
 import { cacheGet, cacheSet } from "@/lib/redis"
-import { tryCatch } from "bullmq"
 
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY
 
