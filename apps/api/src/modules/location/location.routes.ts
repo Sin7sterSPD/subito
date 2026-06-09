@@ -8,13 +8,13 @@ import * as locationService from "./location.service"
 export const locationRouter = new Hono<AppEnv>()
 
 const availabilitySchema = z.object({
-  lat: z.string().transform(Number),
-  long: z.string().transform(Number),
+  lat: z.string().pipe(z.coerce.number().min(-90).max(90)),
+  lng: z.string().pipe(z.coerce.number().min(-180).max(180)),
 })
 
 const reverseGeocodeSchema = z.object({
-  lat: z.string().transform(Number),
-  lng: z.string().transform(Number),
+  lat: z.string().pipe(z.coerce.number().min(-90).max(90)),
+  lng: z.string().pipe(z.coerce.number().min(-180).max(180)),
 })
 
 const placesSchema = z.object({
@@ -30,8 +30,8 @@ locationRouter.get(
   optionalAuth,
   zValidator("query", availabilitySchema),
   async (c) => {
-    const { lat, long } = c.req.valid("query")
-    const result = await locationService.checkAvailability(lat, long)
+    const { lat, lng } = c.req.valid("query")
+    const result = await locationService.checkAvailability(lat, lng)
 
     return c.json({
       success: true,
@@ -48,6 +48,16 @@ locationRouter.get(
     const { placeId } = c.req.valid("query")
     const result = await locationService.getPlaceDetails(placeId)
 
+    if ("error" in result) {
+      return c.json(
+        {
+          success: false,
+          error: result.error,
+        },
+        400
+      )
+    }
+
     return c.json({
       success: true,
       data: result,
@@ -62,6 +72,16 @@ locationRouter.get(
   async (c) => {
     const { lat, lng } = c.req.valid("query")
     const result = await locationService.reverseGeocode(lat, lng)
+
+    if ("error" in result) {
+      return c.json(
+        {
+          success: false,
+          error: result.error,
+        },
+        400
+      )
+    }
 
     return c.json({
       success: true,
@@ -78,6 +98,15 @@ locationRouter.get(
     const { input } = c.req.valid("query")
     const result = await locationService.autocomplete(input)
 
+    if ("error" in result) {
+      return c.json(
+        {
+          success: false,
+          error: result.error,
+        },
+        400
+      )
+    }
     return c.json({
       success: true,
       data: result,
