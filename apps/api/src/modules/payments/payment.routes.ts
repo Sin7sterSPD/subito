@@ -16,8 +16,8 @@ const verifyUpiSchema = z.object({
 })
 
 const initiatePaymentSchema = z.object({
-  orderId: z.string(),
-  amount: z.number(),
+  orderId: z.string().min(1),
+  amount: z.number().positive(),
   paymentMethodId: z.string().optional(),
 })
 
@@ -32,6 +32,9 @@ export const processOrderSchema = z.object({
   txnId: z.string().optional(),
 })
 
+const paymentStatusSchema = z.object({
+  orderId: z.string().min(1),
+})
 paymentsRouter.get(
   "/options",
   requireAuth,
@@ -64,8 +67,11 @@ paymentsRouter.get(
 
 paymentsRouter.get("/", requireAuth, async (c) => {
   const userId = c.get("userId")!
-  const page = parseInt(c.req.query("page") || "1", 10)
-  const limit = parseInt(c.req.query("limit") || "10", 10)
+  const page = Math.max(1, parseInt(c.req.query("page") || "1", 10) || 1)
+  const limit = Math.min(
+    100,
+    Math.max(1, parseInt(c.req.query("limit") || "10", 10) || 10)
+  )
   const history = await paymentsService.getPaymentHistory(userId, {
     page,
     limit,
@@ -78,27 +84,32 @@ paymentsRouter.get("/", requireAuth, async (c) => {
   })
 })
 
-paymentsRouter.get("/status", requireAuth, async (c) => {
-  const userId = c.get("userId")!
-  const orderId = c.req.query("orderId")
+paymentsRouter.get(
+  "/status",
+  requireAuth,
+  zValidator("query", paymentStatusSchema),
+  async (c) => {
+    const userId = c.get("userId")!
+    const orderId = c.req.query("orderId")
 
-  if (!orderId) {
-    return c.json(
-      {
-        success: false,
-        error: { code: "BAD_REQUEST", message: "orderId required" },
-      },
-      400
-    )
+    if (!orderId) {
+      return c.json(
+        {
+          success: false,
+          error: { code: "BAD_REQUEST", message: "orderId required" },
+        },
+        400
+      )
+    }
+
+    const status = await paymentsService.getPaymentStatus(userId, orderId)
+
+    return c.json({
+      success: true,
+      data: status,
+    })
   }
-
-  const status = await paymentsService.getPaymentStatus(userId, orderId)
-
-  return c.json({
-    success: true,
-    data: status,
-  })
-})
+)
 
 paymentsRouter.post(
   "/initiate",
@@ -210,8 +221,19 @@ paymentsRouter.post("/juspay/webhook", async (c) => {
   } else {
     rawBody = await c.req.text()
   }
+  let body: unknown
+  try {
+    body = JSON.parse(rawBody)
+  } catch {
+    return c.json(
+      {
+        success: false,
+        error: { code: "BAD_REQUEST", message: "Invalid JSON payload" },
+      },
+      400
+    )
+  }
 
-  const body = JSON.parse(rawBody) as unknown
   const result = await paymentsService.handleWebhook(body)
 
   return c.json({
