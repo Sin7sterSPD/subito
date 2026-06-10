@@ -22,6 +22,11 @@ import { ratingsRouter } from "./modules/ratings/ratings.routes"
 import { referralsRouter } from "./modules/referrals/referrals.routes"
 import { settingsRouter } from "./modules/settings/settings.routes"
 import { uploadRouter } from "./modules/upload/upload.routes"
+import {
+  paymentsRouter,
+  processOrderSchema,
+} from "./modules/payments/payment.routes"
+import * as paymentsService from "./modules/payments/payments.service"
 
 import type { AppEnv } from "./lib/types"
 
@@ -112,13 +117,25 @@ v1.route("/categories", listingsRouter)
 v1.route("/cart", cartRouter)
 v1.route("/bookings", bookingsRouter)
 v1.route("/partners", partnersRouter)
-
+v1.route("/payments", paymentsRouter)
 v1.route("/coupons", couponsRouter)
 v1.route("/rating", ratingsRouter)
 v1.route("/referral", referralsRouter)
 v1.route("/settings", settingsRouter)
 v1.route("/support", settingsRouter)
 v1.route("/upload", uploadRouter)
+
+v1.post(
+  "/process-order",
+  requireAuth,
+  zValidator("json", processOrderSchema),
+  async (c) => {
+    const userId = c.get("userId")!
+    const data = c.req.valid("json")
+    const result = await paymentsService.processOrder(userId, data)
+    return c.json({ success: true, data: result })
+  }
+)
 
 app.route("/v1", v1)
 
