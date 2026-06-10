@@ -11,6 +11,17 @@ import { zValidator } from "@hono/zod-validator"
 import { errorHandler } from "./middleware/errror-handler"
 import { requireAuth } from "./middleware/auth"
 import { authRouter } from "./modules/auth/auth.routes"
+import { usersRouter } from "./modules/users/users.routes"
+import { locationRouter } from "./modules/location/location.routes"
+import { listingsRouter } from "./modules/listings/listings.routes"
+import { cartRouter } from "./modules/cart/cart.routes"
+import { bookingsRouter } from "./modules/bookings/bookings.routes"
+import { partnersRouter } from "./modules/partners/partners.routes"
+import { couponsRouter } from "./modules/coupons/coupons.routes"
+import { ratingsRouter } from "./modules/ratings/ratings.routes"
+import { referralsRouter } from "./modules/referrals/referrals.routes"
+import { settingsRouter } from "./modules/settings/settings.routes"
+import { uploadRouter } from "./modules/upload/upload.routes"
 
 import type { AppEnv } from "./lib/types"
 
@@ -94,6 +105,20 @@ app.get("/health", (c) => {
 
 const v1 = new Hono<AppEnv>()
 v1.route("/auth", authRouter)
+v1.route("/users", usersRouter)
+v1.route("/location", locationRouter)
+v1.route("/listings", listingsRouter)
+v1.route("/categories", listingsRouter)
+v1.route("/cart", cartRouter)
+v1.route("/bookings", bookingsRouter)
+v1.route("/partners", partnersRouter)
+
+v1.route("/coupons", couponsRouter)
+v1.route("/rating", ratingsRouter)
+v1.route("/referral", referralsRouter)
+v1.route("/settings", settingsRouter)
+v1.route("/support", settingsRouter)
+v1.route("/upload", uploadRouter)
 
 app.route("/v1", v1)
 
