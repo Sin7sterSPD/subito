@@ -6,7 +6,7 @@ import { pool } from "@subito/db"
 
 import { redis } from "./lib/redis"
 import { log } from "./lib/logger"
-
+import { closeQueueProducers } from "./lib/queues"
 const port = parseInt(process.env.PORT || "4000", 10)
 
 log.info({ port }, "api_starting")
@@ -36,6 +36,10 @@ async function gracefulShutdown(signal: string) {
   }, 30000)
 
   try {
+    log.info("closing_bullmq_queues")
+    await closeQueueProducers()
+    log.info("bullmq_queues_closed")
+
     log.info("closing_redis")
     await redis.quit()
     log.info("redis_closed")
