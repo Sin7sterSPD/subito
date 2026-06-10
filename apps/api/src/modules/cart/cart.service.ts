@@ -467,7 +467,6 @@ export async function checkout(
   })
   return result
 }
-   
 
 export async function checkoutV2(
   userId: string,
