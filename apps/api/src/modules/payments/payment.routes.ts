@@ -87,7 +87,7 @@ paymentsRouter.get("/", requireAuth, async (c) => {
 paymentsRouter.get(
   "/status",
   requireAuth,
-  zValidator("query", paymentStatusSchema),
+
   async (c) => {
     const userId = c.get("userId")!
     const orderId = c.req.query("orderId")
