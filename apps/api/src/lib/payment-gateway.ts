@@ -1,5 +1,3 @@
-
-
 /**
  * Re-export shared gateway client; dev-only client-trust escape hatch stays in API.
  */
@@ -14,12 +12,13 @@ export {
   type CreateJuspayOrderSuccess,
   type CreateJuspayOrderFailure,
   type CreateJuspayRefundResult,
-} from "@subito/shared";
+} from "@subito/shared"
 
 /** Explicit dev-only escape hatch; never set in production. */
 export function trustClientOrderSuccessInDev(): boolean {
+  const env = process.env.NODE_ENV
   return (
-    process.env.NODE_ENV !== "production" &&
+    (env === "development" || env === "test") &&
     process.env.JUSPAY_TRUST_CLIENT_ORDER_STATUS === "true"
-  );
+  )
 }

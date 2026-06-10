@@ -109,10 +109,10 @@ export type CreateJuspayOrderResult =
   | CreateJuspayOrderSuccess
   | CreateJuspayOrderFailure
 
-function formatInrAmount(amountStr: string): string {
+function formatInrAmount(amountStr: string): string | null {
   const n = parseFloat(amountStr)
   if (!Number.isFinite(n) || n < 0) {
-    return "0.00"
+    return null
   }
   return (Math.round(n * 100) / 100).toFixed(2)
 }
@@ -174,8 +174,17 @@ export async function createJuspayOrder(
   }
 
   const body = new URLSearchParams()
+  const normalizedAmount = formatInrAmount(input.amount)
+
+  if (!normalizedAmount) {
+    return {
+      success: false,
+      error: "Invalid order amount",
+    }
+  }
+
   body.set("order_id", input.orderId)
-  body.set("amount", formatInrAmount(input.amount))
+  body.set("amount", normalizedAmount)
   body.set("currency", "INR")
   body.set("customer_id", input.customerId)
   body.set("customer_email", input.customerEmail || "customer@subito.app")
@@ -308,8 +317,17 @@ export async function createJuspayRefund(input: {
   }
 
   const body = new URLSearchParams()
+  const normalizedAmount = formatInrAmount(input.amount)
+
+  if (!normalizedAmount) {
+    return {
+      success: false,
+      error: "Invalid refund amount",
+    }
+  }
+
   body.set("unique_request_id", input.uniqueRequestId)
-  body.set("amount", formatInrAmount(input.amount))
+  body.set("amount", normalizedAmount)
 
   const controller = new AbortController()
   const timeoutMs = gatewayTimeoutMs()

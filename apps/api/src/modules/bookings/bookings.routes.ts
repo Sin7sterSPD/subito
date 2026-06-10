@@ -12,18 +12,26 @@ import * as bookingsService from "./bookings.service"
 export const bookingsRouter = new Hono<AppEnv>()
 
 const bookingsQuerySchema = z.object({
-  page: z.string().transform(Number).default("1"),
-  limit: z.string().transform(Number).default("10"),
+  page: z.string().default("1").transform(Number).pipe(z.number().int().min(1)),
+  limit: z
+    .string()
+    .default("10")
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(100)),
   "status[]": z.array(z.string()).optional(),
   "bookingType[]": z.array(z.string()).optional(),
 })
 
 const slotsQuerySchema = z.object({
-  lat: z.string().transform(Number),
-  lng: z.string().transform(Number),
+  lat: z.string().transform(Number).pipe(z.number().finite()),
+  lng: z.string().transform(Number).pipe(z.number().finite()),
   bookingType: z.enum(["INSTANT", "SCHEDULED", "RECURRING"]).optional(),
   time: z.string().optional(),
-  days: z.string().transform(Number).default("7"),
+  days: z
+    .string()
+    .default("7")
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(90)),
 })
 
 const createBookingSchema = z.object({
@@ -61,7 +69,7 @@ const extendBookingSchema = z.object({
 })
 
 const rescheduleSchema = z.object({
-  rescheduleTo: z.string(),
+  rescheduleTo: z.string().datetime(),
 })
 
 const cancelInstanceSchema = z.object({

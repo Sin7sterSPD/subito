@@ -612,7 +612,16 @@ export async function tryAutoRefundAfterBookingCancel(input: {
     return { skipped: true, reason: "Refund already recorded" }
   }
 
-  const orderAmt = parseFloat(String(order.amount))
+  const orderAmt = Number(order.amount)
+
+  if (!Number.isFinite(orderAmt) || orderAmt <= 0) {
+    return {
+      skipped: true,
+      reason: "Invalid order amount",
+    }
+  }
+
+     
   const refundAmtNum = (orderAmt * pct) / 100
   if (refundAmtNum <= 0) {
     return { skipped: true, reason: "Zero refund amount" }
@@ -620,16 +629,7 @@ export async function tryAutoRefundAfterBookingCancel(input: {
   const refundAmountStr = refundAmtNum.toFixed(2)
   const refundId = generateRefundId()
 
-  const gateway = await createJuspayRefund({
-    merchantOrderId: order.orderId,
-    amount: refundAmountStr,
-    uniqueRequestId: refundId,
-  })
-
-  if (!gateway.success) {
-    throw new ServiceUnavailableError(gateway.error)
-  }
-
+  // Create refund record FIRST to prevent phantom refunds
   await db.insert(refunds).values({
     refundId,
     paymentId: payment.id,
@@ -639,12 +639,43 @@ export async function tryAutoRefundAfterBookingCancel(input: {
     status: "INITIATED",
     amount: refundAmountStr,
     reason: `Cancel refund (${input.previousStatus}): ${input.reason}`,
-    juspayRefundId: gateway.refundId ?? null,
-    gatewayResponse: gateway.raw ?? null,
     initiatedBy: input.userId,
   })
 
-  return { refundId, amount: refundAmountStr }
+  const gateway = await createJuspayRefund({
+    merchantOrderId: order.orderId,
+    amount: refundAmountStr,
+    uniqueRequestId: refundId,
+  })
+
+  if (!gateway.success) {
+    await db
+      .update(refunds)
+      .set({
+        status: "FAILED",
+        failureReason: gateway.error,
+        failedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(refunds.refundId, refundId))
+
+    throw new ServiceUnavailableError(gateway.error)
+  }
+
+  await db
+    .update(refunds)
+    .set({
+      juspayRefundId: gateway.refundId ?? null,
+      gatewayResponse: gateway.raw ?? null,
+      processedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(refunds.refundId, refundId))
+
+  return {
+    refundId,
+    amount: refundAmountStr,
+  }
 }
 
 export async function initiateRefund(
@@ -718,6 +749,21 @@ export async function handleWebhook(body: unknown) {
     .update(JSON.stringify(body ?? {}))
     .digest("hex")
     .slice(0, 32)
+
+  const order = await db.query.orders.findFirst({
+    where: eq(orders.orderId, orderId),
+  })
+
+  if (!order) {
+    console.warn(`Webhook order not found: ${orderId}`)
+    return {
+      received: false,
+      enqueued: false,
+      eventName,
+      reason: "Order not found",
+    }
+  }
+
   const idemKey = `webhook:juspay:${orderId}:${String(eventName)}:${payloadKey}`
   const wasNew = await redis.set(idemKey, "1", "EX", 60 * 60 * 24 * 7, "NX")
   if (wasNew !== "OK") {
@@ -727,15 +773,6 @@ export async function handleWebhook(body: unknown) {
       idempotent: true,
       eventName,
     }
-  }
-
-  const order = await db.query.orders.findFirst({
-    where: eq(orders.orderId, orderId),
-  })
-
-  if (!order) {
-    console.warn(`Webhook order not found: ${orderId}`)
-    return { received: true, enqueued: false, eventName }
   }
 
   await paymentReconciliationQueue.add("reconcile-payment", {
