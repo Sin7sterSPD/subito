@@ -775,11 +775,16 @@ export async function handleWebhook(body: unknown) {
     }
   }
 
-  await paymentReconciliationQueue.add("reconcile-payment", {
-    orderId: order.orderId,
-    userId: order.userId,
-    eventName,
-  })
+  try {
+    await paymentReconciliationQueue.add("reconcile-payment", {
+      orderId: order.orderId,
+      userId: order.userId,
+      eventName,
+    })
+  } catch (error) {
+    await redis.del(idemKey)
+    throw error
+  }
 
   return { received: true, enqueued: true, eventName }
 }
