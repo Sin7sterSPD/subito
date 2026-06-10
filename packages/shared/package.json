@@ -21,6 +21,10 @@
   "devDependencies": {
     "@subito/eslint-config": "workspace:*",
     "@subito/typescript-config": "workspace:*",
+    "@types/node": "^25.1.0",
     "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2"
   }
 }
