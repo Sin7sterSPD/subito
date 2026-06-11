@@ -18,7 +18,7 @@ import { spacing } from "../../src/theme/spacing"
 import { useAuthStore } from "../../src/store"
 import { sendOTP } from "../../src/config/firebase"
 import { Ionicons } from "@expo/vector-icons"
-
+import { getApiBaseUrl } from "@/src/config/env"
 export default function LoginScreen() {
   const [phone, setPhone] = useState("")
   const [error, setError] = useState("")
@@ -47,7 +47,10 @@ export default function LoginScreen() {
     clearVerification()
 
     try {
+      console.log("API URL =", getApiBaseUrl())
+      console.log("Calling backend login...")
       const result = await login(phone)
+      console.log(" Backend login...", result)
       if (!result.success) {
         setError(
           result.error || "Failed to start verification. Please try again."
@@ -56,6 +59,7 @@ export default function LoginScreen() {
       }
 
       const verificationId = await sendOTP(phone)
+      console.log("Verification ID:", verificationId)
       if (!verificationId) {
         setError("Failed to send OTP. Please try again.")
         clearVerification()

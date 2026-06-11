@@ -6,8 +6,7 @@ const index = () => {
     <View>
       <Text className="text-red-08 items-center justify-center text-lg font-bold">
         Tab Index
-      </Text>
-      
+      </Text> 
     </View>
   )
 }
