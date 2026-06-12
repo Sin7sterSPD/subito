@@ -10,7 +10,9 @@ interface SubmitRatingData {
 
 export const ratingsApi = {
   getRating: (bookingId: string) =>
-    apiClient.get<{ rating: Rating | null }>(`/rating?bookingId=${bookingId}`),
+    apiClient.get<{ rating: Rating | null }>(
+      `/rating?bookingId=${encodeURIComponent(bookingId)}`
+    ),
 
   submitRating: (data: SubmitRatingData) =>
     apiClient.post<{ success: boolean }>("/rating", data),

@@ -49,7 +49,7 @@ export const listingsApi = {
   getListingById: (id: string) => apiClient.get<Listing>(`/listings/${id}`),
 
   getServiceById: (id: string) => apiClient.get<Listing>(`/services/${id}`),
-
+  // here we can use `/listings/extensions?bookingId=${encodeURIComponent(bookingId)}` future refrence
   getExtensions: (bookingId: string) =>
     apiClient.get<{ extensions: unknown[] }>(
       `/listings/extensions?bookingId=${bookingId}`

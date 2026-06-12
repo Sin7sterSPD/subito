@@ -20,11 +20,13 @@ interface AutocompleteResult {
 export const locationApi = {
   checkAvailability: (lat: number, lng: number) =>
     apiClient.get<LocationAvailability>(
-      `/location/availability?lat=${lat}&long=${lng}`
+      `/location/availability?lat=${lat}&lng=${lng}`
     ),
 
   getPlaceDetails: (placeId: string) =>
-    apiClient.get<PlaceDetails>(`/location/places?placeId=${placeId}`),
+    apiClient.get<PlaceDetails>(
+      `/location/places?placeId=${encodeURIComponent(placeId)}`
+    ),
 
   reverseGeocode: (lat: number, lng: number) =>
     apiClient.get<GeocodedAddress>(
