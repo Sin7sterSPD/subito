@@ -85,6 +85,7 @@ export const useLocationStore = create<LocationState>((set, get) => ({
   },
 
   reverseGeocode: async (lat, lng) => {
+    set({ isLoading: true })
     try {
       const response = await locationApi.reverseGeocode(lat, lng)
       if (response.success && response.data) {
@@ -94,6 +95,8 @@ export const useLocationStore = create<LocationState>((set, get) => ({
       return null
     } catch {
       return null
+    } finally {
+      set({ isLoading: false })
     }
   },
 

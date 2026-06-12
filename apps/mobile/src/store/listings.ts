@@ -12,6 +12,7 @@ interface ListingsState {
   selectedCategory: Category | null
   selectedListing: Listing | null
   isLoading: boolean
+  error: string | null
 
   fetchListings: (lat?: number, lng?: number) => Promise<void>
   fetchPublicListings: (lat?: number, lng?: number) => Promise<void>
@@ -28,7 +29,7 @@ export const useListingsStore = create<ListingsState>((set) => ({
   selectedCategory: null,
   selectedListing: null,
   isLoading: false,
-
+  error: null,
   fetchListings: async (lat, lng) => {
     set({ isLoading: true })
     try {
@@ -40,6 +41,7 @@ export const useListingsStore = create<ListingsState>((set) => ({
         })
       }
     } catch {
+      set({ error: "Failed to fetch listings" })
       // Silent fail
     } finally {
       set({ isLoading: false })
@@ -58,6 +60,7 @@ export const useListingsStore = create<ListingsState>((set) => ({
       }
     } catch {
       // Silent fail
+      set({ error: "Failed to fetch listings" })
     } finally {
       set({ isLoading: false })
     }
