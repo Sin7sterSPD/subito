@@ -117,11 +117,12 @@ interface PaymentsState {
   checkPaymentStatus: (orderId: string) => Promise<PaymentStatusPayload | null>
   waitForPaymentTerminal: (
     orderId: string,
-    options?: { intervalMs?: number; timeoutMs?: number }
+    options?: { intervalMs?: number; timeoutMs?: number; signal?: AbortSignal }
   ) => Promise<{
     ok: boolean
     payload?: PaymentStatusPayload
     timedOut?: boolean
+    aborted?: boolean
   }>
   setSelectedPaymentMethod: (method: PaymentMethod | null) => void
   setCurrentOrderId: (orderId: string | null) => void
@@ -233,9 +234,13 @@ export const usePaymentsStore = create<PaymentsState>((set) => ({
   waitForPaymentTerminal: async (orderId, options = {}) => {
     const intervalMs = options.intervalMs ?? 2500
     const timeoutMs = options.timeoutMs ?? 120_000
+    const signal = options.signal
     const start = Date.now()
 
     while (Date.now() - start < timeoutMs) {
+      if (signal?.aborted) {
+        return { ok: false, aborted: true }
+      }
       const response = await paymentsApi.getPaymentStatus(orderId)
       const payload = response.success && response.data ? response.data : null
       if (payload?.terminal) {
