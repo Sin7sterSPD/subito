@@ -249,7 +249,7 @@ export const useCartStore = create<CartState>((set, get) => ({
 
     set({ isLoading: true, error: null })
     try {
-      const idempotencyKey = `checkout_${cart.id}_v${cart.version}`
+      const idempotencyKey = `checkout_v2_${cart.id}_v${cart.version}`
       const response = await cartApi.checkoutV2(
         { cartVersion: cart.version },
         idempotencyKey
