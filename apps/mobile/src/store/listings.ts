@@ -31,7 +31,7 @@ export const useListingsStore = create<ListingsState>((set) => ({
   isLoading: false,
   error: null,
   fetchListings: async (lat, lng) => {
-    set({ isLoading: true })
+    set({ isLoading: true , error:null})
     try {
       const response = await listingsApi.getListings({ lat, lng })
       if (response.success && response.data) {
@@ -107,6 +107,7 @@ export const useListingsStore = create<ListingsState>((set) => ({
       bundles: [],
       selectedCategory: null,
       selectedListing: null,
-      isLoading: false,
+         isLoading: false,
+          error: null,
     }),
 }))
