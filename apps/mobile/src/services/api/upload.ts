@@ -1,7 +1,7 @@
 import { apiClient } from "../api-client"
 
 interface UploadResponse {
-  url: string
+  url?: string
   filename?: string
   contentType?: string
   size?: number
