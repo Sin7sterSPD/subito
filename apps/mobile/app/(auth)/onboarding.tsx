@@ -76,6 +76,7 @@ export default function OnboardingScreen() {
 
       if (profileImage && !profileImage.startsWith("http")) {
         const url = await uploadApi.uploadImage(profileImage)
+        console.log("UPLOAD URL =", url)
         if (url) {
           uploadedImageUrl = url
         }

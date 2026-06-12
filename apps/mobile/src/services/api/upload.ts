@@ -1,8 +1,10 @@
 import { apiClient } from "../api-client"
 
 interface UploadResponse {
-  image_url?: string
-  imageUrl?: string
+  url?: string
+  filename?: string
+  contentType?: string
+  size?: number
 }
 
 export const uploadApi = {
@@ -25,7 +27,7 @@ export const uploadApi = {
     )
 
     if (response.success && response.data) {
-      return response.data.image_url || response.data.imageUrl || null
+      return response.data.url || null
     }
 
     return null
