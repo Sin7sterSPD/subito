@@ -123,6 +123,10 @@ export const useCartStore = create<CartState>((set, get) => ({
   },
 
   removeItem: async (itemId, bundleId) => {
+    if (!itemId && !bundleId) {
+      set({ error: "Missing item identifier" })
+      return false
+    }
     set({ isLoading: true, error: null })
     try {
       const response = await cartApi.removeItem({ itemId, bundleId })
@@ -149,6 +153,7 @@ export const useCartStore = create<CartState>((set, get) => ({
       }
       return false
     } catch {
+      set({ error: "Failed to remove inactive items" })
       return false
     } finally {
       set({ isLoading: false })
@@ -201,6 +206,7 @@ export const useCartStore = create<CartState>((set, get) => ({
       }
       return false
     } catch {
+      set({ error: "Failed to remove coupon" })
       return false
     } finally {
       set({ isLoading: false })
@@ -213,7 +219,7 @@ export const useCartStore = create<CartState>((set, get) => ({
 
     set({ isLoading: true, error: null })
     try {
-      const idempotencyKey = `checkout_${cart.id}_${Date.now()}`
+      const idempotencyKey = `checkout_${cart.id}_v${cart.version}`
       const response = await cartApi.checkout(
         {
           paymentMethodId,
@@ -243,7 +249,7 @@ export const useCartStore = create<CartState>((set, get) => ({
 
     set({ isLoading: true, error: null })
     try {
-      const idempotencyKey = `checkout_v2_${cart.id}_${Date.now()}`
+      const idempotencyKey = `checkout_${cart.id}_v${cart.version}`
       const response = await cartApi.checkoutV2(
         { cartVersion: cart.version },
         idempotencyKey
