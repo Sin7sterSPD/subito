@@ -44,11 +44,18 @@ export function BottomSheet({
   }, [translateY])
 
   const close = useCallback(() => {
-    translateY.value = withSpring(SCREEN_HEIGHT, {
-      damping: 20,
-      stiffness: 150,
-    })
-    runOnJS(onClose)()
+    translateY.value = withSpring(
+      SCREEN_HEIGHT,
+      {
+        damping: 20,
+        stiffness: 150,
+      },
+      (finished) => {
+        if (finished) {
+          runOnJS(onClose)()
+        }
+      }
+    )
   }, [translateY, onClose])
 
   useEffect(() => {
