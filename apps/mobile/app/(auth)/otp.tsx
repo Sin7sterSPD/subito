@@ -103,6 +103,10 @@ export default function OTPScreen() {
       }
 
       const result = await verify(firebaseResult.idToken)
+      // console.log(
+      //   "🔑 FULL AUTH STATE:",
+      //   JSON.stringify(useAuthStore.getState())
+      // )
 
       if (result.success) {
         if (result.isNewUser) {

@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "subito",
+    "slug": "subito",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mobile",
+    "scheme": "subito",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -29,6 +29,11 @@
     },
     "plugins": [
       "expo-router",
+      "expo-location",
+      {
+        "locationAlwaysAndWhenInUsePermission": "Subito uses your location to find nearby service providers.",
+        "locationWhenInUsePermission": "Subito uses your location to show service providers near you."
+      },
       "@react-native-firebase/app",
       "@react-native-firebase/auth",
       [

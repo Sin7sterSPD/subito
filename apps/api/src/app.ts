@@ -27,7 +27,7 @@ import {
   processOrderSchema,
 } from "./modules/payments/payment.routes"
 import * as paymentsService from "./modules/payments/payments.service"
-
+import { addressesRouter } from "./modules/addresses/addresses.routes"
 import type { AppEnv } from "./lib/types"
 
 import { log } from "./lib/logger"
@@ -124,6 +124,7 @@ v1.route("/referral", referralsRouter)
 v1.route("/settings", settingsRouter)
 v1.route("/support", settingsRouter)
 v1.route("/upload", uploadRouter)
+v1.route("/addresses", addressesRouter)
 
 v1.post(
   "/process-order",

@@ -23,10 +23,10 @@ import {
 } from "@subito/shared"
 
 const JUSPAY_MERCHANT_ID = process.env.JUSPAY_MERCHANT_ID
-const JUSPAY_SDK_CLIENT_ID = process.env.JUSPAY_SDK_CLIENT_ID ?? "subito"
+const JUSPAY_SDK_CLIENT_ID = process.env.JUSPAY_SDK_CLIENT_ID ?? "subitoapp07"
 const JUSPAY_RETURN_URL =
   process.env.JUSPAY_RETURN_URL ??
-  "https://api.subito.in/v1/payments/juspay/return"
+  "https://api.subito.app/v1/payments/juspay/return"
 
 export async function getPaymentOptions(platform: string) {
   const options = [
