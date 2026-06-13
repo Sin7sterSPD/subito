@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react"
+import React, { useState, useCallback, useMemo, useEffect } from "react"
 import {
   View,
   StyleSheet,
@@ -23,12 +23,16 @@ export default function SearchScreen() {
   const [results, setResults] = useState<Listing[]>([])
   const [isSearching, setIsSearching] = useState(false)
 
-  const allListings = categories.flatMap((cat) => cat.listings || [])
+  const allListings = useMemo(
+    () => categories.flatMap((cat) => cat.listings || []),
+    [categories]
+  )
 
   const searchListings = useCallback(
     (searchQuery: string) => {
       if (!searchQuery.trim()) {
         setResults([])
+        setIsSearching(false)
         return
       }
 
@@ -38,6 +42,7 @@ export default function SearchScreen() {
       const filtered = allListings.filter(
         (listing) =>
           listing.name.toLowerCase().includes(lowerQuery) ||
+          listing.description?.toLowerCase().includes(lowerQuery) ||
           listing.shortDescription?.toLowerCase().includes(lowerQuery) ||
           listing.tags?.some((tag) => tag.toLowerCase().includes(lowerQuery))
       )
@@ -48,9 +53,21 @@ export default function SearchScreen() {
     [allListings]
   )
 
-  const debouncedSearch = useCallback(debounce(searchListings, 300), [
-    searchListings,
-  ])
+  //   const debouncedSearch = useCallback(debounce(searchListings, 300), [
+  //     searchListings,
+  //   ])
+  //   const debouncedSearch = useCallback(
+  //     (query: string) => debounce(searchListings, 300)(query),
+  //     [searchListings]
+  //   )
+
+  const debouncedSearch = useMemo(
+    () => debounce(searchListings, 300),
+    [searchListings]
+  )
+  useEffect(() => {
+    return () => debouncedSearch.cancel()
+  }, [debouncedSearch])
 
   const handleQueryChange = (text: string) => {
     setQuery(text)
@@ -65,8 +82,10 @@ export default function SearchScreen() {
   }
 
   const handleClear = () => {
+    debouncedSearch.cancel()
     setQuery("")
     setResults([])
+    setIsSearching(false)
   }
 
   const popularServices = allListings.slice(0, 6)

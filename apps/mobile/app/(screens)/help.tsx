@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Linking,
+  Alert,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Text, Card, Divider } from "../../src/components/ui"
@@ -38,23 +39,40 @@ function HelpItem({ icon, title, subtitle, onPress }: HelpItemProps) {
     </TouchableOpacity>
   )
 }
+const openExternalUrl = async (url: string) => {
+  try {
+    const supported = await Linking.canOpenURL(url)
+
+    if (!supported) {
+      Alert.alert(
+        "Unable to Open",
+        "This action is not supported on your device."
+      )
+      return
+    }
+
+    await Linking.openURL(url)
+  } catch {
+    Alert.alert("Something went wrong", "Please try again later.")
+  }
+}
 
 export default function HelpScreen() {
   const { settings } = useAppStore()
 
   const handleCall = () => {
     const phone = settings?.supportNumber || "1800-123-4567"
-    Linking.openURL(`tel:${phone}`)
+    openExternalUrl(`tel:${phone}`)
   }
 
   const handleEmail = () => {
     const email = settings?.supportEmail || "support@subito.com"
-    Linking.openURL(`mailto:${email}`)
+    openExternalUrl(`mailto:${email}`)
   }
 
   const handleWhatsApp = () => {
     const phone = settings?.supportNumber || "918888888888"
-    Linking.openURL(`https://wa.me/${phone.replace(/[^0-9]/g, "")}`)
+    openExternalUrl(`https://wa.me/${phone.replace(/[^0-9]/g, "")}`)
   }
 
   const faqs = [
@@ -154,21 +172,21 @@ export default function HelpScreen() {
               icon="document-text"
               title="Terms of Service"
               subtitle="Read our terms"
-              onPress={() => Linking.openURL("https://subito.com/terms")}
+              onPress={() => openExternalUrl("https://subito.com/terms")}
             />
             <Divider marginVertical={0} />
             <HelpItem
               icon="shield-checkmark"
               title="Privacy Policy"
               subtitle="How we handle your data"
-              onPress={() => Linking.openURL("https://subito.com/privacy")}
+              onPress={() => openExternalUrl("https://subito.com/privacy")}
             />
             <Divider marginVertical={0} />
             <HelpItem
               icon="card"
               title="Refund Policy"
               subtitle="Cancellation and refunds"
-              onPress={() => Linking.openURL("https://subito.com/refunds")}
+              onPress={() => openExternalUrl("https://subito.com/refunds")}
             />
           </Card>
         </View>

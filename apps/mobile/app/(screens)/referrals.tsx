@@ -22,14 +22,16 @@ export default function ReferralsScreen() {
     fetchReferralSummary()
   }, [fetchReferralSummary])
 
-  const referralCode =
-    referralSummary?.referralCode || user?.referralCode || "LOADING"
+  const referralCode = referralSummary?.referralCode || user?.referralCode || ""
+  const hasReferralCode = referralCode.length > 0
 
   const handleCopyCode = async () => {
+    if (!hasReferralCode) return
     await Clipboard.setStringAsync(referralCode)
   }
 
   const handleShare = async () => {
+    if (!hasReferralCode) return
     try {
       await Share.share({
         message: `Use my referral code ${referralCode} to get amazing discounts on Subito! Download now: https://subito.app`,
@@ -77,6 +79,7 @@ export default function ReferralsScreen() {
               <TouchableOpacity
                 style={styles.copyButton}
                 onPress={handleCopyCode}
+                disabled={!hasReferralCode}
               >
                 <Ionicons name="copy" size={20} color={semantic.primary} />
               </TouchableOpacity>
@@ -193,6 +196,7 @@ export default function ReferralsScreen() {
           fullWidth
           size="lg"
           onPress={handleShare}
+          disabled={!hasReferralCode}
           leftIcon={
             <Ionicons name="share-social" size={20} color={colors.white} />
           }
