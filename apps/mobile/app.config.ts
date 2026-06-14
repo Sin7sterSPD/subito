@@ -1,3 +1,5 @@
+import "dotenv/config"
+
 import type { ConfigContext, ExpoConfig } from "expo/config"
 
 const androidMapsKey = process.env.GOOGLE_MAPS_ANDROID_API_KEY
