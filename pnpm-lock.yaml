@@ -235,6 +235,9 @@ importers:
       heroui-native:
         specifier: ^1.0.4
         version: 1.0.4(dybvzjurpvg7au24b35q7b7lwm)
+      hyper-sdk-react:
+        specifier: ^5.0.33
+        version: 5.0.33(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
       lodash.debounce:
         specifier: ^4.0.8
         version: 4.0.8
@@ -5798,6 +5801,13 @@ packages:
     resolution: {integrity: sha512-5gs5ytaNjBrh5Ow3zrvdUUY+0VxIuWVL4i9irt6friV+BqdCfmV11CQTWMiBYWHbXhco+J1kHfTOUkePhCDvMA==}
     engines: {node: '>=18'}
     hasBin: true
+
+  hyper-sdk-react@5.0.33:
+    resolution: {integrity: sha512-X1Dto6iPKNGiZ1BePN2I9AonKeb1nkCxxIp2/ifzWxaJ/BVyzRpDHm9IrZoVp2xFAqKqkmF6nfePLxY87SmgWg==}
+    engines: {node: '>= 16.0.0'}
+    peerDependencies:
+      react: '*'
+      react-native: '*'
 
   hyphenate-style-name@1.1.0:
     resolution: {integrity: sha512-WDC/ui2VVRrz3jOVi+XtjqkDjiVjTtFaAGiW37k6b+ohyQ5wYDOGkvCZa8+H0nx3gyvv0+BST9xuOgIyGQ00gw==}
@@ -14758,6 +14768,11 @@ snapshots:
   human-signals@8.0.1: {}
 
   husky@9.1.7: {}
+
+  hyper-sdk-react@5.0.33(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0):
+    dependencies:
+      react: 19.1.0
+      react-native: 0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0)
 
   hyphenate-style-name@1.1.0: {}
 
