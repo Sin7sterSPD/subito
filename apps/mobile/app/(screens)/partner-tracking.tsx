@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react"
+import React, { useEffect, useState, useCallback, useRef } from "react"
 import {
   View,
   StyleSheet,
@@ -22,6 +22,10 @@ const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO
 
 export default function PartnerTrackingScreen() {
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>()
+  const resolvedBookingId =
+    typeof bookingId === "string" && bookingId.trim().length > 0
+      ? bookingId
+      : null
   const {
     selectedBooking,
     fetchBookingById,
@@ -30,6 +34,7 @@ export default function PartnerTrackingScreen() {
   } = useBookingsStore()
   const { selectedAddress } = useUserStore()
   const [isLoading, setIsLoading] = useState(true)
+  const mapRef = useRef<MapView | null>(null)
 
   const booking = selectedBooking
   const partner = booking?.partner
@@ -37,21 +42,40 @@ export default function PartnerTrackingScreen() {
 
   useEffect(() => {
     const loadData = async () => {
-      await fetchBookingById(bookingId)
-      await fetchPartnerLocation(bookingId)
-      setIsLoading(false)
+      try {
+        if (!resolvedBookingId) return
+
+        await fetchBookingById(resolvedBookingId)
+        await fetchPartnerLocation(resolvedBookingId)
+      } finally {
+        setIsLoading(false)
+      }
     }
     loadData()
-  }, [bookingId, fetchBookingById, fetchPartnerLocation])
+  }, [resolvedBookingId, fetchBookingById, fetchPartnerLocation])
+
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     if (booking && ["ARRIVING", "STARTED"].includes(booking.status)) {
+  //       fetchPartnerLocation(bookingId)
+  //     }
+  //   }, 10000)
+  //   return () => clearInterval(interval)
+  // }, [booking, bookingId, fetchPartnerLocation])
 
   useEffect(() => {
     const interval = setInterval(() => {
-      if (booking && ["ARRIVING", "STARTED"].includes(booking.status)) {
-        fetchPartnerLocation(bookingId)
+      if (
+        resolvedBookingId &&
+        booking &&
+        ["ARRIVING", "STARTED"].includes(booking.status)
+      ) {
+        fetchPartnerLocation(resolvedBookingId)
       }
     }, 10000)
+
     return () => clearInterval(interval)
-  }, [booking, bookingId, fetchPartnerLocation])
+  }, [booking, resolvedBookingId, fetchPartnerLocation])
 
   const handleCall = () => {
     if (partner?.phone) {
@@ -61,10 +85,6 @@ export default function PartnerTrackingScreen() {
 
   const handleBack = () => {
     router.back()
-  }
-
-  if (isLoading) {
-    return <Spinner fullScreen message="Loading..." />
   }
 
   const mapRegion = partnerLocation
@@ -83,10 +103,21 @@ export default function PartnerTrackingScreen() {
         }
       : undefined
 
+  useEffect(() => {
+    if (mapRegion && mapRef.current) {
+      mapRef.current.animateToRegion(mapRegion, 500)
+    }
+  }, [mapRegion])
+
+  if (isLoading) {
+    return <Spinner fullScreen message="Loading..." />
+  }
+
   return (
     <View style={styles.container}>
       {mapRegion ? (
         <MapView
+          ref={mapRef}
           style={styles.map}
           initialRegion={mapRegion}
           provider={PROVIDER_GOOGLE}

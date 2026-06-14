@@ -110,9 +110,11 @@ export default function PaymentHistoryScreen() {
   const [payments, setPayments] = useState<Payment[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const fetchPayments = async () => {
     try {
+      setError(null)
       const response = await paymentsApi.getPaymentHistory()
       if (response.success && response.data) {
         const allPayments = [
@@ -125,7 +127,7 @@ export default function PaymentHistoryScreen() {
         setPayments(allPayments)
       }
     } catch {
-      // Silent fail
+      setError("Could not load payment history. Pull to refresh and try again.")
     } finally {
       setIsLoading(false)
     }
@@ -149,7 +151,7 @@ export default function PaymentHistoryScreen() {
     <SafeAreaView style={styles.container} edges={["bottom"]}>
       <FlatList
         data={payments}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => `${item.type}-${item.id}`}
         renderItem={({ item }) => <PaymentCard payment={item} />}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}

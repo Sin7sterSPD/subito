@@ -1,5 +1,11 @@
 import type { ConfigContext, ExpoConfig } from "expo/config"
 
+const androidMapsKey = process.env.GOOGLE_MAPS_ANDROID_API_KEY
+const iosMapsKey = process.env.GOOGLE_MAPS_IOS_API_KEY
+
+if (!androidMapsKey || !iosMapsKey) {
+  throw new Error("Missing Google Maps API key(s) for react-native-maps plugin")
+}
 export default ({ config }: ConfigContext): ExpoConfig =>
   ({
     ...config,
@@ -10,7 +16,8 @@ export default ({ config }: ConfigContext): ExpoConfig =>
       [
         "react-native-maps",
         {
-          androidGoogleMapsApiKey: process.env.GOOGLE_MAPS_ANDROID_API_KEY,
+          androidGoogleMapsApiKey: androidMapsKey,
+          iosGoogleMapsApiKey: iosMapsKey,
         },
       ],
     ],

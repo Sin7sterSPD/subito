@@ -12,7 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
 import { Text, Button, Input, Avatar } from "../../src/components/ui"
 import { colors, semantic } from "../../src/theme/colors"
-import { spacing, borderRadius } from "../../src/theme/spacing"
+import { spacing } from "../../src/theme/spacing"
 import { useAuthStore, useUserStore } from "../../src/store"
 import { uploadApi } from "../../src/services/api"
 import * as ImagePicker from "expo-image-picker"
@@ -59,7 +59,7 @@ export default function EditProfileScreen() {
       newErrors.firstName = "First name is required"
     }
 
-    if (email && !validateEmail(email)) {
+    if (email && !validateEmail(email.trim())) {
       newErrors.email = "Please enter a valid email"
     }
 

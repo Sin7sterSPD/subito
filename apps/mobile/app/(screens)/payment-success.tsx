@@ -18,39 +18,69 @@ import { PAYMENT_EVENTS } from "../../src/analytics/payment-events"
 
 export default function PaymentSuccessScreen() {
   const { bookingId, bookingNumber, amount } = useLocalSearchParams<{
-    bookingId: string
-    bookingNumber: string
-    amount?: string
+    bookingId?: string | string[]
+    bookingNumber?: string | string[]
+    amount?: string | string[]
   }>()
-  const { clearCart } = useCartStore()
+  const resolvedBookingId = Array.isArray(bookingId) ? bookingId[0] : bookingId
+  const resolvedBookingNumber = Array.isArray(bookingNumber)
+    ? bookingNumber[0]
+    : bookingNumber
 
+  const resolvedAmount = Array.isArray(amount) ? amount[0] : amount
+  const { clearCart } = useCartStore()
   const scale = useSharedValue(0)
   const opacity = useSharedValue(0)
 
   useEffect(() => {
     clearCart()
-    scale.value = withSpring(1, { damping: 12, stiffness: 100 })
+
+    scale.value = withSpring(1, {
+      damping: 12,
+      stiffness: 100,
+    })
+
     opacity.value = withDelay(300, withSpring(1))
+
     sendEventAnalytics(PAYMENT_EVENTS.PAYMENT_SUCCESS_PAGE_LANDED, {
-      bookingId: bookingId || "",
-      bookingNumber: bookingNumber || "",
-      amount: amount ? parseFloat(amount) : 0,
+      bookingId: resolvedBookingId ?? "",
+      bookingNumber: resolvedBookingNumber ?? "",
+      amount: resolvedAmount ? parseFloat(resolvedAmount) : 0,
       timestamp: new Date().toISOString(),
     })
-  }, [clearCart, scale, opacity, bookingId, bookingNumber, amount])
+  }, [
+    clearCart,
+    scale,
+    opacity,
+    resolvedBookingId,
+    resolvedBookingNumber,
+    resolvedAmount,
+  ])
 
   const iconStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }))
-
   const contentStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
   }))
+  // const handleViewBooking = () => {
+  //   if (!resolvedBookingId) return
+  //   router.replace({
+  //     pathname: "/(screens)/booking/[id]",
+  //     params: { id: resolvedBookingId },
+  //   })
+  // }
 
   const handleViewBooking = () => {
+    if (!resolvedBookingId) {
+      return
+    }
+
     router.replace({
       pathname: "/(screens)/booking/[id]",
-      params: { id: bookingId },
+      params: {
+        id: resolvedBookingId,
+      },
     })
   }
 
@@ -81,13 +111,13 @@ export default function PaymentSuccessScreen() {
             scheduled time.
           </Text>
 
-          {bookingNumber && (
+          {resolvedBookingNumber && (
             <View style={styles.bookingInfo}>
               <Text variant="bodyMedium" color="textMuted">
                 Booking Number
               </Text>
               <Text variant="h5" color="primary" weight="700">
-                #{bookingNumber}
+                #{resolvedBookingNumber}
               </Text>
             </View>
           )}
@@ -98,6 +128,7 @@ export default function PaymentSuccessScreen() {
               fullWidth
               size="lg"
               onPress={handleViewBooking}
+              disabled={!resolvedBookingId}
             >
               View Booking
             </Button>

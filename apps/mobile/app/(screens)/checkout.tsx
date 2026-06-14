@@ -181,6 +181,8 @@ export default function CheckoutScreen() {
 
   useEffect(() => {
     if (selectedAddress) {
+      setSelectedSlot(null)
+      setSelectedDate(null)
       fetchSlots(
         selectedAddress.latitude,
         selectedAddress.longitude,
@@ -191,7 +193,10 @@ export default function CheckoutScreen() {
   }, [selectedAddress, cart?.bookingType, fetchSlots, fetchPaymentOptions])
 
   useEffect(() => {
-    if (availableDates.length > 0 && !selectedDate) {
+    if (
+      availableDates.length > 0 &&
+      (!selectedDate || !availableDates.includes(selectedDate))
+    ) {
       setSelectedDate(availableDates[0])
     }
   }, [availableDates, selectedDate])
