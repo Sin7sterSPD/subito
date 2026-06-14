@@ -215,8 +215,19 @@ export default function ServiceDetailScreen() {
     router.push("/(tabs)/cart")
   }
 
-  if (isLoading || !selectedListing) {
+  if (isLoading) {
     return <Spinner fullScreen message="Loading service..." />
+  }
+  if (!selectedListing || selectedListing.id !== id) {
+    return (
+      <SafeAreaView style={styles.container} edges={["bottom"]}>
+        <View style={styles.content}>
+          <Text variant="h6" color="textSecondary">
+            Service not found
+          </Text>
+        </View>
+      </SafeAreaView>
+    )
   }
 
   const listing = selectedListing

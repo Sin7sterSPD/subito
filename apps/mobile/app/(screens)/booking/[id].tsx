@@ -74,6 +74,7 @@ function getStatusLabel(status: BookingStatus): string {
 function formatDateTime(dateStr?: string, timeStr?: string): string {
   if (!dateStr) return ""
   const date = new Date(dateStr)
+  if (Number.isNaN(date.getTime())) return ""
   const dateFormatted = date.toLocaleDateString("en-IN", {
     weekday: "short",
     day: "numeric",
@@ -81,7 +82,13 @@ function formatDateTime(dateStr?: string, timeStr?: string): string {
     year: "numeric",
   })
   if (timeStr) {
-    const time = new Date(timeStr)
+    let time = new Date(timeStr)
+    if (Number.isNaN(time.getTime())) {
+      time = new Date(`${dateStr}T${timeStr}`)
+    }
+    if (Number.isNaN(time.getTime())) {
+      return dateFormatted
+    }
     const timeFormatted = time.toLocaleTimeString("en-IN", {
       hour: "2-digit",
       minute: "2-digit",
@@ -240,6 +247,8 @@ export default function BookingDetailScreen() {
   const [refreshing, setRefreshing] = useState(false)
   const [showCancelSheet, setShowCancelSheet] = useState(false)
   const [cancelReason, setCancelReason] = useState("")
+  const booking =
+    selectedBooking && selectedBooking.id === id ? selectedBooking : null
 
   useEffect(() => {
     if (id) {
@@ -267,10 +276,20 @@ export default function BookingDetailScreen() {
     }
   }
 
-  const handleCallPartner = () => {
-    const phone = selectedBooking?.partner?.phone
+  const handleCallPartner = async () => {
+    const phone = booking?.partner?.phone
     if (phone) {
-      Linking.openURL(`tel:${phone}`)
+      const url = `tel:${phone}`
+      try {
+        const supported = await Linking.canOpenURL(url)
+        if (!supported) {
+          Alert.alert("Error", "Calling is not supported on this device.")
+          return
+        }
+        await Linking.openURL(url)
+      } catch {
+        Alert.alert("Error", "Unable to start the call. Please try again.")
+      }
     }
   }
 
@@ -288,11 +307,9 @@ export default function BookingDetailScreen() {
     })
   }
 
-  if (isLoading || !selectedBooking) {
+  if (isLoading || !booking) {
     return <Spinner fullScreen message="Loading booking..." />
   }
-
-  const booking = selectedBooking
   const canCancel = ["PENDING_PAYMENT", "PENDING_MATCH", "MATCHED"].includes(
     booking.status
   )

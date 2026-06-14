@@ -86,14 +86,16 @@ function AddressCard({
         {address.city}, {address.state} - {address.pincode}
       </Text>
 
-      {(address.houseNo || address.floor || address.landmark) && (
+      {(address.houseNo ||
+        address.floor !== undefined && address.floor !== null ||
+        address.landmark) && (
         <View style={styles.additionalInfo}>
           {address.houseNo && (
             <Text variant="bodyMedium" color="textMuted">
               House: {address.houseNo}
             </Text>
           )}
-          {address.floor && (
+          {address.floor !== undefined && address.floor !== null && (
             <Text variant="bodyMedium" color="textMuted">
               Floor: {address.floor}
             </Text>

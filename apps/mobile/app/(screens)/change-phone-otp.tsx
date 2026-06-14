@@ -16,24 +16,35 @@ export default function ChangePhoneOtpScreen() {
     newPhone: string
     verificationId: string
   }>()
+  const changeToken =
+    typeof params.changeToken === "string" ? params.changeToken : ""
+  const newPhone = typeof params.newPhone === "string" ? params.newPhone : ""
+  const verificationId =
+    typeof params.verificationId === "string" ? params.verificationId : ""
+  const hasRequiredParams = !!changeToken && !!newPhone && !!verificationId
   const [otp, setOtp] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
   const verifyAndFinish = async (code: string) => {
+    if (loading) return
     if (code.length !== 6) return
+    if (!hasRequiredParams) {
+      setError("Session expired. Please restart phone verification.")
+      return
+    }
     setLoading(true)
     setError("")
     try {
-      const fb = await verifyOTP(params.verificationId, code)
+      const fb = await verifyOTP(verificationId, code)
       if (!fb.success || !fb.idToken) {
         setError("Invalid OTP")
         return
       }
       const res = await authApi.verifyPhoneChange({
-        changeToken: params.changeToken,
+        changeToken,
         idtoken: fb.idToken,
-        newPhone: params.newPhone,
+        newPhone,
       })
       if (!res.success || !res.data) {
         setError(res.error?.message || "Verification failed")
@@ -59,7 +70,9 @@ export default function ChangePhoneOtpScreen() {
         <View style={styles.inner}>
           <Text variant="h3">Verify new number</Text>
           <Text variant="bodyMedium" color="textMuted" style={styles.sub}>
-            Enter the code sent to +91 {params.newPhone}
+            {hasRequiredParams
+              ? `Enter the code sent to +91 ${newPhone}`
+              : "Session expired. Please restart phone verification."}
           </Text>
           <OTPInput
             value={otp}
@@ -80,7 +93,7 @@ export default function ChangePhoneOtpScreen() {
             size="lg"
             onPress={() => void verifyAndFinish(otp)}
             isLoading={loading}
-            disabled={otp.length !== 6}
+            disabled={loading || otp.length !== 6 || !hasRequiredParams}
           >
             Confirm
           </Button>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import {
   View,
   StyleSheet,
@@ -43,6 +43,7 @@ export default function AddAddressScreen() {
     currentLocation,
     isLoading: locationLoading,
   } = useLocationStore()
+  const isEditMode = typeof addressId === "string" && addressId.length > 0
 
   const existingAddress = addressId
     ? addresses.find((a) => a.id === addressId)
@@ -68,9 +69,31 @@ export default function AddAddressScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSearching, setIsSearching] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const searchRequestSeq = useRef(0)
   const [searchResults, setSearchResults] = useState<
     { placeId: string; description: string; mainText: string }[]
   >([])
+
+  useEffect(() => {
+    if (!existingAddress) return
+
+    setFormData({
+      name: existingAddress.name || "",
+      addressLine1: existingAddress.addressLine1 || "",
+      addressLine2: existingAddress.addressLine2 || "",
+      area: existingAddress.area || "",
+      city: existingAddress.city || "",
+      state: existingAddress.state || "",
+      pincode: existingAddress.pincode || "",
+      latitude: existingAddress.latitude || 0,
+      longitude: existingAddress.longitude || 0,
+      type: (existingAddress.type || "HOME") as AddressType,
+      houseNo: existingAddress.houseNo || "",
+      buildingName: existingAddress.buildingName || "",
+      landmark: existingAddress.landmark || "",
+      floor: existingAddress.floor?.toString() || "",
+    })
+  }, [existingAddress])
 
   const handleUseCurrentLocation = async () => {
     const location = await getCurrentLocation()
@@ -97,20 +120,29 @@ export default function AddAddressScreen() {
   const handleSearch = async (query: string) => {
     setSearchQuery(query)
     if (query.length < 3) {
+      searchRequestSeq.current += 1
       setSearchResults([])
+      setIsSearching(false)
       return
     }
 
+    const requestId = ++searchRequestSeq.current
     setIsSearching(true)
     try {
       const response = await locationApi.autocomplete(query)
-      if (response.success && response.data) {
+      if (
+        requestId === searchRequestSeq.current &&
+        response.success &&
+        response.data
+      ) {
         setSearchResults(response.data)
       }
     } catch {
       // Silent fail
     } finally {
-      setIsSearching(false)
+      if (requestId === searchRequestSeq.current) {
+        setIsSearching(false)
+      }
     }
   }
 
@@ -153,6 +185,9 @@ export default function AddAddressScreen() {
     if (formData.latitude === 0 || formData.longitude === 0) {
       newErrors.addressLine1 = "Please select a location"
     }
+    if (formData.floor && !/^[+-]?\d+$/.test(formData.floor.trim())) {
+      newErrors.floor = "Floor must be a valid number"
+    }
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -160,12 +195,23 @@ export default function AddAddressScreen() {
   const handleSave = async () => {
     if (!validate()) return
 
+    const parsedFloor = formData.floor.trim()
+    const floor =
+      parsedFloor && /^[+-]?\d+$/.test(parsedFloor)
+        ? Number.parseInt(parsedFloor, 10)
+        : undefined
+
     try {
-      if (existingAddress) {
+      if (isEditMode) {
+        if (!existingAddress) {
+          Alert.alert("Error", "Address not found")
+          return
+        }
+
         const success = await updateAddress({
           id: existingAddress.id,
           ...formData,
-          floor: formData.floor ? parseInt(formData.floor) : undefined,
+          floor,
         })
         if (success) {
           Alert.alert("Success", "Address updated successfully")
@@ -176,7 +222,7 @@ export default function AddAddressScreen() {
       } else {
         const address = await addAddress({
           ...formData,
-          floor: formData.floor ? parseInt(formData.floor) : undefined,
+          floor,
           isDefault: addresses.length === 0,
         } as Omit<Address, "id" | "userId" | "canDelete">)
         if (address) {
@@ -350,9 +396,11 @@ export default function AddAddressScreen() {
                 label="Floor"
                 placeholder="Optional"
                 value={formData.floor}
-                onChangeText={(text) =>
+                onChangeText={(text) => {
                   setFormData((prev) => ({ ...prev, floor: text }))
-                }
+                  if (errors.floor) setErrors({ ...errors, floor: "" })
+                }}
+                error={errors.floor}
                 keyboardType="number-pad"
               />
             </View>
@@ -407,7 +455,7 @@ export default function AddAddressScreen() {
             onPress={handleSave}
             isLoading={isSaving}
           >
-            {existingAddress ? "Update Address" : "Save Address"}
+            {isEditMode ? "Update Address" : "Save Address"}
           </Button>
         </View>
       </KeyboardAvoidingView>

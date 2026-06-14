@@ -18,9 +18,13 @@ export default function BundleDetailScreen() {
 
   const handleAddToCart = async () => {
     if (!bundle) return
-
     for (const item of bundle.items) {
-      await addItem(item.catalogId, item.quantity, { bundleId: bundle.id })
+      const ok = await addItem(item.catalogId, item.quantity, {
+        bundleId: bundle.id,
+      })
+      if (!ok) {
+        return
+      }
     }
     router.push("/(tabs)/cart")
   }

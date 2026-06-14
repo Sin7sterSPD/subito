@@ -81,7 +81,19 @@ export default function AddCardScreen() {
     const mm = m[1]!
     let yy = m[2]!
     if (yy.length === 4) yy = yy.slice(-2)
-    if (cvv.length < 3 || cvv.length > 4) {
+    const mmNum = Number(mm)
+    if (!Number.isInteger(mmNum) || mmNum < 1 || mmNum > 12) {
+      setError("Invalid expiry month.")
+      return
+    }
+    const now = new Date()
+    const fullYear = 2000 + Number(yy)
+    const expiryDate = new Date(fullYear, mmNum, 0, 23, 59, 59, 999)
+    if (Number.isNaN(expiryDate.getTime()) || expiryDate < now) {
+      setError("Card has expired.")
+      return
+    }
+    if (!/^\d{3,4}$/.test(cvv)) {
       setError("Invalid CVV.")
       return
     }
@@ -92,7 +104,7 @@ export default function AddCardScreen() {
 
     sendEventAnalytics(PAYMENT_EVENTS.ADD_CARD_CLICKED, {
       cardNumberLength: digits.length,
-      expiryDate: expiry,
+
       nameOnCard: !!nameOnCard.trim(),
       secureCard: saveCard,
     })
