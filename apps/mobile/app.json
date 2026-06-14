@@ -29,11 +29,13 @@
     },
     "plugins": [
       "expo-router",
-      "expo-location",
-      {
-        "locationAlwaysAndWhenInUsePermission": "Subito uses your location to find nearby service providers.",
-        "locationWhenInUsePermission": "Subito uses your location to show service providers near you."
-      },
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
+        }
+      ],
+
       "@react-native-firebase/app",
       "@react-native-firebase/auth",
       [
