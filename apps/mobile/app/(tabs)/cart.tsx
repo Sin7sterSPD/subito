@@ -48,7 +48,7 @@ function CartItemCard({
           </Text>
           {item.catalog?.description && (
             <Text
-              variant="captionMedium"
+              variant="bodyMedium"
               color="textMuted"
               numberOfLines={1}
               style={styles.itemDesc}
@@ -71,12 +71,29 @@ function CartItemCard({
             <TouchableOpacity
               style={styles.quantityButton}
               onPress={item.quantity > 1 ? onDecrement : onRemove}
+              accessibilityRole="button"
+              accessibilityLabel={
+                item.quantity > 1
+                  ? "Decrease quantity"
+                  : "Remove item from cart"
+              }
             >
               <Ionicons
                 name={item.quantity > 1 ? "remove" : "trash-outline"}
                 size={18}
                 color={item.quantity > 1 ? semantic.primary : semantic.error}
               />
+            </TouchableOpacity>
+            <Text variant="bodySmall" weight="600" style={styles.quantityText}>
+              {item.quantity}
+            </Text>
+            <TouchableOpacity
+              style={styles.quantityButton}
+              onPress={onIncrement}
+              accessibilityRole="button"
+              accessibilityLabel="Increase quantity"
+            >
+              <Ionicons name="add" size={18} color={semantic.primary} />
             </TouchableOpacity>
             <Text variant="bodySmall" weight="600" style={styles.quantityText}>
               {item.quantity}
@@ -342,7 +359,7 @@ export default function CartScreen() {
         <Text variant="h4" color="textPrimary" weight="700">
           Cart
         </Text>
-        <Text variant="captionLarge" color="textMuted">
+        <Text variant="bodyLarge" color="textMuted">
           {cart.items.length} {cart.items.length === 1 ? "item" : "items"}
         </Text>
       </View>
@@ -408,7 +425,7 @@ export default function CartScreen() {
                     {selectedAddress.name}
                   </Text>
                   <Text
-                    variant="captionMedium"
+                    variant="bodyMedium"
                     color="textMuted"
                     numberOfLines={1}
                   >
@@ -438,13 +455,13 @@ export default function CartScreen() {
                   <Text variant="bodySmall" color="success" weight="600">
                     {cart.coupon.code} applied
                   </Text>
-                  <Text variant="captionMedium" color="textMuted">
+                  <Text variant="bodyMedium" color="textMuted">
                     You save ₹{cart.discountAmount}
                   </Text>
                 </View>
               </View>
               <TouchableOpacity onPress={handleRemoveCoupon}>
-                <Text variant="captionLarge" color="error" weight="500">
+                <Text variant="bodyLarge" color="error" weight="500">
                   Remove
                 </Text>
               </TouchableOpacity>
@@ -490,7 +507,7 @@ export default function CartScreen() {
 
       <View style={styles.footer}>
         <View style={styles.footerPrice}>
-          <Text variant="captionMedium" color="textMuted">
+          <Text variant="bodyMedium" color="textMuted">
             Total
           </Text>
           <Text variant="h5" color="primary" weight="700">
@@ -564,7 +581,7 @@ export default function CartScreen() {
                     <Text variant="bodySmall" color="primary" weight="700">
                       {coupon.code}
                     </Text>
-                    <Text variant="captionMedium" color="textMuted">
+                    <Text variant="bodyMedium" color="textMuted">
                       {coupon.description ||
                         `Get ${coupon.discountValue}${coupon.discountType === "PERCENTAGE" ? "%" : ""} off`}
                     </Text>

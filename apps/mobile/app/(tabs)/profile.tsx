@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Platform,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
@@ -41,7 +42,7 @@ function MenuItem({ icon, label, onPress, badge, danger }: MenuItemProps) {
       </Text>
       {badge && (
         <View style={styles.menuBadge}>
-          <Text variant="captionMedium" color={colors.white} weight="600">
+          <Text variant="bodyMedium" color={colors.white} weight="600">
             {badge}
           </Text>
         </View>
@@ -62,7 +63,7 @@ function MenuSection({
     <View style={styles.menuSection}>
       {title && (
         <Text
-          variant="captionLarge"
+          variant="bodyLarge"
           color="textMuted"
           style={styles.menuSectionTitle}
         >
@@ -80,6 +81,10 @@ export default function ProfileScreen() {
   const { user, logout } = useAuthStore()
   const { referralSummary } = useUserStore()
   const { settings } = useAppStore()
+  const appVersion =
+    Platform.OS === "ios"
+      ? settings?.appVersions?.ios
+      : settings?.appVersions?.android
 
   const handleLogout = () => {
     Alert.alert(
@@ -149,7 +154,7 @@ export default function ProfileScreen() {
                 +91 {user?.phone}
               </Text>
               {user?.email && (
-                <Text variant="captionMedium" color="textMuted">
+                <Text variant="bodyMedium" color="textMuted">
                   {user.email}
                 </Text>
               )}
@@ -174,7 +179,7 @@ export default function ProfileScreen() {
                 <Text variant="bodySmall" color="textPrimary" weight="600">
                   Refer & Earn
                 </Text>
-                <Text variant="captionMedium" color="textMuted">
+                <Text variant="bodyMedium" color="textMuted">
                   Share your code: {referralSummary.referralCode}
                 </Text>
               </View>
@@ -182,7 +187,7 @@ export default function ProfileScreen() {
                 style={styles.referralButton}
                 onPress={handleReferrals}
               >
-                <Text variant="captionLarge" color="primary" weight="600">
+                <Text variant="bodyLarge" color="primary" weight="600">
                   Invite
                 </Text>
               </TouchableOpacity>
@@ -249,8 +254,8 @@ export default function ProfileScreen() {
         </MenuSection>
 
         <View style={styles.footer}>
-          <Text variant="captionMedium" color="textMuted" align="center">
-            App Version {settings?.appVersions?.android || "1.0.0"}
+          <Text variant="bodyMedium" color="textMuted" align="center">
+            App Version {appVersion || "1.0.0"}
           </Text>
         </View>
       </ScrollView>

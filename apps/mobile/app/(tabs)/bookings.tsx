@@ -1,101 +1,131 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from "react"
 import {
   View,
   StyleSheet,
   FlatList,
   TouchableOpacity,
   RefreshControl,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { Text, Card, Badge, Spinner, Button } from '../../src/components/ui';
-import { colors, semantic } from '../../src/theme/colors';
-import { spacing, borderRadius } from '../../src/theme/spacing';
-import { useBookingsStore } from '../../src/store';
-import { Booking, BookingStatus } from '../../src/types/api';
-import { Ionicons } from '@expo/vector-icons';
+} from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
+import { router } from "expo-router"
+import { Text, Card, Badge, Spinner, Button } from "../../src/components/ui"
+import { colors, semantic } from "../../src/theme/colors"
+import { spacing, borderRadius } from "../../src/theme/spacing"
+import { useBookingsStore } from "../../src/store"
+import { Booking, BookingStatus } from "../../src/types/api"
+import { Ionicons } from "@expo/vector-icons"
 
 const TABS = [
-  { key: 'active', label: 'Active' },
-  { key: 'completed', label: 'Completed' },
-  { key: 'cancelled', label: 'Cancelled' },
-] as const;
+  { key: "active", label: "Active" },
+  { key: "completed", label: "Completed" },
+  { key: "cancelled", label: "Cancelled" },
+] as const
 
-const ACTIVE_STATUSES: BookingStatus[] = ['PENDING_PAYMENT', 'PENDING_MATCH', 'MATCHED', 'ARRIVING', 'STARTED'];
-const COMPLETED_STATUSES: BookingStatus[] = ['COMPLETED'];
-const CANCELLED_STATUSES: BookingStatus[] = ['CANCELLED', 'REFUNDED'];
+const ACTIVE_STATUSES: BookingStatus[] = [
+  "PENDING_PAYMENT",
+  "PENDING_MATCH",
+  "MATCHED",
+  "ARRIVING",
+  "STARTED",
+]
+const COMPLETED_STATUSES: BookingStatus[] = ["COMPLETED"]
+const CANCELLED_STATUSES: BookingStatus[] = ["CANCELLED", "REFUNDED"]
 
-function getStatusColor(status: BookingStatus): 'primary' | 'success' | 'warning' | 'error' | 'neutral' {
+function getStatusColor(
+  status: BookingStatus
+): "primary" | "success" | "warning" | "error" | "neutral" {
   switch (status) {
-    case 'PENDING_PAYMENT':
-    case 'PENDING_MATCH':
-      return 'warning';
-    case 'MATCHED':
-    case 'ARRIVING':
-      return 'primary';
-    case 'STARTED':
-      return 'primary';
-    case 'COMPLETED':
-      return 'success';
-    case 'CANCELLED':
-    case 'REFUNDED':
-      return 'error';
+    case "PENDING_PAYMENT":
+    case "PENDING_MATCH":
+      return "warning"
+    case "MATCHED":
+    case "ARRIVING":
+      return "primary"
+    case "STARTED":
+      return "primary"
+    case "COMPLETED":
+      return "success"
+    case "CANCELLED":
+    case "REFUNDED":
+      return "error"
     default:
-      return 'neutral';
+      return "neutral"
   }
 }
 
 function getStatusLabel(status: BookingStatus): string {
   switch (status) {
-    case 'PENDING_PAYMENT':
-      return 'Payment Pending';
-    case 'PENDING_MATCH':
-      return 'Finding Partner';
-    case 'MATCHED':
-      return 'Partner Assigned';
-    case 'ARRIVING':
-      return 'Partner Arriving';
-    case 'STARTED':
-      return 'In Progress';
-    case 'COMPLETED':
-      return 'Completed';
-    case 'CANCELLED':
-      return 'Cancelled';
-    case 'REFUNDED':
-      return 'Refunded';
+    case "PENDING_PAYMENT":
+      return "Payment Pending"
+    case "PENDING_MATCH":
+      return "Finding Partner"
+    case "MATCHED":
+      return "Partner Assigned"
+    case "ARRIVING":
+      return "Partner Arriving"
+    case "STARTED":
+      return "In Progress"
+    case "COMPLETED":
+      return "Completed"
+    case "CANCELLED":
+      return "Cancelled"
+    case "REFUNDED":
+      return "Refunded"
     default:
-      return status;
+      return status
   }
 }
 
 function formatDate(dateString?: string): string {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-IN', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
+  if (!dateString) return ""
+  const date = new Date(dateString)
+  return date.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  })
 }
 
 function formatTime(timeString?: string): string {
-  if (!timeString) return '';
-  const date = new Date(timeString);
-  return date.toLocaleTimeString('en-IN', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  if (!timeString) return ""
+  const hhmm = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec(timeString)
+  if (hhmm) {
+    const [, h, m] = hhmm
+    const d = new Date()
+    d.setHours(Number(h), Number(m), 0, 0)
+    return d.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  }
+  const date = new Date(timeString)
+  if (Number.isNaN(date.getTime())) return timeString
+  return date.toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+  })
 }
 
-function BookingCard({ booking, onPress }: { booking: Booking; onPress: () => void }) {
-  const serviceNames = booking.items?.map((i) => i.name).join(', ') || 'Service';
-  const date = booking.scheduledDate || booking.createdAt;
+function BookingCard({
+  booking,
+  onPress,
+}: {
+  booking: Booking
+  onPress: () => void
+}) {
+  const serviceNames = booking.items?.map((i) => i.name).join(", ") || "Service"
+  const date = booking.scheduledDate || booking.createdAt
 
   return (
-    <Card style={styles.bookingCard} onPress={onPress} variant="elevated" shadow="sm">
+    <Card
+      style={styles.bookingCard}
+      onPress={onPress}
+      variant="elevated"
+      shadow="sm"
+    >
       <View style={styles.cardHeader}>
         <View style={styles.bookingNumber}>
-          <Text variant="captionMedium" color="textMuted">
+          <Text variant="bodyMedium" color="textMuted">
             #{booking.bookingNumber}
           </Text>
         </View>
@@ -105,21 +135,42 @@ function BookingCard({ booking, onPress }: { booking: Booking; onPress: () => vo
       </View>
 
       <View style={styles.cardBody}>
-        <Text variant="bodyMedium" color="textPrimary" weight="600" numberOfLines={2}>
+        <Text
+          variant="bodyMedium"
+          color="textPrimary"
+          weight="600"
+          numberOfLines={2}
+        >
           {serviceNames}
         </Text>
-        
+
         <View style={styles.details}>
           <View style={styles.detailRow}>
-            <Ionicons name="calendar-outline" size={16} color={semantic.textMuted} />
-            <Text variant="captionLarge" color="textSecondary" style={styles.detailText}>
+            <Ionicons
+              name="calendar-outline"
+              size={16}
+              color={semantic.textMuted}
+            />
+            <Text
+              variant="bodyLarge"
+              color="textSecondary"
+              style={styles.detailText}
+            >
               {formatDate(date)}
             </Text>
           </View>
           {booking.scheduledStartTime && (
             <View style={styles.detailRow}>
-              <Ionicons name="time-outline" size={16} color={semantic.textMuted} />
-              <Text variant="captionLarge" color="textSecondary" style={styles.detailText}>
+              <Ionicons
+                name="time-outline"
+                size={16}
+                color={semantic.textMuted}
+              />
+              <Text
+                variant="bodyLarge"
+                color="textSecondary"
+                style={styles.detailText}
+              >
                 {formatTime(booking.scheduledStartTime)}
               </Text>
             </View>
@@ -128,8 +179,17 @@ function BookingCard({ booking, onPress }: { booking: Booking; onPress: () => vo
 
         {booking.address && (
           <View style={styles.addressRow}>
-            <Ionicons name="location-outline" size={16} color={semantic.textMuted} />
-            <Text variant="captionMedium" color="textMuted" numberOfLines={1} style={styles.detailText}>
+            <Ionicons
+              name="location-outline"
+              size={16}
+              color={semantic.textMuted}
+            />
+            <Text
+              variant="bodyMedium"
+              color="textMuted"
+              numberOfLines={1}
+              style={styles.detailText}
+            >
               {booking.address.name} • {booking.address.addressLine1}
             </Text>
           </View>
@@ -138,39 +198,39 @@ function BookingCard({ booking, onPress }: { booking: Booking; onPress: () => vo
 
       <View style={styles.cardFooter}>
         <Text variant="bodyMedium" color="primary" weight="700">
-          ₹{booking.finalAmount || booking.totalAmount}
+          ₹{booking.finalAmount ?? booking.totalAmount ?? "0"}
         </Text>
         <View style={styles.viewDetails}>
-          <Text variant="captionLarge" color="primary" weight="500">
+          <Text variant="bodyLarge" color="primary" weight="500">
             View Details
           </Text>
           <Ionicons name="chevron-forward" size={16} color={semantic.primary} />
         </View>
       </View>
     </Card>
-  );
+  )
 }
 
-function EmptyState({ type }: { type: 'active' | 'completed' | 'cancelled' }) {
+function EmptyState({ type }: { type: "active" | "completed" | "cancelled" }) {
   const messages = {
     active: {
-      title: 'No active bookings',
-      subtitle: 'Your ongoing bookings will appear here',
-      icon: 'calendar-outline' as const,
+      title: "No active bookings",
+      subtitle: "Your ongoing bookings will appear here",
+      icon: "calendar-outline" as const,
     },
     completed: {
-      title: 'No completed bookings',
-      subtitle: 'Your completed services will appear here',
-      icon: 'checkmark-circle-outline' as const,
+      title: "No completed bookings",
+      subtitle: "Your completed services will appear here",
+      icon: "checkmark-circle-outline" as const,
     },
     cancelled: {
-      title: 'No cancelled bookings',
-      subtitle: 'Cancelled bookings will appear here',
-      icon: 'close-circle-outline' as const,
+      title: "No cancelled bookings",
+      subtitle: "Cancelled bookings will appear here",
+      icon: "close-circle-outline" as const,
     },
-  };
+  }
 
-  const { title, subtitle, icon } = messages[type];
+  const { title, subtitle, icon } = messages[type]
 
   return (
     <View style={styles.emptyState}>
@@ -183,64 +243,82 @@ function EmptyState({ type }: { type: 'active' | 'completed' | 'cancelled' }) {
       <Text variant="bodySmall" color="textMuted" align="center">
         {subtitle}
       </Text>
-      {type === 'active' && (
+      {type === "active" && (
         <Button
           variant="primary"
           size="md"
           style={styles.browseButton}
-          onPress={() => router.push('/(tabs)')}
+          onPress={() => router.push("/(tabs)")}
         >
           Browse Services
         </Button>
       )}
     </View>
-  );
+  )
 }
 
 export default function BookingsScreen() {
-  const [activeTab, setActiveTab] = useState<'active' | 'completed' | 'cancelled'>('active');
-  const { bookings, fetchBookings, isLoading, hasMore, reset } = useBookingsStore();
-  const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState<
+    "active" | "completed" | "cancelled"
+  >("active")
+  const { bookings, fetchBookings, isLoading, hasMore, reset } =
+    useBookingsStore()
+  const [refreshing, setRefreshing] = useState(false)
+  const isPaginatingRef = useRef(false)
 
   const getStatusForTab = () => {
     switch (activeTab) {
-      case 'active':
-        return ACTIVE_STATUSES;
-      case 'completed':
-        return COMPLETED_STATUSES;
-      case 'cancelled':
-        return CANCELLED_STATUSES;
+      case "active":
+        return ACTIVE_STATUSES
+      case "completed":
+        return COMPLETED_STATUSES
+      case "cancelled":
+        return CANCELLED_STATUSES
     }
-  };
+  }
 
   useEffect(() => {
-    reset();
-    fetchBookings(getStatusForTab(), true);
-  }, [activeTab]);
+    reset()
+    fetchBookings(getStatusForTab(), true)
+  }, [activeTab])
 
   const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await fetchBookings(getStatusForTab(), true);
-    setRefreshing(false);
-  }, [activeTab, fetchBookings]);
-
-  const loadMore = useCallback(() => {
-    if (!isLoading && hasMore) {
-      fetchBookings(getStatusForTab());
+    setRefreshing(true)
+    try {
+      await fetchBookings(getStatusForTab(), true)
+    } finally {
+      setRefreshing(false)
     }
-  }, [isLoading, hasMore, activeTab, fetchBookings]);
+  }, [activeTab, fetchBookings])
+
+  // const loadMore = useCallback(() => {
+  //   if (!isLoading && hasMore) {
+  //     fetchBookings(getStatusForTab())
+  //   }
+  // }, [isLoading, hasMore, activeTab, fetchBookings])
+  const loadMore = useCallback(async () => {
+    if (isPaginatingRef.current || isLoading || !hasMore) return
+    isPaginatingRef.current = true
+    try {
+      await fetchBookings(getStatusForTab())
+    } finally {
+      isPaginatingRef.current = false
+    }
+  }, [isLoading, hasMore, activeTab, fetchBookings])
 
   const handleBookingPress = (booking: Booking) => {
     router.push({
-      pathname: '/(screens)/booking/[id]',
+      pathname: "/(screens)/booking/[id]",
       params: { id: booking.id },
-    });
-  };
+    })
+  }
 
-  const filteredBookings = bookings.filter((b) => getStatusForTab().includes(b.status));
+  const filteredBookings = bookings.filter((b) =>
+    getStatusForTab().includes(b.status)
+  )
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
         <Text variant="h4" color="textPrimary" weight="700">
           My Bookings
@@ -256,8 +334,8 @@ export default function BookingsScreen() {
           >
             <Text
               variant="bodySmall"
-              color={activeTab === tab.key ? 'primary' : 'textMuted'}
-              weight={activeTab === tab.key ? '600' : '400'}
+              color={activeTab === tab.key ? "primary" : "textMuted"}
+              weight={activeTab === tab.key ? "600" : "400"}
             >
               {tab.label}
             </Text>
@@ -269,12 +347,19 @@ export default function BookingsScreen() {
         data={filteredBookings}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <BookingCard booking={item} onPress={() => handleBookingPress(item)} />
+          <BookingCard
+            booking={item}
+            onPress={() => handleBookingPress(item)}
+          />
         )}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[semantic.primary]} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[semantic.primary]}
+          />
         }
         onEndReached={loadMore}
         onEndReachedThreshold={0.3}
@@ -294,7 +379,7 @@ export default function BookingsScreen() {
         }
       />
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -309,7 +394,7 @@ const styles = StyleSheet.create({
     borderBottomColor: semantic.borderLight,
   },
   tabs: {
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[2],
     gap: spacing[2],
@@ -319,7 +404,7 @@ const styles = StyleSheet.create({
   tab: {
     flex: 1,
     paddingVertical: spacing[2],
-    alignItems: 'center',
+    alignItems: "center",
     borderRadius: borderRadius.md,
   },
   activeTab: {
@@ -334,9 +419,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing[3],
   },
   cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: spacing[3],
   },
   bookingNumber: {
@@ -349,38 +434,38 @@ const styles = StyleSheet.create({
     marginBottom: spacing[3],
   },
   details: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginTop: spacing[2],
     gap: spacing[4],
   },
   detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   detailText: {
     marginLeft: spacing[1],
   },
   addressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: spacing[2],
   },
   cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingTop: spacing[3],
     borderTopWidth: 1,
     borderTopColor: semantic.borderLight,
   },
   viewDetails: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   emptyState: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: spacing[6],
     paddingVertical: spacing[10],
   },
@@ -389,8 +474,8 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     backgroundColor: semantic.backgroundSecondary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: spacing[4],
   },
   emptyTitle: {
@@ -402,4 +487,4 @@ const styles = StyleSheet.create({
   loadingMore: {
     paddingVertical: spacing[4],
   },
-});
+})
