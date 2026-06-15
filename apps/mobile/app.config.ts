@@ -2,21 +2,21 @@ import type { ConfigContext, ExpoConfig } from "expo/config"
 
 export default ({ config }: ConfigContext): ExpoConfig => {
   const androidMapsKey = process.env.GOOGLE_MAPS_ANDROID_API_KEY
-
-
+  const existingPlugins = config.plugins ?? []
 
   return {
     ...config,
     name: config.name ?? "subito",
     slug: config.slug ?? "subito",
     plugins: [
-      ...(config.plugins ?? []),
+      ...existingPlugins,
       [
         "react-native-maps",
         {
           androidGoogleMapsApiKey: androidMapsKey,
         },
       ],
+      "./plugins/withJuspayHyperSdkBypass",
     ],
     extra: {
       ...config.extra,
