@@ -7,13 +7,7 @@ import { colors, semantic } from "../../src/theme/colors"
 import { spacing } from "../../src/theme/spacing"
 import { usePaymentsStore, useCartStore } from "../../src/store"
 import { Ionicons } from "@expo/vector-icons"
-import {
-  hyperSDKController,
-  buildHyperInitConfig,
-  type HyperUpiDetails,
-  type HyperCardDetails,
-} from "../../src/lib/hypersdk-controller"
-import { mapHyperPayloadToProcessOrder } from "../../src/lib/map-hyper-process-result"
+import { openRazorpayCheckout } from "../../src/lib/razorpay"
 import { sendEventAnalytics } from "../../src/analytics/events"
 import { PAYMENT_EVENTS } from "../../src/analytics/payment-events"
 
@@ -27,26 +21,13 @@ export default function PaymentScreen() {
     orderId: string
     bookingId: string
     amount: string
-    clientAuthToken: string
-    merchantId: string
-    clientId: string
-    environment: string
-    paymentModeId: "upiTxn" | "cardTxn"
-    upiDetails?: string
-    cardDetails?: string
   }>()
 
   const orderId = paramStr(params.orderId)
   const bookingId = paramStr(params.bookingId)
   const amount = paramStr(params.amount)
-  const clientAuthToken = paramStr(params.clientAuthToken)
-  const merchantId = paramStr(params.merchantId)
-  const clientId = paramStr(params.clientId)
-  const environment = paramStr(params.environment)
-  const paymentModeId = (paramStr(params.paymentModeId) || "upiTxn") as
-    | "upiTxn"
-    | "cardTxn"
 
+  const initiatePayment = usePaymentsStore((s) => s.initiatePayment)
   const processOrder = usePaymentsStore((s) => s.processOrder)
   const waitForPaymentTerminal = usePaymentsStore(
     (s) => s.waitForPaymentTerminal
@@ -69,137 +50,59 @@ export default function PaymentScreen() {
     let cancelled = false
 
     const runPayment = async () => {
-      if (!orderId || !amount || !clientAuthToken) {
+      if (!orderId || !amount) {
         setPaymentStatus("failed")
-        setError(
-          "Missing payment session. Go back and choose a payment method again."
-        )
-        return
-      }
-
-      let upiDetails: HyperUpiDetails | undefined
-      let cardDetails: HyperCardDetails | undefined
-
-      try {
-        if (params.upiDetails) {
-          upiDetails = JSON.parse(
-            paramStr(params.upiDetails)
-          ) as HyperUpiDetails
-        }
-        if (params.cardDetails) {
-          cardDetails = JSON.parse(
-            paramStr(params.cardDetails)
-          ) as HyperCardDetails
-        }
-      } catch {
-        setPaymentStatus("failed")
-        setError("Invalid payment details.")
-        return
-      }
-
-      if (paymentModeId === "upiTxn" && !upiDetails) {
-        setPaymentStatus("failed")
-        setError("Missing UPI details.")
-        return
-      }
-      if (paymentModeId === "cardTxn" && !cardDetails) {
-        setPaymentStatus("failed")
-        setError("Missing card details.")
+        setError("Missing payment details. Please try checkout again.")
         return
       }
 
       setPaymentStatus("processing")
       setError(null)
-      setIsPaymentProviderOpen(true)
 
       try {
-        if (!hyperSDKController.isAvailable()) {
-          setPaymentStatus("failed")
-          setError(
-            "Payments require a dev build with Juspay HyperSDK. Expo Go is not supported."
-          )
-          setIsPaymentProviderOpen(false)
-          return
+        const initiated = await initiatePayment(orderId, Number.parseFloat(amount))
+        if (!initiated) {
+          throw new Error("Unable to create payment order")
         }
 
-        const cfg = buildHyperInitConfig({
-          orderId,
-          clientAuthToken,
-          merchantId: merchantId || undefined,
-          clientId: clientId || undefined,
-          environment: environment || undefined,
-        })
-
-        await hyperSDKController.init(cfg)
-
-        sendEventAnalytics(PAYMENT_EVENTS.PAYMENT_INITIATED, {
-          Instrument: paymentModeId === "upiTxn" ? "UPI" : "Card",
-          UPIType:
-            paymentModeId === "upiTxn" && upiDetails ? upiDetails.type : "",
-        })
-
+        setIsPaymentProviderOpen(true)
         setIsPaymentInitiated(true)
 
-        let rawResult: Record<string, unknown>
-        if (paymentModeId === "upiTxn" && upiDetails) {
-          rawResult = await hyperSDKController.initiateUpiTransaction(
-            orderId,
-            clientAuthToken,
-            upiDetails,
-            { useActivity: false }
-          )
-        } else if (paymentModeId === "cardTxn" && cardDetails) {
-          rawResult = await hyperSDKController.initiateCardTransaction(
-            orderId,
-            clientAuthToken,
-            cardDetails,
-            { useActivity: false }
-          )
-        } else {
-          throw new Error("Unsupported payment mode")
-        }
+        sendEventAnalytics(PAYMENT_EVENTS.PAYMENT_INITIATED, {
+          instrument: "RAZORPAY_CHECKOUT",
+          orderId,
+        })
+
+        const result = await openRazorpayCheckout({
+          key_id: initiated.keyId,
+          amount: initiated.amount,
+          currency: initiated.currency,
+          order_id: initiated.razorpayOrderId,
+          description: "Subito booking payment",
+          theme: { color: "#111827" },
+        })
 
         if (cancelled) return
 
+        setPaymentStatus("confirming")
         setIsPaymentProviderOpen(false)
 
-        const mapped = mapHyperPayloadToProcessOrder(rawResult)
-
-        if (mapped.status === "FAILED") {
-          sendEventAnalytics(PAYMENT_EVENTS.PAYMENT_FAILED, {
+        try {
+          await processOrder({
             orderId,
-            errorCode: String(
-              rawResult.errorCode ?? rawResult.errorMessage ?? "unknown"
-            ),
-            instrument: paymentModeId,
+            status: "SUCCESS",
+            razorpayPaymentId: result.razorpay_payment_id,
+            razorpaySignature: result.razorpay_signature,
+            razorpayOrderId: result.razorpay_order_id,
           })
-          setPaymentStatus("failed")
-          setError("Payment was not completed. You can try again.")
-          return
+        } catch {
+          /* polling covers eventual consistency */
         }
 
-        if (mapped.status === "SUCCESS" || mapped.status === "CHARGED") {
-          setPaymentStatus("confirming")
-          try {
-            await processOrder(
-              orderId,
-              mapped.status === "CHARGED" ? "CHARGED" : "SUCCESS",
-              mapped.txnId
-            )
-          } catch {
-            /* rely on polling if gateway lags */
-          }
-        } else {
-          setPaymentStatus("confirming")
-        }
-
-        const { ok, payload, timedOut } = await waitForPaymentTerminal(
-          orderId,
-          {
-            intervalMs: 2500,
-            timeoutMs: 120_000,
-          }
-        )
+        const { ok, payload, timedOut } = await waitForPaymentTerminal(orderId, {
+          intervalMs: 2500,
+          timeoutMs: 120_000,
+        })
         if (cancelled) return
 
         if (ok && payload?.bookingId) {
@@ -229,7 +132,7 @@ export default function PaymentScreen() {
         if (timedOut) {
           setPaymentStatus("failed")
           setError(
-            "We could not confirm payment in time. If money was debited, check Payment history or contact support."
+            "We could not confirm payment in time. If money was debited, check payment history or contact support."
           )
           return
         }
@@ -241,18 +144,13 @@ export default function PaymentScreen() {
         sendEventAnalytics(PAYMENT_EVENTS.PAYMENT_FAILED, {
           orderId,
           errorCode: e instanceof Error ? e.message : "unknown",
-          instrument: paymentModeId,
+          instrument: "RAZORPAY_CHECKOUT",
         })
         setPaymentStatus("failed")
         setError(e instanceof Error ? e.message : "Something went wrong.")
       } finally {
         setIsPaymentProviderOpen(false)
         setIsPaymentInitiated(false)
-        try {
-          hyperSDKController.terminate()
-        } catch {
-          /* ignore */
-        }
       }
     }
 
@@ -261,22 +159,16 @@ export default function PaymentScreen() {
       cancelled = true
     }
   }, [
-    attemptKey,
-    orderId,
     amount,
-    clientAuthToken,
-    merchantId,
-    clientId,
-    environment,
-    paymentModeId,
-    params.upiDetails,
-    params.cardDetails,
-    processOrder,
-    waitForPaymentTerminal,
-    clearCart,
+    attemptKey,
     bookingId,
+    clearCart,
+    initiatePayment,
+    orderId,
+    processOrder,
     setIsPaymentInitiated,
     setIsPaymentProviderOpen,
+    waitForPaymentTerminal,
   ])
 
   useEffect(() => {
@@ -310,10 +202,10 @@ export default function PaymentScreen() {
 
   const phaseLabel =
     paymentStatus === "confirming"
-      ? "Confirming payment…"
+      ? "Confirming payment..."
       : paymentStatus === "processing"
-        ? "Processing payment…"
-        : "Preparing…"
+        ? "Opening checkout..."
+        : "Preparing..."
 
   return (
     <SafeAreaView style={styles.container}>
@@ -332,7 +224,7 @@ export default function PaymentScreen() {
               {phaseLabel}
             </Text>
             <Text variant="bodyMedium" color="textSecondary" align="center">
-              Please wait while we process ₹{amount}
+              Please wait while we process Rs {amount}
             </Text>
             <Text
               variant="caption"
@@ -340,7 +232,7 @@ export default function PaymentScreen() {
               align="center"
               style={styles.warning}
             >
-              Please don’t press back or close the app
+              Please do not press back or close the app
             </Text>
           </View>
         ) : paymentStatus === "failed" ? (
@@ -387,7 +279,7 @@ export default function PaymentScreen() {
               Payment Successful!
             </Text>
             <Text variant="bodyMedium" color="textSecondary" align="center">
-              Redirecting to your booking…
+              Redirecting to your booking...
             </Text>
           </View>
         )}
@@ -406,7 +298,7 @@ export default function PaymentScreen() {
               Amount
             </Text>
             <Text variant="bodySmall" color="primary" weight="700">
-              ₹{amount}
+              Rs {amount}
             </Text>
           </View>
         </Card>

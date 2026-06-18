@@ -16,15 +16,11 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           androidGoogleMapsApiKey: androidMapsKey,
         },
       ],
-      "./plugins/withJuspayHyperSdkBypass",
+      
     ],
     extra: {
       ...config.extra,
       apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL,
-      juspayMerchantId: process.env.JUSPAY_MERCHANT_ID,
-      juspayClientId: process.env.JUSPAY_CLIENT_ID,
-      juspayEnvironment:
-        process.env.JUSPAY_ENVIRONMENT ?? "sandbox",
     },
   } as ExpoConfig
 }

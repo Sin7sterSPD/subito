@@ -15,6 +15,13 @@
       "when": 1780827404964,
       "tag": "0001_noisy_gladiator",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781784000000,
+      "tag": "0002_razorpay_gateway",
+      "breakpoints": true
     }
   ]
 }

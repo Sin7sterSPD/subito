@@ -23,7 +23,6 @@ import {
 } from "@/utils/helpers"
 
 import { enqueuePartnerMatchingJob } from "@/lib/enqueue-partner-match"
-import { verifyPaymentResponseSignature } from "@/lib/juspay-signature"
 
 async function checkIdempotencyKey(
   userId: string,
@@ -620,82 +619,6 @@ export async function checkoutV2(
   })
 
   return result
-}
-
-export async function verifyPayment(
-  userId: string,
-  data: { orderId: string; paymentId: string; signature: string }
-) {
-  if (
-    !verifyPaymentResponseSignature(
-      data.orderId,
-      data.paymentId,
-      data.signature
-    )
-  ) {
-    throw new BadRequestError(
-      "Invalid or missing payment verification signature"
-    )
-  }
-
-  const result = await db.transaction(async (tx) => {
-    const [order] = await tx
-      .select()
-      .from(orders)
-      .where(and(eq(orders.orderId, data.orderId), eq(orders.userId, userId)))
-      .for("update")
-
-    if (!order) {
-      throw new NotFoundError("Order")
-    }
-
-    if (order.status === "COMPLETED") {
-      return {
-        verified: true,
-        orderId: data.orderId,
-        alreadyProcessed: true,
-        bookingId: order.bookingId,
-        shouldEnqueue: false,
-      }
-    }
-
-    if (order.status === "FAILED" || order.status === "CANCELLED") {
-      throw new BadRequestError(`Order is in ${order.status} status`)
-    }
-
-    await tx
-      .update(orders)
-      .set({ status: "COMPLETED", updatedAt: new Date() })
-      .where(eq(orders.id, order.id))
-
-    let shouldEnqueue = false
-    if (order.bookingId) {
-      const updated = await tx
-        .update(bookings)
-        .set({ status: "PENDING_MATCH", updatedAt: new Date() })
-        .where(
-          and(
-            eq(bookings.id, order.bookingId),
-            eq(bookings.status, "PENDING_PAYMENT")
-          )
-        )
-        .returning({ id: bookings.id })
-      shouldEnqueue = updated.length > 0
-    }
-
-    return {
-      verified: true,
-      orderId: data.orderId,
-      bookingId: order.bookingId,
-      shouldEnqueue,
-    }
-  })
-
-  if (result.bookingId && result.shouldEnqueue) {
-    await enqueuePartnerMatchingJob(result.bookingId)
-  }
-
-  return { verified: true, orderId: data.orderId }
 }
 
 async function getOrCreateCart(userId: string) {

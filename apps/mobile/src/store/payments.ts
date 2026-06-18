@@ -1,98 +1,11 @@
 import { create } from "zustand"
-import { Platform } from "react-native"
-import { PaymentMethod } from "../types/api"
 import {
   paymentsApi,
   type PaymentStatusPayload,
   type InitiatePaymentResponse,
 } from "../services/api/payments"
 
-interface PaymentOptions {
-  upi: PaymentMethod[]
-  cards: PaymentMethod[]
-  netbanking: PaymentMethod[]
-  wallets: PaymentMethod[]
-}
-
-function normalizePaymentOptions(raw: {
-  options?: {
-    id: string
-    name: string
-    type: string
-    icon?: string
-    description?: string
-    providers?: { id: string; name: string; icon?: string }[]
-  }[]
-}): PaymentOptions {
-  const grouped: PaymentOptions = {
-    upi: [],
-    cards: [],
-    netbanking: [],
-    wallets: [],
-  }
-  const list = raw.options ?? []
-  for (const opt of list) {
-    const t = (opt.type || "").toUpperCase()
-    const id = opt.id || "opt"
-
-    if (t === "UPI") {
-      if (opt.providers?.length) {
-        for (const p of opt.providers) {
-          grouped.upi.push({
-            id: `upi:${p.id}`,
-            type: "UPI",
-            name: p.name,
-            icon: p.icon ?? opt.icon,
-          })
-        }
-      } else {
-        grouped.upi.push({
-          id: `upi:${id}`,
-          type: "UPI",
-          name: opt.name || "UPI",
-          icon: opt.icon,
-        })
-      }
-    } else if (t === "CARD" || id === "card") {
-      grouped.cards.push({
-        id: `card:${id}`,
-        type: "CARD",
-        name: opt.name || "Card",
-        icon: opt.icon,
-      })
-    } else if (t === "NETBANKING" || id === "netbanking") {
-      grouped.netbanking.push({
-        id: `nb:${id}`,
-        type: "NETBANKING",
-        name: opt.name || "Net banking",
-        icon: opt.icon,
-      })
-    } else if (t === "WALLET" || t === "APPLE_PAY") {
-      if (opt.providers?.length) {
-        for (const p of opt.providers) {
-          grouped.wallets.push({
-            id: `wallet:${p.id}`,
-            type: "WALLET",
-            name: p.name,
-            icon: p.icon ?? opt.icon,
-          })
-        }
-      } else {
-        grouped.wallets.push({
-          id: `wallet:${id}`,
-          type: "WALLET",
-          name: opt.name || "Wallet",
-          icon: opt.icon,
-        })
-      }
-    }
-  }
-  return grouped
-}
-
 interface PaymentsState {
-  paymentOptions: PaymentOptions | null
-  selectedPaymentMethod: PaymentMethod | null
   currentOrderId: string | null
   paymentStatus: string | null
   isLoading: boolean
@@ -100,20 +13,18 @@ interface PaymentsState {
   isPaymentInitiated: boolean
   bookingId: string | null
 
-  fetchPaymentOptions: (platform?: "android" | "ios") => Promise<void>
-  verifyUpi: (
-    upiId: string
-  ) => Promise<{ isVerified: boolean; customerName?: string }>
   initiatePayment: (
     orderId: string,
     amount: number,
     paymentMethodId?: string
   ) => Promise<InitiatePaymentResponse | null>
-  processOrder: (
-    orderId: string,
-    status: "SUCCESS" | "CHARGED" | "FAILED" | "PENDING",
-    txnId?: string
-  ) => Promise<{ success: boolean }>
+  processOrder: (input: {
+    orderId: string
+    status: "SUCCESS" | "CHARGED" | "FAILED" | "PENDING"
+    razorpayPaymentId?: string
+    razorpaySignature?: string
+    razorpayOrderId?: string
+  }) => Promise<{ success: boolean }>
   checkPaymentStatus: (orderId: string) => Promise<PaymentStatusPayload | null>
   waitForPaymentTerminal: (
     orderId: string,
@@ -124,7 +35,6 @@ interface PaymentsState {
     timedOut?: boolean
     aborted?: boolean
   }>
-  setSelectedPaymentMethod: (method: PaymentMethod | null) => void
   setCurrentOrderId: (orderId: string | null) => void
   setIsPaymentProviderOpen: (open: boolean) => void
   setIsPaymentInitiated: (v: boolean) => void
@@ -137,48 +47,12 @@ function sleep(ms: number): Promise<void> {
 }
 
 export const usePaymentsStore = create<PaymentsState>((set) => ({
-  paymentOptions: null,
-  selectedPaymentMethod: null,
   currentOrderId: null,
   paymentStatus: null,
   isLoading: false,
   isPaymentProviderOpen: false,
   isPaymentInitiated: false,
   bookingId: null,
-
-  fetchPaymentOptions: async (platform) => {
-    const pf = platform ?? (Platform.OS === "ios" ? "ios" : "android")
-    set({ isLoading: true })
-    try {
-      const response = await paymentsApi.getPaymentOptions(pf)
-      if (response.success && response.data) {
-        set({ paymentOptions: normalizePaymentOptions(response.data) })
-      }
-    } catch {
-      /* silent */
-    } finally {
-      set({ isLoading: false })
-    }
-  },
-
-  verifyUpi: async (upiId) => {
-    set({ isLoading: true })
-    try {
-      const response = await paymentsApi.verifyUpi(upiId)
-      if (response.success && response.data) {
-        const d = response.data
-        return {
-          isVerified: d.isValid,
-          customerName: d.name ?? undefined,
-        }
-      }
-      return { isVerified: false }
-    } catch {
-      return { isVerified: false }
-    } finally {
-      set({ isLoading: false })
-    }
-  },
 
   initiatePayment: async (orderId, amount, paymentMethodId) => {
     set({ isLoading: true, currentOrderId: orderId })
@@ -199,14 +73,10 @@ export const usePaymentsStore = create<PaymentsState>((set) => ({
     }
   },
 
-  processOrder: async (orderId, status, txnId) => {
+  processOrder: async (input) => {
     set({ isLoading: true })
     try {
-      const response = await paymentsApi.processOrder({
-        orderId,
-        status,
-        txnId,
-      })
+      const response = await paymentsApi.processOrder(input)
       if (response.success && response.data?.success) {
         return { success: true }
       }
@@ -258,7 +128,6 @@ export const usePaymentsStore = create<PaymentsState>((set) => ({
     return { ok: false, timedOut: true }
   },
 
-  setSelectedPaymentMethod: (method) => set({ selectedPaymentMethod: method }),
   setCurrentOrderId: (orderId) => set({ currentOrderId: orderId }),
   setIsPaymentProviderOpen: (open) => set({ isPaymentProviderOpen: open }),
   setIsPaymentInitiated: (v) => set({ isPaymentInitiated: v }),
@@ -267,8 +136,6 @@ export const usePaymentsStore = create<PaymentsState>((set) => ({
 
   reset: () =>
     set({
-      paymentOptions: null,
-      selectedPaymentMethod: null,
       currentOrderId: null,
       paymentStatus: null,
       isLoading: false,

@@ -1,7 +1,6 @@
 import { createHash } from "crypto"
 import { db } from "@subito/db"
 import { orders, payments, bookings, refunds, users } from "@subito/db/schema"
-
 import { eq, and, desc, sql } from "@subito/db"
 import {
   NotFoundError,
@@ -12,85 +11,73 @@ import { generatePaymentId, generateRefundId } from "../../utils/helpers"
 import { enqueuePartnerMatchingJob } from "../../lib/enqueue-partner-match"
 import { paymentReconciliationQueue } from "../../lib/queues"
 import { redis } from "../../lib/redis"
-
-
-
-import { trustClientOrderSuccessInDev } from "@/lib/payment-gateway"
 import {
-  createJuspayOrder,
-  createJuspayRefund,
+  createGatewayOrder,
+  createGatewayRefund,
   fetchGatewayOrderStatus,
-} from "@subito/shared"
+  verifyGatewaySignature,
+} from "@/lib/payment-gateway"
 
-const JUSPAY_MERCHANT_ID = process.env.JUSPAY_MERCHANT_ID
-const JUSPAY_SDK_CLIENT_ID = process.env.JUSPAY_SDK_CLIENT_ID ?? "subitoapp07"
-const JUSPAY_RETURN_URL =
-  process.env.JUSPAY_RETURN_URL ??
-  "https://api.subito.app/v1/payments/juspay/return"
-
-export async function getPaymentOptions(platform: string) {
-  const options = [
-    {
-      id: "upi",
-      name: "UPI",
-      type: "UPI",
-      icon: "upi",
-      description: "Pay using UPI",
-      providers: [
-        { id: "gpay", name: "Google Pay", icon: "gpay" },
-        { id: "phonepe", name: "PhonePe", icon: "phonepe" },
-        { id: "paytm", name: "Paytm", icon: "paytm" },
-      ],
-    },
-    {
-      id: "card",
-      name: "Credit/Debit Card",
-      type: "CARD",
-      icon: "card",
-      description: "Pay using card",
-    },
-    {
-      id: "netbanking",
-      name: "Net Banking",
-      type: "NETBANKING",
-      icon: "bank",
-      description: "Pay using net banking",
-    },
-    {
-      id: "wallet",
-      name: "Wallets",
-      type: "WALLET",
-      icon: "wallet",
-      description: "Pay using wallet",
-      providers: [
-        { id: "paytm_wallet", name: "Paytm Wallet", icon: "paytm" },
-        { id: "mobikwik", name: "MobiKwik", icon: "mobikwik" },
-      ],
-    },
-  ]
-
-  if (platform === "ios") {
-    options.unshift({
-      id: "apple_pay",
-      name: "Apple Pay",
-      type: "APPLE_PAY",
-      icon: "apple",
-      description: "Pay using Apple Pay",
-    })
-  }
-
-  return { options }
+function amountToPaise(amount: string | number): number {
+  const parsed =
+    typeof amount === "number" ? amount : Number.parseFloat(String(amount))
+  return Math.round(parsed * 100)
 }
 
-export async function verifyUpi(upiId: string) {
-  const upiRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9]+$/
-  const isValid = upiRegex.test(upiId)
+function normalizePhone(phone: string): string {
+  const digits = phone.replace(/\D/g, "")
+  return digits.slice(-10) || "9999999999"
+}
 
-  return {
-    upiId,
-    isValid,
-    name: isValid ? "Verified UPI ID" : null,
+function webhookEntityFromBody(body: unknown): Record<string, unknown> | null {
+  if (!body || typeof body !== "object") {
+    return null
   }
+
+  const payload = (body as Record<string, unknown>).payload
+  if (!payload || typeof payload !== "object") {
+    return null
+  }
+
+  const paymentEntity = (payload as Record<string, unknown>).payment
+  if (
+    paymentEntity &&
+    typeof paymentEntity === "object" &&
+    "entity" in paymentEntity
+  ) {
+    const entity = (paymentEntity as Record<string, unknown>).entity
+    if (entity && typeof entity === "object") {
+      return entity as Record<string, unknown>
+    }
+  }
+
+  const orderEntity = (payload as Record<string, unknown>).order
+  if (orderEntity && typeof orderEntity === "object" && "entity" in orderEntity) {
+    const entity = (orderEntity as Record<string, unknown>).entity
+    if (entity && typeof entity === "object") {
+      return entity as Record<string, unknown>
+    }
+  }
+
+  return null
+}
+
+function extractOrderIdFromWebhook(body: unknown): string | undefined {
+  const entity = webhookEntityFromBody(body)
+  const notes = entity?.notes
+  if (notes && typeof notes === "object") {
+    const orderId = (notes as Record<string, unknown>).orderId
+    if (typeof orderId === "string" && orderId.length > 0) {
+      return orderId
+    }
+  }
+
+  const receipt = entity?.receipt
+  if (typeof receipt === "string" && receipt.length > 0) {
+    return receipt
+  }
+
+  return undefined
 }
 
 export async function getPaymentHistory(
@@ -197,7 +184,6 @@ export async function getPaymentStatus(userId: string, orderId: string) {
     bookingId: order.bookingId,
     bookingStatus: booking?.status ?? null,
     bookingNumber: booking?.bookingNumber ?? null,
-    /** True when order is in a terminal state (polling can stop). */
     terminal: terminalOrder,
   }
 }
@@ -222,7 +208,7 @@ export async function initiatePayment(
     throw new BadRequestError(`Order is in ${order.status} status`)
   }
 
-  const orderAmount = parseFloat(String(order.amount))
+  const orderAmount = Number.parseFloat(String(order.amount))
   if (
     !Number.isFinite(data.amount) ||
     !Number.isFinite(orderAmount) ||
@@ -240,111 +226,49 @@ export async function initiatePayment(
     throw new NotFoundError("User")
   }
 
-  const merchantId = JUSPAY_MERCHANT_ID || "subito_merchant"
-  const customerEmail =
-    user.email?.trim() ||
-    `user_${user.phone.replace(/\D/g, "") || "unknown"}@subito.phone`
-
-  const hasJuspayCreds =
-    !!process.env.JUSPAY_API_KEY?.trim() && !!JUSPAY_MERCHANT_ID?.trim()
-  const useMockJuspay = !hasJuspayCreds && process.env.NODE_ENV !== "production"
-
-  if (!hasJuspayCreds && process.env.NODE_ENV === "production") {
+  if (
+    !process.env.RAZORPAY_KEY_ID?.trim() ||
+    !process.env.RAZORPAY_KEY_SECRET?.trim()
+  ) {
     throw new ServiceUnavailableError("Payment gateway is not configured")
   }
 
-  let clientAuthToken: string
-  let clientAuthTokenExpiry: Date
-  let juspayOrderId: string | null = order.juspayOrderId
-  let sdkPayload: Record<string, unknown>
+  const customerEmail =
+    user.email?.trim() ||
+    `user_${normalizePhone(user.phone) || "unknown"}@subito.phone`
 
-  if (useMockJuspay) {
-    clientAuthToken = Buffer.from(`${order.orderId}:${Date.now()}`).toString(
-      "base64"
-    )
-    clientAuthTokenExpiry = new Date(Date.now() + 30 * 60 * 1000)
-    sdkPayload = {
-      requestId: order.orderId,
-      service: "in.juspay.hyperapi",
-      payload: {
-        action: "initiate",
-        merchantId,
-        clientId: JUSPAY_SDK_CLIENT_ID,
-        orderId: order.orderId,
-        amount: data.amount.toFixed(2),
-        clientAuthToken,
-        customerId: userId,
-        customerPhone: user.phone,
-        customerEmail,
-      },
-    }
-  } else {
-    const created = await createJuspayOrder({
-      orderId: order.orderId,
-      amount: String(order.amount),
-      customerId: userId,
-      customerPhone: user.phone,
-      customerEmail,
-      returnUrl: JUSPAY_RETURN_URL,
-      description: "Subito booking payment",
-    })
+  const created = await createGatewayOrder({
+    orderId: order.orderId,
+    amount: String(order.amount),
+    currency: String(order.currency ?? "INR"),
+    customerId: userId,
+    customerPhone: user.phone,
+    customerEmail,
+    description: "Subito booking payment",
+  })
 
-    if (!created.success) {
-      throw new ServiceUnavailableError(created.error)
-    }
-
-    clientAuthToken = created.clientAuthToken
-    juspayOrderId = created.juspayOrderId
-    clientAuthTokenExpiry = created.clientAuthTokenExpiry
-      ? new Date(created.clientAuthTokenExpiry)
-      : new Date(Date.now() + 30 * 60 * 1000)
-    if (Number.isNaN(clientAuthTokenExpiry.getTime())) {
-      clientAuthTokenExpiry = new Date(Date.now() + 30 * 60 * 1000)
-    }
-
-    sdkPayload =
-      created.sdkPayload ??
-      ({
-        requestId: order.orderId,
-        service: "in.juspay.hyperapi",
-        payload: {
-          action: "initiate",
-          merchantId,
-          clientId: JUSPAY_SDK_CLIENT_ID,
-          orderId: order.orderId,
-          amount: data.amount.toFixed(2),
-          clientAuthToken,
-          customerId: userId,
-          customerPhone: user.phone,
-          customerEmail,
-        },
-      } as Record<string, unknown>)
+  if (!created.success) {
+    throw new ServiceUnavailableError(created.error)
   }
 
   await db
     .update(orders)
     .set({
       status: "PENDING",
-      juspayOrderId: juspayOrderId ?? undefined,
-      juspayClientAuthToken: clientAuthToken,
-      juspayClientAuthTokenExpiry: clientAuthTokenExpiry,
-      paymentMethodId: data.paymentMethodId,
+      gatewayOrderId: created.gatewayOrderId,
+      gatewayData: created.gatewayData,
+      paymentMethodId: data.paymentMethodId ?? null,
       updatedAt: new Date(),
     })
     .where(eq(orders.id, order.id))
 
   return {
     orderId: order.orderId,
-    amount: data.amount,
-    currency: "INR",
-    clientAuthToken,
-    clientAuthTokenExpiry: clientAuthTokenExpiry.toISOString(),
-    merchantId,
-    clientId: JUSPAY_SDK_CLIENT_ID,
-    environment:
-      process.env.JUSPAY_ENVIRONMENT ??
-      (process.env.NODE_ENV === "production" ? "production" : "sandbox"),
-    sdkPayload,
+    amount: amountToPaise(order.amount),
+    currency: String(order.currency ?? "INR"),
+    keyId: process.env.RAZORPAY_KEY_ID!,
+    razorpayOrderId: created.gatewayOrderId,
+    gatewayData: created.gatewayData,
   }
 }
 
@@ -353,7 +277,9 @@ export async function processOrder(
   data: {
     orderId: string
     status: string
-    txnId?: string
+    razorpayPaymentId?: string
+    razorpaySignature?: string
+    razorpayOrderId?: string
   }
 ) {
   const order = await db.query.orders.findFirst({
@@ -372,6 +298,7 @@ export async function processOrder(
       ),
       orderBy: [desc(payments.createdAt)],
     })
+
     return {
       success: true,
       orderId: data.orderId,
@@ -388,30 +315,29 @@ export async function processOrder(
   const isClientSuccess = data.status === "SUCCESS" || data.status === "CHARGED"
 
   if (isClientSuccess) {
-    let { status: gateway, gatewayUnreachable } = await fetchGatewayOrderStatus(
-      {
-        orderId: order.orderId,
-        juspayOrderId: order.juspayOrderId,
-      }
-    )
-    if (gateway === "PENDING" && trustClientOrderSuccessInDev()) {
-      gateway = "CHARGED"
-      gatewayUnreachable = false
+    if (!order.gatewayOrderId) {
+      throw new BadRequestError("Gateway order id missing for this order")
     }
-    if (gatewayUnreachable) {
-      throw new ServiceUnavailableError(
-        "Payment gateway temporarily unavailable. Try again shortly or poll GET /v1/payments/status."
-      )
+
+    if (!data.razorpayPaymentId || !data.razorpaySignature) {
+      throw new BadRequestError("Missing Razorpay payment confirmation fields")
     }
-    if (gateway === "PENDING") {
-      throw new BadRequestError(
-        "Payment not confirmed by gateway. Poll GET /v1/payments/status or wait for the webhook."
-      )
+
+    if (
+      data.razorpayOrderId &&
+      data.razorpayOrderId !== order.gatewayOrderId
+    ) {
+      throw new BadRequestError("Razorpay order id does not match this order")
     }
-    if (gateway === "FAILED") {
-      throw new BadRequestError(
-        "Gateway reports this payment as failed or voided"
-      )
+
+    const isValid = verifyGatewaySignature({
+      razorpayOrderId: order.gatewayOrderId,
+      razorpayPaymentId: data.razorpayPaymentId,
+      razorpaySignature: data.razorpaySignature,
+    })
+
+    if (!isValid) {
+      throw new BadRequestError("Invalid payment signature")
     }
   }
 
@@ -442,11 +368,13 @@ export async function processOrder(
             )
             .orderBy(desc(payments.createdAt))
             .limit(1)
+
           if (!existingP) {
             throw new BadRequestError(
               "Order is completed but no captured payment record"
             )
           }
+
           return {
             payment: existingP,
             bookingId: locked.bookingId,
@@ -458,6 +386,12 @@ export async function processOrder(
           throw new BadRequestError(`Order is in ${locked.status} status`)
         }
 
+        const gatewayData = {
+          razorpayOrderId: locked.gatewayOrderId,
+          razorpayPaymentId: data.razorpayPaymentId,
+          razorpaySignature: data.razorpaySignature,
+        }
+
         const [payment] = await tx
           .insert(payments)
           .values({
@@ -465,16 +399,27 @@ export async function processOrder(
             orderId: order.id,
             userId,
             amount: order.amount,
+            currency: order.currency,
             status: "CAPTURED",
-            juspayTxnId: data.txnId,
+            gatewayTxnId: data.razorpayPaymentId,
+            gatewayData,
+            gatewayResponse: gatewayData,
             capturedAt: new Date(),
           })
           .returning()
+
+        if (!payment) {
+          throw new ServiceUnavailableError("Failed to persist captured payment")
+        }
 
         await tx
           .update(orders)
           .set({
             status: "COMPLETED",
+            gatewayData: {
+              ...((locked.gatewayData as Record<string, unknown> | null) ?? {}),
+              lastPaymentId: data.razorpayPaymentId,
+            },
             updatedAt: new Date(),
           })
           .where(eq(orders.id, order.id))
@@ -509,7 +454,7 @@ export async function processOrder(
     return {
       success: true,
       orderId: data.orderId,
-      paymentId: payment!.paymentId,
+      paymentId: payment.paymentId,
       status: "COMPLETED" as const,
     }
   }
@@ -524,8 +469,15 @@ export async function processOrder(
     if (!locked) {
       throw new NotFoundError("Order")
     }
+
     if (locked.status === "COMPLETED" || locked.status === "FAILED") {
       return
+    }
+
+    const gatewayData = {
+      razorpayOrderId: locked.gatewayOrderId,
+      razorpayPaymentId: data.razorpayPaymentId ?? null,
+      reason: data.status,
     }
 
     await tx.insert(payments).values({
@@ -533,8 +485,11 @@ export async function processOrder(
       orderId: order.id,
       userId,
       amount: order.amount,
+      currency: order.currency,
       status: "FAILED",
-      juspayTxnId: data.txnId,
+      gatewayTxnId: data.razorpayPaymentId ?? null,
+      gatewayData,
+      gatewayResponse: gatewayData,
       failedAt: new Date(),
       errorCode: data.status,
     })
@@ -600,6 +555,9 @@ export async function tryAutoRefundAfterBookingCancel(input: {
   if (!payment) {
     return { skipped: true, reason: "No captured payment" }
   }
+  if (!payment.gatewayTxnId) {
+    return { skipped: true, reason: "Gateway transaction id missing" }
+  }
 
   const existing = await db.query.refunds.findFirst({
     where: eq(refunds.paymentId, payment.id),
@@ -609,7 +567,6 @@ export async function tryAutoRefundAfterBookingCancel(input: {
   }
 
   const orderAmt = Number(order.amount)
-
   if (!Number.isFinite(orderAmt) || orderAmt <= 0) {
     return {
       skipped: true,
@@ -617,15 +574,14 @@ export async function tryAutoRefundAfterBookingCancel(input: {
     }
   }
 
-     
   const refundAmtNum = (orderAmt * pct) / 100
   if (refundAmtNum <= 0) {
     return { skipped: true, reason: "Zero refund amount" }
   }
+
   const refundAmountStr = refundAmtNum.toFixed(2)
   const refundId = generateRefundId()
 
-  // Create refund record FIRST to prevent phantom refunds
   await db.insert(refunds).values({
     refundId,
     paymentId: payment.id,
@@ -638,8 +594,8 @@ export async function tryAutoRefundAfterBookingCancel(input: {
     initiatedBy: input.userId,
   })
 
-  const gateway = await createJuspayRefund({
-    merchantOrderId: order.orderId,
+  const gateway = await createGatewayRefund({
+    gatewayTxnId: payment.gatewayTxnId,
     amount: refundAmountStr,
     uniqueRequestId: refundId,
   })
@@ -661,7 +617,8 @@ export async function tryAutoRefundAfterBookingCancel(input: {
   await db
     .update(refunds)
     .set({
-      juspayRefundId: gateway.refundId ?? null,
+      gatewayRefundId: gateway.refundId ?? null,
+      gatewayData: gateway.raw ?? null,
       gatewayResponse: gateway.raw ?? null,
       processedAt: new Date(),
       updatedAt: new Date(),
@@ -707,39 +664,20 @@ export async function initiateRefund(
   return result
 }
 
-/**
- * Juspay (and similar) webhooks: enqueue server-side reconciliation.
- * Do not trust payload alone — reconciliation worker / gateway verify is source of truth.
- */
 export async function handleWebhook(body: unknown) {
-  const record =
-    body && typeof body === "object" ? (body as Record<string, unknown>) : {}
-  const orderId =
-    (typeof record.order_id === "string" && record.order_id) ||
-    (typeof record.orderId === "string" && record.orderId) ||
-    (typeof record.id === "string" && record.id) ||
-    undefined
+  const orderId = extractOrderIdFromWebhook(body)
 
   if (!orderId) {
     console.warn("Webhook missing order id", JSON.stringify(body).slice(0, 500))
     return { received: true, enqueued: false }
   }
 
-  let eventName = "ORDER_EVENT"
-  if (typeof record.event_name === "string") {
-    eventName = record.event_name
-  } else if (typeof record.name === "string") {
-    eventName = record.name
-  } else if (
-    record.content &&
-    typeof record.content === "object" &&
-    record.content !== null
-  ) {
-    const c = record.content as Record<string, unknown>
-    if (typeof c.event_name === "string") {
-      eventName = c.event_name
-    }
-  }
+  const record =
+    body && typeof body === "object" ? (body as Record<string, unknown>) : {}
+  const eventName =
+    typeof record.event === "string" && record.event.length > 0
+      ? record.event
+      : "payment.unknown"
 
   const payloadKey = createHash("sha256")
     .update(JSON.stringify(body ?? {}))
@@ -760,7 +698,7 @@ export async function handleWebhook(body: unknown) {
     }
   }
 
-  const idemKey = `webhook:juspay:${orderId}:${String(eventName)}:${payloadKey}`
+  const idemKey = `webhook:razorpay:${orderId}:${eventName}:${payloadKey}`
   const wasNew = await redis.set(idemKey, "1", "EX", 60 * 60 * 24 * 7, "NX")
   if (wasNew !== "OK") {
     return {

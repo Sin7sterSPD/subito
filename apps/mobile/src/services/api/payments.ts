@@ -1,7 +1,5 @@
 import { apiClient } from "../api-client"
-import { PaymentMethod, PaymentStatus } from "../../types/api"
 
-/** Matches `GET /payments/status` (order + booking fields). */
 export interface PaymentStatusPayload {
   orderId: string
   status: string
@@ -17,36 +15,16 @@ export interface InitiatePaymentResponse {
   orderId: string
   amount: number
   currency: string
-  clientAuthToken: string
-  clientAuthTokenExpiry: string
-  merchantId: string
-  clientId: string
-  environment: string
-  sdkPayload: Record<string, unknown>
-}
-
-interface PaymentOptionsApiBody {
-  options: {
-    id: string
-    name: string
-    type: string
-    icon?: string
-    description?: string
-    providers?: { id: string; name: string; icon?: string }[]
-  }[]
-}
-
-interface UpiVerificationResponse {
-  upiId: string
-  isValid: boolean
-  name: string | null
+  keyId: string
+  razorpayOrderId: string
+  gatewayData: Record<string, unknown>
 }
 
 interface PaymentHistory {
   payments: {
     id: string
     amount: string
-    status: PaymentStatus
+    status: string
     type: string
     createdAt: string
   }[]
@@ -67,7 +45,9 @@ interface InitiatePaymentData {
 interface ProcessOrderData {
   orderId: string
   status: "SUCCESS" | "CHARGED" | "FAILED" | "PENDING"
-  txnId?: string
+  razorpayPaymentId?: string
+  razorpaySignature?: string
+  razorpayOrderId?: string
 }
 
 export interface ProcessOrderResult {
@@ -79,16 +59,6 @@ export interface ProcessOrderResult {
 }
 
 export const paymentsApi = {
-  getPaymentOptions: (platform: "android" | "ios" = "android") =>
-    apiClient.get<PaymentOptionsApiBody>(
-      `/payments/options?platform=${platform}`
-    ),
-
-  verifyUpi: (upiId: string) =>
-    apiClient.get<UpiVerificationResponse>(
-      `/payments/verify-upi?upiId=${encodeURIComponent(upiId)}`
-    ),
-
   getPaymentHistory: (page = 1, limit = 10) =>
     apiClient.get<PaymentHistory>(`/payments?page=${page}&limit=${limit}`),
 
@@ -101,7 +71,7 @@ export const paymentsApi = {
     apiClient.post<InitiatePaymentResponse>("/payments/initiate", data),
 
   processOrder: (data: ProcessOrderData) =>
-    apiClient.post<ProcessOrderResult>("/process-order", data),
+    apiClient.post<ProcessOrderResult>("/payments/process-order", data),
 
   requestRefund: (data: { bookingId: string; reason: string }) =>
     apiClient.post<{ refundId: string; amount: string }>(
