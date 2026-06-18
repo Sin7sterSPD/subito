@@ -23,7 +23,6 @@ import {
   useCartStore,
   useUserStore,
   useBookingsStore,
-  usePaymentsStore,
 } from "../../src/store"
 import { BookingSlot } from "../../src/types/api"
 import { Ionicons } from "@expo/vector-icons"
@@ -172,8 +171,6 @@ export default function CheckoutScreen() {
     fetchSlots,
     isLoading: slotsLoading,
   } = useBookingsStore()
-  const { fetchPaymentOptions } = usePaymentsStore()
-
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [selectedSlot, setSelectedSlot] = useState<BookingSlot | null>(null)
   const [notes, setNotes] = useState("")
@@ -188,9 +185,8 @@ export default function CheckoutScreen() {
         selectedAddress.longitude,
         cart?.bookingType
       )
-      fetchPaymentOptions()
     }
-  }, [selectedAddress, cart?.bookingType, fetchSlots, fetchPaymentOptions])
+  }, [selectedAddress, cart?.bookingType, fetchSlots])
 
   useEffect(() => {
     if (
@@ -234,7 +230,7 @@ export default function CheckoutScreen() {
 
       if (result.bookingId && result.orderId) {
         router.push({
-          pathname: "/(screens)/payment-methods",
+          pathname: "/(screens)/payment",
           params: {
             orderId: result.orderId,
             bookingId: result.bookingId,

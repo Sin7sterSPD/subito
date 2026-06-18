@@ -4,16 +4,9 @@ import { z } from "zod"
 import type { AppEnv } from "../../lib/types"
 import { requireAuth } from "../../middleware/auth"
 import * as paymentsService from "./payments.service"
+import { verifyRazorpayWebhookSignature } from "@/lib/razorpay-signature"
 
 export const paymentsRouter = new Hono<AppEnv>()
-
-const optionsQuerySchema = z.object({
-  platform: z.string().default("android"),
-})
-
-const verifyUpiSchema = z.object({
-  upiId: z.string(),
-})
 
 const initiatePaymentSchema = z.object({
   orderId: z.string().min(1),
@@ -29,48 +22,17 @@ const refundSchema = z.object({
 export const processOrderSchema = z.object({
   orderId: z.string(),
   status: z.enum(["SUCCESS", "CHARGED", "FAILED", "PENDING"]),
-  txnId: z.string().optional(),
+  razorpayPaymentId: z.string().optional(),
+  razorpaySignature: z.string().optional(),
+  razorpayOrderId: z.string().optional(),
 })
-
-const paymentStatusSchema = z.object({
-  orderId: z.string().min(1),
-})
-paymentsRouter.get(
-  "/options",
-  requireAuth,
-  zValidator("query", optionsQuerySchema),
-  async (c) => {
-    const { platform } = c.req.valid("query")
-    const options = await paymentsService.getPaymentOptions(platform)
-
-    return c.json({
-      success: true,
-      data: options,
-    })
-  }
-)
-
-paymentsRouter.get(
-  "/verify-upi",
-  requireAuth,
-  zValidator("query", verifyUpiSchema),
-  async (c) => {
-    const { upiId } = c.req.valid("query")
-    const result = await paymentsService.verifyUpi(upiId)
-
-    return c.json({
-      success: true,
-      data: result,
-    })
-  }
-)
 
 paymentsRouter.get("/", requireAuth, async (c) => {
   const userId = c.get("userId")!
-  const page = Math.max(1, parseInt(c.req.query("page") || "1", 10) || 1)
+  const page = Math.max(1, Number.parseInt(c.req.query("page") || "1", 10) || 1)
   const limit = Math.min(
     100,
-    Math.max(1, parseInt(c.req.query("limit") || "10", 10) || 10)
+    Math.max(1, Number.parseInt(c.req.query("limit") || "10", 10) || 10)
   )
   const history = await paymentsService.getPaymentHistory(userId, {
     page,
@@ -84,32 +46,27 @@ paymentsRouter.get("/", requireAuth, async (c) => {
   })
 })
 
-paymentsRouter.get(
-  "/status",
-  requireAuth,
+paymentsRouter.get("/status", requireAuth, async (c) => {
+  const userId = c.get("userId")!
+  const orderId = c.req.query("orderId")
 
-  async (c) => {
-    const userId = c.get("userId")!
-    const orderId = c.req.query("orderId")
-
-    if (!orderId) {
-      return c.json(
-        {
-          success: false,
-          error: { code: "BAD_REQUEST", message: "orderId required" },
-        },
-        400
-      )
-    }
-
-    const status = await paymentsService.getPaymentStatus(userId, orderId)
-
-    return c.json({
-      success: true,
-      data: status,
-    })
+  if (!orderId) {
+    return c.json(
+      {
+        success: false,
+        error: { code: "BAD_REQUEST", message: "orderId required" },
+      },
+      400
+    )
   }
-)
+
+  const status = await paymentsService.getPaymentStatus(userId, orderId)
+
+  return c.json({
+    success: true,
+    data: status,
+  })
+})
 
 paymentsRouter.post(
   "/initiate",
@@ -155,14 +112,10 @@ paymentsRouter.post(
   }
 )
 
-paymentsRouter.post("/juspay/webhook", async (c) => {
-  const JUSPAY_WEBHOOK_SECRET = process.env.JUSPAY_WEBHOOK_SECRET
-  const isProd = process.env.NODE_ENV === "production"
-  const allowUnsigned =
-    process.env.JUSPAY_WEBHOOK_ALLOW_UNSIGNED === "true" && !isProd
-
-  if (isProd && !JUSPAY_WEBHOOK_SECRET) {
-    console.error("JUSPAY_WEBHOOK_SECRET is required in production")
+paymentsRouter.post("/razorpay/webhook", async (c) => {
+  const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET
+  if (!webhookSecret) {
+    console.error("RAZORPAY_WEBHOOK_SECRET is required")
     return c.json(
       {
         success: false,
@@ -175,52 +128,28 @@ paymentsRouter.post("/juspay/webhook", async (c) => {
     )
   }
 
-  let rawBody: string
-  if (JUSPAY_WEBHOOK_SECRET) {
-    const signatureHeader =
-      c.req.header("x-juspay-signature") || c.req.header("x-signature")
-    if (!signatureHeader) {
-      return c.json(
-        {
-          success: false,
-          error: { code: "UNAUTHORIZED", message: "Missing signature" },
-        },
-        401
-      )
-    }
-    rawBody = await c.req.text()
-    const crypto = await import("crypto")
-    const computedSignature = crypto
-      .createHmac("sha256", JUSPAY_WEBHOOK_SECRET)
-      .update(rawBody)
-      .digest("hex")
-    if (
-      computedSignature !== signatureHeader &&
-      `sha256=${computedSignature}` !== signatureHeader
-    ) {
-      return c.json(
-        {
-          success: false,
-          error: { code: "UNAUTHORIZED", message: "Invalid signature" },
-        },
-        401
-      )
-    }
-  } else if (!allowUnsigned) {
+  const signature = c.req.header("x-razorpay-signature")
+  if (!signature) {
     return c.json(
       {
         success: false,
-        error: {
-          code: "UNAUTHORIZED",
-          message:
-            "Set JUSPAY_WEBHOOK_SECRET or JUSPAY_WEBHOOK_ALLOW_UNSIGNED=true (non-production only)",
-        },
+        error: { code: "UNAUTHORIZED", message: "Missing signature" },
       },
       401
     )
-  } else {
-    rawBody = await c.req.text()
   }
+
+  const rawBody = await c.req.text()
+  if (!verifyRazorpayWebhookSignature(rawBody, signature)) {
+    return c.json(
+      {
+        success: false,
+        error: { code: "UNAUTHORIZED", message: "Invalid signature" },
+      },
+      401
+    )
+  }
+
   let body: unknown
   try {
     body = JSON.parse(rawBody)

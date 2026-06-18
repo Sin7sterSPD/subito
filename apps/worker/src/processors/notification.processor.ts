@@ -1,0 +1,109 @@
+import { Worker, Job } from "bullmq"
+import { db, eq } from "@subito/db"
+import { notifications, fcmTokens } from "@subito/db/schema"
+
+import { redis } from "../lib/redis"
+import { log } from "../lib/logger"
+import type { NotificationJobData } from "../queues"
+
+const CLEVERTAP_ACCOUNT_ID = process.env.CLEVERTAP_ACCOUNT_ID
+const CLEVERTAP_PASSCODE = process.env.CLEVERTAP_PASSCODE
+
+async function processNotification(job: Job<NotificationJobData>) {
+  const { type, userId, title, body, data } = job.data
+
+  log.info({ jobId: job.id, type, userId }, "Processing notification job")
+
+  await db.insert(notifications).values({
+    userId,
+    title,
+    body,
+    type,
+    referenceType: data?.referenceType as string,
+    referenceId: data?.referenceId as string,
+    metadata: data,
+  })
+
+  const userTokens = await db.query.fcmTokens.findMany({
+    where: eq(fcmTokens.userId, userId),
+  })
+
+  if (userTokens.length === 0) {
+    log.info({ userId }, "No FCM tokens found for user")
+    return { sent: false, reason: "No FCM tokens" }
+  }
+
+  if (CLEVERTAP_ACCOUNT_ID && CLEVERTAP_PASSCODE) {
+    await sendViaCleverTap({
+      userId,
+      title,
+      body,
+      data,
+      tokens: userTokens.map((t) => t.token),
+    })
+  } else {
+    log.info("CleverTap not configured, skipping push notification")
+  }
+
+  return { sent: true, tokensCount: userTokens.length }
+}
+
+async function sendViaCleverTap(payload: {
+  userId: string
+  title: string
+  body: string
+  data?: Record<string, unknown>
+  tokens: string[]
+}) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 10_000)
+  const response = await fetch("https://api.clevertap.com/1/send/push.json", {
+    method: "POST",
+    signal: controller.signal,
+    headers: {
+      "X-CleverTap-Account-Id": CLEVERTAP_ACCOUNT_ID!,
+      "X-CleverTap-Passcode": CLEVERTAP_PASSCODE!,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      to: {
+        FBID: payload.tokens,
+      },
+      tag_group: "notifications",
+      content: {
+        title: payload.title,
+        body: payload.body,
+        platform_specific: {
+          android: {
+            notification_channel_id: "default",
+          },
+        },
+      },
+      data: payload.data,
+    }),
+  })
+  clearTimeout(timeoutId)
+  if (!response.ok) {
+    throw new Error(`CleverTap request failed: ${response.status}`)
+  }
+  const result = await response.json()
+  log.debug({ result }, "CleverTap response")
+  return result
+}
+
+export const notificationWorker = new Worker<NotificationJobData>(
+  "notification-queue",
+  processNotification,
+  {
+    connection: redis,
+    concurrency: 10,
+  }
+)
+
+notificationWorker.on("completed", (job) => {
+  log.info({ jobId: job.id }, "Notification job completed")
+})
+
+notificationWorker.on("failed", (job, err) => {
+  log.error({ jobId: job?.id, err }, "Notification job failed")
+})

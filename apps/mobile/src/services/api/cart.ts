@@ -45,12 +45,6 @@ interface ExtendedCheckoutData {
   cartVersion: number
 }
 
-interface VerifyPaymentData {
-  orderId: string
-  paymentId: string
-  signature: string
-}
-
 export const cartApi = {
   getCart: () => apiClient.get<Cart>("/cart/v2"),
 
@@ -96,11 +90,5 @@ export const cartApi = {
       "/cart/checkout/extended",
       data,
       idempotencyKey ? { idempotencyKey } : {}
-    ),
-
-  verifyPayment: (data: VerifyPaymentData) =>
-    apiClient.post<{ verified: boolean; orderId: string }>(
-      "/cart/verify-payment",
-      data
     ),
 }

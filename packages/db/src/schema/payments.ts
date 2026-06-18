@@ -55,7 +55,7 @@ export const orders = pgTable(
   "orders",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    /** Client- and gateway-facing id (HyperSDK / Juspay order id string). Not a sequential order number. */
+    /** Merchant-facing order id used throughout the app. Not a sequential order number. */
     orderId: varchar("order_id", { length: 100 }).unique().notNull(),
     bookingId: uuid("booking_id").references(() => bookings.id),
     userId: uuid("user_id")
@@ -65,9 +65,8 @@ export const orders = pgTable(
     amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
     currency: varchar("currency", { length: 10 }).default("INR").notNull(),
 
-    juspayOrderId: varchar("juspay_order_id", { length: 100 }),
-    juspayClientAuthToken: text("juspay_client_auth_token"),
-    juspayClientAuthTokenExpiry: timestamp("juspay_client_auth_token_expiry"),
+    gatewayOrderId: varchar("gateway_order_id", { length: 100 }),
+    gatewayData: jsonb("gateway_data"),
 
     paymentMethodId: varchar("payment_method_id", { length: 100 }),
     paymentMethod: paymentMethodEnum("payment_method"),
@@ -101,7 +100,8 @@ export const payments = pgTable(
     paymentMethod: paymentMethodEnum("payment_method"),
     paymentMethodDetails: jsonb("payment_method_details"),
 
-    juspayTxnId: varchar("juspay_txn_id", { length: 100 }),
+    gatewayTxnId: varchar("gateway_txn_id", { length: 100 }),
+    gatewayData: jsonb("gateway_data"),
     bankReferenceNumber: varchar("bank_reference_number", { length: 100 }),
     authorizationCode: varchar("authorization_code", { length: 50 }),
 
@@ -138,7 +138,8 @@ export const refunds = pgTable("refunds", {
   amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
   reason: text("reason"),
 
-  juspayRefundId: varchar("juspay_refund_id", { length: 100 }),
+  gatewayRefundId: varchar("gateway_refund_id", { length: 100 }),
+  gatewayData: jsonb("gateway_data"),
   gatewayResponse: jsonb("gateway_response"),
 
   initiatedBy: uuid("initiated_by").references(() => users.id),

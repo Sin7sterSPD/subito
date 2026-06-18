@@ -1281,7 +1281,6 @@ async function seed() {
         status: "COMPLETED",
         amount: "684.79",
         currency: "INR",
-        juspayOrderId: "JUSPAY-ORD-001",
         paymentMethod: "UPI",
       })
       .returning(),
@@ -1298,7 +1297,6 @@ async function seed() {
         status: "CAPTURED",
         amount: "1402.92",
         currency: "INR",
-        juspayOrderId: "JUSPAY-ORD-002",
         paymentMethod: "CARD",
       })
       .returning(),
@@ -1315,7 +1313,6 @@ async function seed() {
         status: "CAPTURED",
         amount: "376.92",
         currency: "INR",
-        juspayOrderId: "JUSPAY-ORD-003",
         paymentMethod: "UPI",
       })
       .returning(),
@@ -1331,7 +1328,6 @@ async function seed() {
       amount: "684.79",
       currency: "INR",
       paymentMethod: "UPI",
-      juspayTxnId: "TXN-JUSPAY-001",
       bankReferenceNumber: "BNK-REF-001",
       capturedAt: pastDate(10),
     },
@@ -1343,7 +1339,6 @@ async function seed() {
       amount: "1402.92",
       currency: "INR",
       paymentMethod: "CARD",
-      juspayTxnId: "TXN-JUSPAY-002",
       capturedAt: pastDate(2),
     },
     {
@@ -1354,7 +1349,6 @@ async function seed() {
       amount: "376.92",
       currency: "INR",
       paymentMethod: "UPI",
-      juspayTxnId: "TXN-JUSPAY-003",
       capturedAt: new Date(),
     },
   ])

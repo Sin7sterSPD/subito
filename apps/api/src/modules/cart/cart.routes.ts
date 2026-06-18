@@ -76,12 +76,6 @@ const checkoutV2Schema = z.object({
   cartVersion: z.number().int().nonnegative(),
 })
 
-const verifyPaymentSchema = z.object({
-  orderId: z.string(),
-  paymentId: z.string(),
-  signature: z.string(),
-})
-
 const extendedCheckoutSchema = z.object({
   bookingId: z.string().uuid(),
   additionalItems: z.array(
@@ -248,19 +242,3 @@ cartRouter.post(
   }
 )
 
-cartRouter.post(
-  "/verify-payment",
-  requireAuth,
-  paymentIdempotency,
-  zValidator("json", verifyPaymentSchema),
-  async (c) => {
-    const userId = c.get("userId")!
-    const data = c.req.valid("json")
-    const result = await cartService.verifyPayment(userId, data)
-
-    return c.json({
-      success: true,
-      data: result,
-    })
-  }
-)

@@ -24,12 +24,6 @@ export default function ScreensLayout() {
       />
       <Stack.Screen name="checkout" options={{ title: "Checkout" }} />
       <Stack.Screen
-        name="payment-methods"
-        options={{ title: "Payment method", headerShown: true }}
-      />
-      <Stack.Screen name="add-upi" options={{ title: "UPI" }} />
-      <Stack.Screen name="add-card" options={{ title: "Card" }} />
-      <Stack.Screen
         name="payment"
         options={{ title: "Payment", headerShown: false }}
       />

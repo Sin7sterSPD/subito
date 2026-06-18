@@ -46,7 +46,6 @@ function defaultTimeoutFor(method: string, path: string): number {
     p.includes("/payments") ||
     p.includes("process-order") ||
     p.includes("/cart/checkout") ||
-    p.includes("/cart/verify-payment") ||
     p.includes("/bookings/extend")
   ) {
     return PAYMENT_TIMEOUT_MS
