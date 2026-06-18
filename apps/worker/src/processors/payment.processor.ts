@@ -124,7 +124,7 @@ async function processPaymentReconciliation(
 
     return { status: "COMPLETED", orderId }
   } else if (paymentStatus.status === "FAILED") {
-    await db.transaction(async (tx) => {
+    const shouldNotify = await db.transaction(async (tx) => {
       const [lockedOrder] = await tx
         .select()
         .from(orders)
@@ -132,29 +132,32 @@ async function processPaymentReconciliation(
         .for("update")
 
       if (!lockedOrder) {
-        return
+        return false
       }
 
       if (lockedOrder.status === "FAILED") {
-        return
+        return false
       }
 
       await tx
         .update(orders)
         .set({ status: "FAILED", updatedAt: new Date() })
         .where(eq(orders.id, order.id))
+      return true
     })
 
-    await notificationQueue.add("payment-failed", {
-      type: "PAYMENT_FAILED",
-      userId,
-      title: "Payment Failed",
-      body: "Your payment could not be processed. Please try again.",
-      data: {
-        orderId,
-        reason: paymentStatus.reason,
-      },
-    })
+    if (shouldNotify) {
+         await notificationQueue.add("payment-failed", {
+           type: "PAYMENT_FAILED",
+           userId,
+           title: "Payment Failed",
+           body: "Your payment could not be processed. Please try again.",
+           data: {
+             orderId,
+             reason: paymentStatus.reason,
+           },
+         })
+    }     
 
     return { status: "FAILED", orderId, reason: paymentStatus.reason }
   }

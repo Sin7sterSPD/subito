@@ -80,9 +80,13 @@ async function processRecurringBooking(job: Job<RecurringBookingJobData>) {
       instanceNumber: nextInstanceNumber,
       status: "SCHEDULED",
       scheduledDate: nextDate,
-      scheduledTime: recurring.booking.scheduledTime,
+      scheduledTime: recurring.booking.scheduledStartTime,
     })
     .returning()
+
+  if (!newInstance) {
+    throw new Error("Failed to create booking instance")
+  }
 
   log.info(
     { nextInstanceNumber, recurringBookingId },

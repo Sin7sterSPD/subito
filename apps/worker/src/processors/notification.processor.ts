@@ -12,9 +12,7 @@ const CLEVERTAP_PASSCODE = process.env.CLEVERTAP_PASSCODE
 async function processNotification(job: Job<NotificationJobData>) {
   const { type, userId, title, body, data } = job.data
 
-  console.log(
-    `Processing notification job ${job.id}: ${type} for user ${userId}`
-  )
+  log.info({ jobId: job.id, type, userId }, "Processing notification job")
 
   await db.insert(notifications).values({
     userId,
@@ -57,8 +55,11 @@ async function sendViaCleverTap(payload: {
   data?: Record<string, unknown>
   tokens: string[]
 }) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 10_000)
   const response = await fetch("https://api.clevertap.com/1/send/push.json", {
     method: "POST",
+    signal: controller.signal,
     headers: {
       "X-CleverTap-Account-Id": CLEVERTAP_ACCOUNT_ID!,
       "X-CleverTap-Passcode": CLEVERTAP_PASSCODE!,
@@ -81,7 +82,10 @@ async function sendViaCleverTap(payload: {
       data: payload.data,
     }),
   })
-
+  clearTimeout(timeoutId)
+  if (!response.ok) {
+    throw new Error(`CleverTap request failed: ${response.status}`)
+  }
   const result = await response.json()
   log.debug({ result }, "CleverTap response")
   return result

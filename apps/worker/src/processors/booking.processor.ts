@@ -25,7 +25,9 @@ async function processBookingStatus(job: Job<BookingStatusJobData>) {
 
   if (!booking) {
     throw new Error(`Booking ${bookingId} not found`)
-  }
+     }
+     
+  
 
   await db.insert(bookingStatusHistory).values({
     bookingId,
@@ -57,6 +59,11 @@ async function processBookingStatus(job: Job<BookingStatusJobData>) {
       },
     })
   } else if (toStatus === "MATCHED") {
+    if (!booking.address) {
+      throw new Error(
+        `Booking ${bookingId} has no address for partner matching`
+      )
+    }
     await notificationQueue.add("partner-assigned", {
       type: "PARTNER_ASSIGNED",
       userId: booking.userId,

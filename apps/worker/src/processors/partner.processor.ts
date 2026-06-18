@@ -133,7 +133,10 @@ async function processPartnerMatching(job: Job<PartnerMatchingJobData>) {
     return { bookingId, matched: false, reason: "No partners available" }
   }
 
-  const selectedPartner = eligiblePartners[0]
+  const selectedPartner = eligiblePartners[0]!
+  if (!selectedPartner) {
+    throw new Error("Selected partner is undefined")
+  }
 
   await db.transaction(async (tx) => {
     const [lockedBooking] = await tx

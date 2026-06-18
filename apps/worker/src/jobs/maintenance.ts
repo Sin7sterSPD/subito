@@ -3,9 +3,18 @@ import { idempotencyKeys } from "@subito/db/schema"
 import { lt } from "@subito/db"
 import { redis } from "../lib/redis"
 import { log } from "../lib/logger"
+import { randomUUID } from "crypto"
 
 const LOCK_KEY = "subito:lock:data_maintenance_v1"
 const LOCK_TTL_SEC = 240
+
+const RELEASE_LOCK_SCRIPT = `
+  if redis.call("get", KEYS[1]) == ARGV[1] then
+    return redis.call("del", KEYS[1])
+  else
+    return 0
+  end
+`
 
 export interface MaintenanceResult {
   skipped: boolean
@@ -44,14 +53,18 @@ export async function runScheduledMaintenance(
 export async function runScheduledMaintenanceWithLock(
   partnerLocationRetentionDays = defaultRetentionDays()
 ): Promise<MaintenanceResult> {
-  const ok = await redis.set(LOCK_KEY, "1", "EX", LOCK_TTL_SEC, "NX")
+  const lockToken = randomUUID()
+
+  const ok = await redis.set(LOCK_KEY, lockToken, "EX", LOCK_TTL_SEC, "NX")
+
   if (ok !== "OK") {
     return { skipped: true }
   }
+
   try {
     return await runScheduledMaintenance(partnerLocationRetentionDays)
   } finally {
-    await redis.del(LOCK_KEY)
+    await redis.eval(RELEASE_LOCK_SCRIPT, 1, LOCK_KEY, lockToken)
   }
 }
 

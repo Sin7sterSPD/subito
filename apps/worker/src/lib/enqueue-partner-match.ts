@@ -2,6 +2,7 @@ import { db } from "@subito/db"
 import { bookings } from "@subito/db/schema"
 import { eq } from "@subito/db"
 import { partnerMatchingQueue } from "../queues"
+import { log } from "./logger"
 /**
  * Enqueue partner matching for a booking in PENDING_MATCH.
  * Worker skips matching if status !== PENDING_MATCH.
@@ -21,6 +22,10 @@ export async function enqueuePartnerMatchingJob(
     return
   }
 
+  if (!booking.address) {
+    log.warn(`[partner-matching] booking ${bookingId} has no address`)
+    return
+  }
   const serviceIds = [
     ...new Set(
       (booking.items || [])
