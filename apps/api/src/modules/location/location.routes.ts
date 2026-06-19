@@ -17,10 +17,6 @@ const reverseGeocodeSchema = z.object({
   lng: z.string().pipe(z.coerce.number().min(-180).max(180)),
 })
 
-const placesSchema = z.object({
-  placeId: z.string(),
-})
-
 const autocompleteSchema = z.object({
   input: z.string().min(1),
 })
@@ -32,31 +28,6 @@ locationRouter.get(
   async (c) => {
     const { lat, lng } = c.req.valid("query")
     const result = await locationService.checkAvailability(lat, lng)
-
-    return c.json({
-      success: true,
-      data: result,
-    })
-  }
-)
-
-locationRouter.get(
-  "/places",
-  optionalAuth,
-  zValidator("query", placesSchema),
-  async (c) => {
-    const { placeId } = c.req.valid("query")
-    const result = await locationService.getPlaceDetails(placeId)
-
-    if ("error" in result) {
-      return c.json(
-        {
-          success: false,
-          error: result.error,
-        },
-        400
-      )
-    }
 
     return c.json({
       success: true,
@@ -98,15 +69,6 @@ locationRouter.get(
     const { input } = c.req.valid("query")
     const result = await locationService.autocomplete(input)
 
-    if ("error" in result) {
-      return c.json(
-        {
-          success: false,
-          error: result.error,
-        },
-        400
-      )
-    }
     return c.json({
       success: true,
       data: result,

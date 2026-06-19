@@ -8,7 +8,7 @@ import {
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router, useLocalSearchParams } from "expo-router"
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps"
+import MapLibreGL from "@maplibre/maplibre-react-native"
 import { Text, Card, Avatar, Button, Spinner } from "../../src/components/ui"
 import { colors, semantic } from "../../src/theme/colors"
 import { spacing, borderRadius } from "../../src/theme/spacing"
@@ -19,6 +19,7 @@ const { width, height } = Dimensions.get("window")
 const ASPECT_RATIO = width / height
 const LATITUDE_DELTA = 0.01
 const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO
+const MAPTILER_STYLE_URL = `https://api.maptiler.com/maps/streets-v2/style.json?key=${process.env.EXPO_PUBLIC_MAPTILER_API_KEY}`
 
 export default function PartnerTrackingScreen() {
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>()
@@ -34,7 +35,7 @@ export default function PartnerTrackingScreen() {
   } = useBookingsStore()
   const { selectedAddress } = useUserStore()
   const [isLoading, setIsLoading] = useState(true)
-  const mapRef = useRef<MapView | null>(null)
+  const cameraRef = useRef<MapLibreGL.CameraRef>(null)
 
   const booking = selectedBooking
   const partner = booking?.partner
@@ -53,15 +54,6 @@ export default function PartnerTrackingScreen() {
     }
     loadData()
   }, [resolvedBookingId, fetchBookingById, fetchPartnerLocation])
-
-  // useEffect(() => {
-  //   const interval = setInterval(() => {
-  //     if (booking && ["ARRIVING", "STARTED"].includes(booking.status)) {
-  //       fetchPartnerLocation(bookingId)
-  //     }
-  //   }, 10000)
-  //   return () => clearInterval(interval)
-  // }, [booking, bookingId, fetchPartnerLocation])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -87,27 +79,17 @@ export default function PartnerTrackingScreen() {
     router.back()
   }
 
-  const mapRegion = partnerLocation
-    ? {
-        latitude: partnerLocation.latitude,
-        longitude: partnerLocation.longitude,
-        latitudeDelta: LATITUDE_DELTA,
-        longitudeDelta: LONGITUDE_DELTA,
-      }
+  const mapCenter = partnerLocation
+    ? ([partnerLocation.longitude, partnerLocation.latitude] as [number, number])
     : address
-      ? {
-          latitude: address.latitude,
-          longitude: address.longitude,
-          latitudeDelta: LATITUDE_DELTA,
-          longitudeDelta: LONGITUDE_DELTA,
-        }
+      ? ([address.longitude, address.latitude] as [number, number])
       : undefined
 
   useEffect(() => {
-    if (mapRegion && mapRef.current) {
-      mapRef.current.animateToRegion(mapRegion, 500)
+    if (mapCenter && cameraRef.current) {
+      cameraRef.current.flyTo(mapCenter, 500)
     }
-  }, [mapRegion])
+  }, [mapCenter])
 
   if (isLoading) {
     return <Spinner fullScreen message="Loading..." />
@@ -115,41 +97,38 @@ export default function PartnerTrackingScreen() {
 
   return (
     <View style={styles.container}>
-      {mapRegion ? (
-        <MapView
-          ref={mapRef}
+      {mapCenter ? (
+        <MapLibreGL.MapView
           style={styles.map}
-          initialRegion={mapRegion}
-          provider={PROVIDER_GOOGLE}
+          styleURL={MAPTILER_STYLE_URL}
+          logoEnabled={false}
         >
+          <MapLibreGL.Camera
+            ref={cameraRef}
+            defaultSettings={{
+              centerCoordinate: mapCenter,
+              zoomLevel: 15,
+            }}
+          />
           {address && (
-            <Marker
-              coordinate={{
-                latitude: address.latitude,
-                longitude: address.longitude,
-              }}
-              title="Delivery Location"
-              description={address.addressLine1}
+            <MapLibreGL.MarkerView
+              coordinate={[address.longitude, address.latitude]}
             >
               <View style={styles.destinationMarker}>
                 <Ionicons name="home" size={20} color={colors.white} />
               </View>
-            </Marker>
+            </MapLibreGL.MarkerView>
           )}
           {partnerLocation && (
-            <Marker
-              coordinate={{
-                latitude: partnerLocation.latitude,
-                longitude: partnerLocation.longitude,
-              }}
-              title={partner?.name || "Partner"}
+            <MapLibreGL.MarkerView
+              coordinate={[partnerLocation.longitude, partnerLocation.latitude]}
             >
               <View style={styles.partnerMarker}>
                 <Ionicons name="person" size={20} color={colors.white} />
               </View>
-            </Marker>
+            </MapLibreGL.MarkerView>
           )}
-        </MapView>
+        </MapLibreGL.MapView>
       ) : (
         <View style={styles.noMapContainer}>
           <Ionicons name="map-outline" size={48} color={semantic.textMuted} />

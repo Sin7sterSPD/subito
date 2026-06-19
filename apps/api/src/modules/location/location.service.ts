@@ -7,8 +7,7 @@ import { eq, and } from "@subito/db"
 import { calculateDistance } from "@subito/shared"
 import { ServiceabilityStatus } from "@/lib/types"
 import { cacheGet, cacheSet } from "@/lib/redis"
-
-const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY
+import * as maptiler from "./maptiler"
 
 export async function checkAvailability(lat: number, lng: number) {
   if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
@@ -102,180 +101,11 @@ interface ServiceabilityResult {
   kitConfig: unknown
 }
 
-// export async function getPlaceDetails(placeId: string) {
-//   if (!GOOGLE_MAPS_API_KEY) {
-//     return { error: "Google Maps API key not configured" }
-//   }
-
-//   const url = new URL("https://maps.googleapis.com/maps/api/place/details/json")
-//   url.searchParams.set("place_id", placeId)
-//   url.searchParams.set("key", GOOGLE_MAPS_API_KEY)
-//   url.searchParams.set(
-//     "fields",
-//     "formatted_address,geometry,address_components,name"
-//   )
-
-//   const response = await fetch(url.toString())
-//   const data = await response.json()
-
-//   if (data.status !== "OK") {
-//     return { error: data.error_message || "Place not found" }
-//   }
-
-//   const result = data.result
-//   return {
-//     placeId,
-//     name: result.name,
-//     formattedAddress: result.formatted_address,
-//     latitude: result.geometry.location.lat,
-//     longitude: result.geometry.location.lng,
-//     addressComponents: result.address_components,
-//   }
-// }
-
-export async function getPlaceDetails(placeId: string) {
-  if (!GOOGLE_MAPS_API_KEY) {
-    return { error: "Google Maps API key not configured" }
-  }
-  try {
-    const url = new URL(
-      "https://maps.googleapis.com/maps/api/place/details/json"
-    )
-    url.searchParams.set("place_id", placeId)
-    url.searchParams.set("key", GOOGLE_MAPS_API_KEY)
-    url.searchParams.set(
-      "fields",
-      "formatted_address,geometry,address_components,name"
-    )
-    const response = await fetch(url.toString())
-    if (!response.ok) {
-      return { error: `Google Maps API returned ${response.status}` }
-    }
-    const data = await response.json()
-    if (data.status !== "OK") {
-      return { error: data.error_message || "Place not found" }
-    }
-    const result = data.result
-    if (!result?.geometry?.location || !result.formatted_address) {
-      return { error: "Incomplete place data received" }
-    }
-    return {
-      placeId,
-      name: result.name,
-      formattedAddress: result.formatted_address,
-      latitude: result.geometry.location.lat,
-      longitude: result.geometry.location.lng,
-      addressComponents: result.address_components,
-    }
-  } catch (error) {
-    return {
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to fetch place details",
-    }
-  }
-}
-
 export async function reverseGeocode(lat: number, lng: number) {
-  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-    return {
-      error:
-        "Invalid coordinates: latitude must be between -90 and 90, longitude between -180 and 180",
-    }
-  }
-  if (!GOOGLE_MAPS_API_KEY) {
-    return { error: "Google Maps API key not configured" }
-  }
-
-  try {
-    const url = new URL("https://maps.googleapis.com/maps/api/geocode/json")
-
-    url.searchParams.set("latlng", `${lat},${lng}`)
-    url.searchParams.set("key", GOOGLE_MAPS_API_KEY)
-
-    const response = await fetch(url.toString())
-
-    if (!response.ok) {
-      return {
-        error: `Geocoding API returned ${response.status}`,
-      }
-    }
-
-    const data = await response.json()
-
-    if (data.status !== "OK" || !data.results.length) {
-      return {
-        error: "Could not geocode location",
-      }
-    }
-
-    const result = data.results[0]
-
-    if (!result.formatted_address || !result.place_id) {
-      return {
-        error: "Incomplete geocoding data received",
-      }
-    }
-
-    return {
-      formattedAddress: result.formatted_address,
-      placeId: result.place_id,
-      addressComponents: result.address_components,
-      latitude: lat,
-      longitude: lng,
-    }
-  } catch (error) {
-    return {
-      error:
-        error instanceof Error ? error.message : "Failed to reverse geocode",
-    }
-  }
+  return maptiler.reverseGeocode(lat, lng)
 }
 
 export async function autocomplete(input: string) {
-  if (!GOOGLE_MAPS_API_KEY) {
-    return { predictions: [] }
-  }
-  if (!input.trim() || input.trim().length < 2) {
-    return {
-      predictions: [],
-    }
-  }
-  try {
-    const url = new URL(
-      "https://maps.googleapis.com/maps/api/place/autocomplete/json"
-    )
-    url.searchParams.set("input", input)
-    url.searchParams.set("key", GOOGLE_MAPS_API_KEY)
-    url.searchParams.set("components", "country:in")
-
-    const response = await fetch(url.toString())
-    if (!response.ok) {
-      return {
-        error: `Autocomplete API returned ${response.status}`,
-      }
-    }
-    const data = await response.json()
-
-    if (data.status !== "OK") {
-      return { predictions: [] }
-    }
-
-    return {
-      predictions: data.predictions.map(
-        (p: { place_id: string; description: string }) => ({
-          placeId: p.place_id,
-          description: p.description,
-        })
-      ),
-    }
-  } catch (error) {
-    return {
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to fetch autocomplete predictions",
-    }
-  }
+  const result = await maptiler.forwardGeocode(input, { country: "in" })
+  return { results: result.results }
 }

@@ -19,7 +19,7 @@ export default function AboutScreen() {
       >
         <View style={styles.header}>
           <Image
-            source={require("../../assets/images/HomeBanner.png")}
+            source={require("../../assets/home/HomeBanner.png")}
             style={styles.logo}
             contentFit="cover"
           />

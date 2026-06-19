@@ -91,6 +91,20 @@ export interface GeocodedAddress {
   closestPlace: string
 }
 
+export interface AutocompleteResult {
+  id: string
+  description: string
+  mainText: string
+  secondaryText: string
+  latitude: number
+  longitude: number
+  address?: string
+  city?: string
+  state?: string
+  pincode?: string
+  area?: string
+}
+
 // Listing types
 export interface Category {
   id: string

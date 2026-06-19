@@ -85,7 +85,8 @@ export const useUserStore = create<UserState>((set, get) => ({
         return newAddress
       }
       return null
-    } catch {
+    } catch (e) {
+      console.warn("[addAddress] error:", e)
       return null
     } finally {
       set({ isLoading: false })

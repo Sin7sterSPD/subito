@@ -14,7 +14,7 @@ import { Text, Button, Input, Card, Spinner } from "../../src/components/ui"
 import { colors, semantic } from "../../src/theme/colors"
 import { spacing, borderRadius } from "../../src/theme/spacing"
 import { useUserStore, useLocationStore } from "../../src/store"
-import { AddressType, Address } from "../../src/types/api"
+import { AddressType, Address, AutocompleteResult } from "../../src/types/api"
 import { locationApi } from "../../src/services/api"
 import { Ionicons } from "@expo/vector-icons"
 
@@ -70,9 +70,7 @@ export default function AddAddressScreen() {
   const [isSearching, setIsSearching] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const searchRequestSeq = useRef(0)
-  const [searchResults, setSearchResults] = useState<
-    { placeId: string; description: string; mainText: string }[]
-  >([])
+  const [searchResults, setSearchResults] = useState<AutocompleteResult[]>([])
 
   useEffect(() => {
     if (!existingAddress) return
@@ -135,7 +133,7 @@ export default function AddAddressScreen() {
         response.success &&
         response.data
       ) {
-        setSearchResults(response.data)
+        setSearchResults(response.data.results)
       }
     } catch {
       // Silent fail
@@ -146,28 +144,39 @@ export default function AddAddressScreen() {
     }
   }
 
-  const handleSelectPlace = async (placeId: string) => {
+  const handleSelectPlace = async (result: AutocompleteResult) => {
     setIsSearching(true)
     try {
-      const response = await locationApi.getPlaceDetails(placeId)
-      if (response.success && response.data) {
-        const { lat, lng } = response.data.geometry.location
-        const geocoded = await reverseGeocode(lat, lng)
+      const { latitude, longitude, address, city, state, pincode, area } =
+        result
+      if (city && state && pincode) {
+        setFormData((prev) => ({
+          ...prev,
+          addressLine1: address || result.description,
+          area: area || "",
+          city: city || "",
+          state: state || "",
+          pincode: pincode || "",
+          latitude,
+          longitude,
+        }))
+      } else {
+        const geocoded = await reverseGeocode(latitude, longitude)
         if (geocoded) {
           setFormData((prev) => ({
             ...prev,
-            addressLine1: geocoded.address || "",
+            addressLine1: geocoded.address || result.description,
             area: geocoded.area || "",
             city: geocoded.city || "",
             state: geocoded.state || "",
             pincode: geocoded.pincode || "",
-            latitude: lat,
-            longitude: lng,
+            latitude,
+            longitude,
           }))
         }
-        setSearchQuery("")
-        setSearchResults([])
       }
+      setSearchQuery("")
+      setSearchResults([])
     } catch {
       // Silent fail
     } finally {
@@ -181,6 +190,7 @@ export default function AddAddressScreen() {
     if (!formData.addressLine1.trim())
       newErrors.addressLine1 = "Address is required"
     if (!formData.city.trim()) newErrors.city = "City is required"
+    if (!formData.state.trim()) newErrors.state = "State is required"
     if (!formData.pincode.trim()) newErrors.pincode = "Pincode is required"
     if (formData.latitude === 0 || formData.longitude === 0) {
       newErrors.addressLine1 = "Please select a location"
@@ -262,9 +272,9 @@ export default function AddAddressScreen() {
               <Card style={styles.searchResults} variant="elevated" padding={0}>
                 {searchResults.map((result) => (
                   <TouchableOpacity
-                    key={result.placeId}
+                    key={result.id}
                     style={styles.searchResult}
-                    onPress={() => handleSelectPlace(result.placeId)}
+                    onPress={() => handleSelectPlace(result)}
                   >
                     <Ionicons
                       name="location-outline"
@@ -431,18 +441,31 @@ export default function AddAddressScreen() {
               </View>
               <View style={[styles.halfInput, styles.inputSpacing]}>
                 <Input
-                  label="Pincode *"
-                  placeholder="Pincode"
-                  value={formData.pincode}
+                  label="State *"
+                  placeholder="State"
+                  value={formData.state}
                   onChangeText={(text) => {
-                    setFormData((prev) => ({ ...prev, pincode: text }))
-                    if (errors.pincode) setErrors({ ...errors, pincode: "" })
+                    setFormData((prev) => ({ ...prev, state: text }))
+                    if (errors.state) setErrors({ ...errors, state: "" })
                   }}
-                  error={errors.pincode}
-                  keyboardType="number-pad"
-                  maxLength={6}
+                  error={errors.state}
                 />
               </View>
+            </View>
+
+            <View style={styles.inputSpacing}>
+              <Input
+                label="Pincode *"
+                placeholder="Pincode"
+                value={formData.pincode}
+                onChangeText={(text) => {
+                  setFormData((prev) => ({ ...prev, pincode: text }))
+                  if (errors.pincode) setErrors({ ...errors, pincode: "" })
+                }}
+                error={errors.pincode}
+                keyboardType="number-pad"
+                maxLength={6}
+              />
             </View>
           </View>
         </ScrollView>
