@@ -131,7 +131,7 @@ function extractStateFromPlaceName(placeName: string): string | null {
   const parts = placeName.split(",").map((s) => s.trim())
   const last = parts[parts.length - 1]
   if (last === "India" && parts.length >= 2) {
-    const candidate = parts[parts.length - 2].replace(/\s+\d{6}$/, "").trim()
+    const candidate = (parts[parts.length - 2] || "").replace(/\s+\d{6}$/, "").trim()
     if (candidate.length > 0 && candidate.length <= 40) {
       return candidate
     }
@@ -141,10 +141,13 @@ function extractStateFromPlaceName(placeName: string): string | null {
 
 function extractFieldsFromFeature(feature: MapTilerFeature) {
   const props = feature.properties
-  let city = props.city || ""
-  let state = props.state || props.region || ""
-  let pincode = props.postcode || ""
-  let area = props.locality || props.district || ""
+  let city: string = props.city || ""
+  let state: string = (props.state as string | undefined) || props.region || ""
+  let pincode: string = props.postcode || ""
+  let area: string = props.locality || props.district || ""
+
+  let county = ""
+  let town = ""
 
   // Extract from the feature itself first
   const id = feature.id || ""
@@ -153,6 +156,12 @@ function extractFieldsFromFeature(feature: MapTilerFeature) {
   }
   if ((id.startsWith("municipality") || props.place_designation === "city") && !city) {
     city = feature.text
+  }
+  if (id.startsWith("county")) {
+    county = feature.text
+  }
+  if (props.place_designation === "town" || props.place_designation === "village") {
+    town = feature.text
   }
   if ((id.startsWith("region") || props.place_designation === "state") && !state) {
     state = feature.text
@@ -171,6 +180,12 @@ function extractFieldsFromFeature(feature: MapTilerFeature) {
       if ((cid.startsWith("municipality") || ctx.place_designation === "city") && !city) {
         city = ctx.text
       }
+      if (cid.startsWith("county")) {
+        county = ctx.text
+      }
+      if (ctx.place_designation === "town" || ctx.place_designation === "village") {
+        town = ctx.text
+      }
       if ((cid.startsWith("region") || ctx.place_designation === "state") && !state) {
         state = ctx.text
       }
@@ -178,6 +193,10 @@ function extractFieldsFromFeature(feature: MapTilerFeature) {
         area = ctx.text
       }
     }
+  }
+
+  if (!city) {
+    city = town || county || ""
   }
 
   // Fallbacks using place_name splits
