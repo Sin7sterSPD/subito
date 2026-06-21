@@ -17,6 +17,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1073.0",
     "@hono/node-server": "^2.0.3",
     "@hono/zod-validator": "^0.8.0",
     "@subito/db": "workspace:*",
