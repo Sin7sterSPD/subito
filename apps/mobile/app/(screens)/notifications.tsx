@@ -1,9 +1,9 @@
 import React from "react"
 import { View, StyleSheet, FlatList } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { Text, Card } from "../../src/components/ui"
+import { Typography, Card } from "heroui-native"
 import { colors, semantic } from "../../src/theme/colors"
-import { spacing, borderRadius } from "../../src/theme/spacing"
+import { spacing } from "../../src/theme/spacing"
 import { Ionicons } from "@expo/vector-icons"
 
 interface Notification {
@@ -74,7 +74,7 @@ function NotificationItem({ notification }: { notification: Notification }) {
   return (
     <Card
       style={[styles.notificationCard, !notification.isRead && styles.unread]}
-      variant="outlined"
+      variant="default"
     >
       <View style={styles.notificationContent}>
         <View
@@ -87,26 +87,25 @@ function NotificationItem({ notification }: { notification: Notification }) {
         </View>
         <View style={styles.textContent}>
           <View style={styles.titleRow}>
-            <Text
-              variant="bodySmall"
-              color="textPrimary"
-              weight="600"
-              style={styles.title}
+            <Typography
+              type="body-sm"
+              weight="semibold"
+              style={[styles.title, { color: semantic.textPrimary }]}
             >
               {notification.title}
-            </Text>
+            </Typography>
             {!notification.isRead && <View style={styles.unreadDot} />}
           </View>
-          <Text
-            variant="bodyMedium"
-            color="textSecondary"
+          <Typography
+            type="body"
+            color="muted"
             style={styles.message}
           >
             {notification.message}
-          </Text>
-          <Text variant="bodyMedium" color="textMuted" style={styles.time}>
+          </Typography>
+          <Typography type="body-sm" color="muted" style={styles.time}>
             {notification.time}
-          </Text>
+          </Typography>
         </View>
       </View>
     </Card>
@@ -123,19 +122,19 @@ function EmptyState() {
           color={semantic.textMuted}
         />
       </View>
-      <Text variant="h6" color="textSecondary" style={styles.emptyTitle}>
+      <Typography type="h6" weight="semibold" style={[styles.emptyTitle, { color: semantic.textSecondary }]}>
         No notifications yet
-      </Text>
-      <Text variant="bodySmall" color="textMuted" align="center">
-        You&apos;ll see your booking updates and offers here
-      </Text>
+      </Typography>
+      <Typography type="body-sm" color="muted" align="center">
+        {"You'll see your booking updates and offers here"}
+      </Typography>
     </View>
   )
 }
 
 export default function NotificationsScreen() {
   return (
-    <SafeAreaView style={styles.container} edges={["bottom"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: semantic.backgroundSecondary }} edges={["bottom"]}>
       <FlatList
         data={mockNotifications}
         keyExtractor={(item) => item.id}
@@ -149,10 +148,6 @@ export default function NotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: semantic.backgroundSecondary,
-  },
   list: {
     padding: spacing[4],
     flexGrow: 1,

@@ -7,9 +7,9 @@ import {
   TouchableOpacity,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { Text, Card, Button, Spinner } from "../../src/components/ui"
+import { Typography, Card, Button, Spinner } from "heroui-native"
 import { colors, semantic } from "../../src/theme/colors"
-import { spacing, borderRadius } from "../../src/theme/spacing"
+import { spacing } from "../../src/theme/spacing"
 import { useUserStore, useAuthStore } from "../../src/store"
 import { Ionicons } from "@expo/vector-icons"
 import * as Clipboard from "expo-clipboard"
@@ -43,39 +43,39 @@ export default function ReferralsScreen() {
   }
 
   if (isLoading && !referralSummary) {
-    return <Spinner fullScreen message="Loading..." />
+    return <Spinner size="lg" style={{ flex: 1, justifyContent: "center", alignItems: "center" }} />
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["bottom"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.white }} edges={["bottom"]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View style={styles.headerIcon}>
             <Ionicons name="gift" size={48} color={colors.white} />
           </View>
-          <Text variant="h4" color="textPrimary" weight="700" align="center">
+          <Typography type="h4" weight="bold" align="center" style={{ color: semantic.textPrimary }}>
             Refer & Earn
-          </Text>
-          <Text
-            variant="bodyMedium"
-            color="textSecondary"
+          </Typography>
+          <Typography
+            type="body"
+            color="muted"
             align="center"
             style={styles.headerSubtitle}
           >
             Share your code with friends and earn rewards when they complete
             their first booking
-          </Text>
+          </Typography>
         </View>
 
         <View style={styles.content}>
-          <Card style={styles.codeCard} variant="outlined">
-            <Text variant="bodyMedium" color="textMuted" align="center">
+          <Card style={styles.codeCard} variant="default">
+            <Typography type="body" color="muted" align="center">
               Your Referral Code
-            </Text>
+            </Typography>
             <View style={styles.codeContainer}>
-              <Text variant="h3" color="primary" weight="700">
+              <Typography type="h3" weight="bold" className="text-accent">
                 {referralCode}
-              </Text>
+              </Typography>
               <TouchableOpacity
                 style={styles.copyButton}
                 onPress={handleCopyCode}
@@ -87,103 +87,102 @@ export default function ReferralsScreen() {
           </Card>
 
           <View style={styles.statsGrid}>
-            <Card style={styles.statCard} variant="filled">
-              <Text variant="h4" color="primary" weight="700">
+            <Card style={styles.statCard} variant="secondary">
+              <Typography type="h4" weight="bold" className="text-accent">
                 {referralSummary?.totalReferrals || 0}
-              </Text>
-              <Text variant="bodyMedium" color="textMuted">
+              </Typography>
+              <Typography type="body-sm" color="muted">
                 Total Referrals
-              </Text>
+              </Typography>
             </Card>
-            <Card style={styles.statCard} variant="filled">
-              <Text variant="h4" color="success" weight="700">
+            <Card style={styles.statCard} variant="secondary">
+              <Typography type="h4" weight="bold" style={{ color: semantic.success }}>
                 {referralSummary?.successfulReferrals || 0}
-              </Text>
-              <Text variant="bodyMedium" color="textMuted">
+              </Typography>
+              <Typography type="body-sm" color="muted">
                 Successful
-              </Text>
+              </Typography>
             </Card>
-            <Card style={styles.statCard} variant="filled">
-              <Text variant="h4" color="warning" weight="700">
+            <Card style={styles.statCard} variant="secondary">
+              <Typography type="h4" weight="bold" style={{ color: semantic.warning }}>
                 {referralSummary?.pendingReferrals || 0}
-              </Text>
-              <Text variant="bodyMedium" color="textMuted">
+              </Typography>
+              <Typography type="body-sm" color="muted">
                 Pending
-              </Text>
+              </Typography>
             </Card>
           </View>
 
           {referralSummary?.totalEarnings &&
             parseFloat(referralSummary.totalEarnings) > 0 && (
-              <Card style={styles.earningsCard} variant="elevated">
+              <Card style={styles.earningsCard} variant="default">
                 <View style={styles.earningsContent}>
                   <View style={styles.earningsIcon}>
                     <Ionicons name="wallet" size={24} color={colors.white} />
                   </View>
                   <View style={styles.earningsText}>
-                    <Text variant="bodyMedium" color="textMuted">
+                    <Typography type="body" color="muted">
                       Total Earnings
-                    </Text>
-                    <Text variant="h4" color="success" weight="700">
+                    </Typography>
+                    <Typography type="h4" weight="bold" style={{ color: semantic.success }}>
                       ₹{referralSummary.totalEarnings}
-                    </Text>
+                    </Typography>
                   </View>
                 </View>
               </Card>
             )}
 
           <View style={styles.howItWorks}>
-            <Text
-              variant="h6"
-              color="textPrimary"
-              weight="600"
-              style={styles.sectionTitle}
+            <Typography
+              type="h6"
+              weight="semibold"
+              style={[styles.sectionTitle, { color: semantic.textPrimary }]}
             >
               How it works
-            </Text>
+            </Typography>
             <View style={styles.step}>
               <View style={styles.stepNumber}>
-                <Text variant="bodySmall" color={colors.white} weight="700">
+                <Typography type="body-sm" weight="bold" style={{ color: colors.white }}>
                   1
-                </Text>
+                </Typography>
               </View>
               <View style={styles.stepContent}>
-                <Text variant="bodySmall" color="textPrimary" weight="500">
+                <Typography type="body" weight="medium" style={{ color: semantic.textPrimary }}>
                   Share your code
-                </Text>
-                <Text variant="bodyMedium" color="textMuted">
+                </Typography>
+                <Typography type="body" color="muted">
                   Send your referral code to friends
-                </Text>
+                </Typography>
               </View>
             </View>
             <View style={styles.step}>
               <View style={styles.stepNumber}>
-                <Text variant="bodySmall" color={colors.white} weight="700">
+                <Typography type="body-sm" weight="bold" style={{ color: colors.white }}>
                   2
-                </Text>
+                </Typography>
               </View>
               <View style={styles.stepContent}>
-                <Text variant="bodySmall" color="textPrimary" weight="500">
+                <Typography type="body" weight="medium" style={{ color: semantic.textPrimary }}>
                   Friend signs up
-                </Text>
-                <Text variant="bodyMedium" color="textMuted">
+                </Typography>
+                <Typography type="body" color="muted">
                   They use your code during registration
-                </Text>
+                </Typography>
               </View>
             </View>
             <View style={styles.step}>
               <View style={styles.stepNumber}>
-                <Text variant="bodySmall" color={colors.white} weight="700">
+                <Typography type="body-sm" weight="bold" style={{ color: colors.white }}>
                   3
-                </Text>
+                </Typography>
               </View>
               <View style={styles.stepContent}>
-                <Text variant="bodySmall" color="textPrimary" weight="500">
+                <Typography type="body" weight="medium" style={{ color: semantic.textPrimary }}>
                   Both earn rewards
-                </Text>
-                <Text variant="bodyMedium" color="textMuted">
+                </Typography>
+                <Typography type="body" color="muted">
                   Get credits after their first booking
-                </Text>
+                </Typography>
               </View>
             </View>
           </View>
@@ -193,15 +192,11 @@ export default function ReferralsScreen() {
       <View style={styles.footer}>
         <Button
           variant="primary"
-          fullWidth
-          size="lg"
           onPress={handleShare}
-          disabled={!hasReferralCode}
-          leftIcon={
-            <Ionicons name="share-social" size={20} color={colors.white} />
-          }
+          isDisabled={!hasReferralCode}
+          className="w-full"
         >
-          Share with Friends
+          <Button.Label>Share with Friends</Button.Label>
         </Button>
       </View>
     </SafeAreaView>
@@ -209,10 +204,6 @@ export default function ReferralsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
   header: {
     alignItems: "center",
     paddingVertical: spacing[6],
@@ -248,7 +239,7 @@ const styles = StyleSheet.create({
     marginLeft: spacing[3],
     padding: spacing[2],
     backgroundColor: colors.blue[1],
-    borderRadius: borderRadius.md,
+    borderRadius: 8,
   },
   statsGrid: {
     flexDirection: "row",

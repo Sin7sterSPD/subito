@@ -1,16 +1,14 @@
 import React, { useEffect, useState } from "react"
 import {
   View,
-  StyleSheet,
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
+  Text,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
-import { Text, Button, OTPInput } from "../../src/components/ui"
-import { colors, semantic } from "../../src/theme/colors"
-import { spacing } from "../../src/theme/spacing"
+import { Button, InputOTP, Spinner } from "heroui-native"
 import { useAuthStore, useAppStore } from "../../src/store"
 import { verifyOTP, sendOTP } from "../../src/config/firebase"
 import { Ionicons } from "@expo/vector-icons"
@@ -103,10 +101,6 @@ export default function OTPScreen() {
       }
 
       const result = await verify(firebaseResult.idToken)
-      // console.log(
-      //   "🔑 FULL AUTH STATE:",
-      //   JSON.stringify(useAuthStore.getState())
-      // )
 
       if (result.success) {
         if (result.isNewUser) {
@@ -182,54 +176,60 @@ export default function OTPScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={{ flex: 1 }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardView}
+        style={{ flex: 1 }}
       >
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={semantic.textPrimary} />
+        <TouchableOpacity onPress={handleBack} className="self-start p-4">
+          <Ionicons name="arrow-back" size={24} color="#14151A" />
         </TouchableOpacity>
 
-        <View style={styles.content}>
-          <View style={styles.header}>
-            <Text variant="h3" color="textPrimary" weight="700">
+        <View className="flex-1 p-6 pt-4">
+          <View className="mb-8">
+            <Text className="text-h6 text-gray-13 font-jakarta-bold">
               Verify your number
             </Text>
-            <Text
-              variant="bodyMedium"
-              color="textSecondary"
-              style={styles.subtitle}
-            >
+            <Text className="text-body-s text-gray-08 font-inter-regular mt-2">
               Enter the 6-digit code sent to
             </Text>
-            <Text variant="bodyMedium" color="primary" weight="600">
+            <Text className="text-body-s font-inter-semibold text-blue-03 mt-1">
               {mobileNumber}
             </Text>
           </View>
 
-          <View style={styles.otpContainer}>
-            <OTPInput
+          <View className="mb-6 items-center">
+            <InputOTP
               value={otp}
               onChange={handleOTPChange}
-              error={!!error}
-              autoFocus
-            />
+              maxLength={6}
+              isInvalid={!!error}
+              textInputProps={{ autoFocus: true }}
+            >
+              <InputOTP.Group className="flex-row justify-center gap-2">
+                <InputOTP.Slot index={0} />
+                <InputOTP.Slot index={1} />
+                <InputOTP.Slot index={2} />
+                <InputOTP.Slot index={3} />
+                <InputOTP.Slot index={4} />
+                <InputOTP.Slot index={5} />
+              </InputOTP.Group>
+            </InputOTP>
             {error && (
-              <Text variant="bodyMedium" color="error" style={styles.error}>
+              <Text className="text-body-s text-danger font-inter-medium mt-3 text-center">
                 {error}
               </Text>
             )}
           </View>
 
-          <View style={styles.resendContainer}>
+          <View className="mb-6 items-center">
             {resendTimer > 0 ? (
-              <Text variant="bodySmall" color="textMuted">
+              <Text className="text-body-s text-gray-06 font-inter-regular">
                 Resend code in {resendTimer}s
               </Text>
             ) : (
               <TouchableOpacity onPress={handleResend} disabled={isLoading}>
-                <Text variant="bodySmall" color="primary" weight="600">
+                <Text className="text-body-s font-inter-semibold text-blue-03 mt-1">
                   Resend Code
                 </Text>
               </TouchableOpacity>
@@ -238,51 +238,19 @@ export default function OTPScreen() {
 
           <Button
             onPress={() => handleVerify()}
-            isLoading={isLoading}
-            disabled={otp.length !== 6}
-            fullWidth
+            isDisabled={isLoading || otp.length !== 6}
+            variant="primary"
             size="lg"
+            className="h-12 w-full bg-blue-03"
           >
-            Verify
+            {isLoading ? (
+              <Spinner size="sm" color="white" />
+            ) : (
+              <Button.Label>Verify</Button.Label>
+            )}
           </Button>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  backButton: {
-    padding: spacing[4],
-    alignSelf: "flex-start",
-  },
-  content: {
-    flex: 1,
-    padding: spacing[6],
-    paddingTop: spacing[4],
-  },
-  header: {
-    marginBottom: spacing[8],
-  },
-  subtitle: {
-    marginTop: spacing[2],
-  },
-  otpContainer: {
-    marginBottom: spacing[6],
-  },
-  error: {
-    textAlign: "center",
-    marginTop: spacing[3],
-  },
-  resendContainer: {
-    alignItems: "center",
-    marginBottom: spacing[6],
-  },
-})

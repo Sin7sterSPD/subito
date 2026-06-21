@@ -3,7 +3,7 @@ import { View, StyleSheet, ScrollView, TouchableOpacity } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router, useLocalSearchParams, Stack } from "expo-router"
 import { Image } from "expo-image"
-import { Text, Card, Badge, Button, Divider } from "@/src/components/ui"
+import { Typography, Card, Chip, Button, Separator } from "heroui-native"
 import { colors, semantic } from "@/src/theme/colors"
 import { spacing, borderRadius } from "@/src/theme/spacing"
 import { useListingsStore, useCartStore } from "@/src/store"
@@ -31,11 +31,11 @@ export default function BundleDetailScreen() {
 
   if (!bundle) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: semantic.background }}>
         <View style={styles.notFound}>
-          <Text variant="h6" color="textSecondary">
+          <Typography type="h6" style={{ color: semantic.textSecondary }}>
             Bundle not found
-          </Text>
+          </Typography>
         </View>
       </SafeAreaView>
     )
@@ -47,7 +47,7 @@ export default function BundleDetailScreen() {
   return (
     <>
       <Stack.Screen options={{ title: bundle.name }} />
-      <SafeAreaView style={styles.container} edges={["bottom"]}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: semantic.background }} edges={["bottom"]}>
         <ScrollView showsVerticalScrollIndicator={false}>
           {bundle.image && (
             <Image
@@ -60,90 +60,87 @@ export default function BundleDetailScreen() {
           <View style={styles.content}>
             <View style={styles.header}>
               {bundle.discountPercentage && (
-                <Badge variant="success" size="md">
+                <Chip color="success" variant="soft" style={{ alignSelf: "flex-start" }}>
                   {bundle.discountPercentage}% OFF
-                </Badge>
+                </Chip>
               )}
-              <Text
-                variant="h4"
-                color="textPrimary"
-                weight="700"
-                style={styles.title}
+              <Typography
+                type="h4"
+                weight="bold"
+                style={[styles.title, { color: semantic.textPrimary }]}
               >
                 {bundle.name}
-              </Text>
+              </Typography>
               {bundle.description && (
-                <Text variant="bodyMedium" color="textSecondary">
+                <Typography type="body" style={{ color: semantic.textSecondary }}>
                   {bundle.description}
-                </Text>
+                </Typography>
               )}
             </View>
 
-            <Card style={styles.pricingCard} variant="filled">
+            <Card style={styles.pricingCard} variant="secondary">
               <View style={styles.pricingRow}>
-                <Text variant="bodyMedium" color="textSecondary">
+                <Typography type="body" style={{ color: semantic.textSecondary }}>
                   Bundle Price
-                </Text>
+                </Typography>
                 <View style={styles.priceValues}>
-                  <Text variant="h5" color="primary" weight="700">
+                  <Typography type="h5" weight="bold" className="text-accent">
                     ₹{bundle.bundlePrice}
-                  </Text>
-                  <Text
-                    variant="bodySmall"
-                    color="textMuted"
-                    style={styles.strikethrough}
+                  </Typography>
+                  <Typography
+                    type="body-sm"
+                    style={[styles.strikethrough, { color: semantic.textMuted }]}
                   >
                     ₹{bundle.originalPrice}
-                  </Text>
+                  </Typography>
                 </View>
               </View>
               <View style={styles.savingsRow}>
                 <Ionicons name="pricetag" size={16} color={semantic.success} />
-                <Text variant="bodySmall" color="success" weight="600">
+                <Typography type="body-sm" weight="semibold" className="text-success">
                   You save ₹{savings.toFixed(0)}
-                </Text>
+                </Typography>
               </View>
             </Card>
 
             <View style={styles.section}>
-              <Text
-                variant="h6"
-                color="textPrimary"
-                weight="600"
-                style={styles.sectionTitle}
+              <Typography
+                type="body"
+                weight="semibold"
+                style={[styles.sectionTitle, { color: semantic.textPrimary }]}
               >
                 Included Services ({bundle.items.length})
-              </Text>
-              <Card variant="outlined" padding={0}>
+              </Typography>
+              <Card variant="default" style={{ padding: 0 }}>
                 {bundle.items.map((item, idx) => (
                   <React.Fragment key={idx}>
                     <View style={styles.serviceItem}>
                       <View style={styles.serviceInfo}>
-                        <Text
-                          variant="bodySmall"
-                          color="textPrimary"
-                          weight="500"
+                        <Typography
+                          type="body-sm"
+                          weight="semibold"
+                          style={{ color: semantic.textPrimary }}
                         >
                           {item.catalog?.name || "Service"}
-                        </Text>
+                        </Typography>
                         {item.catalog?.description && (
-                          <Text
-                            variant="bodyMedium"
-                            color="textMuted"
+                          <Typography
+                            type="body-sm"
                             numberOfLines={1}
+                            style={{ color: semantic.textMuted }}
                           >
                             {item.catalog.description}
-                          </Text>
+                          </Typography>
                         )}
                       </View>
                       <View style={styles.serviceQty}>
-                        <Text variant="bodyLarge" color="textMuted">
+                        <Typography type="body" style={{ color: semantic.textMuted }}>
                           x{item.quantity}
-                        </Text>
+                        </Typography>
                       </View>
                     </View>
                     {idx < bundle.items.length - 1 && (
-                      <Divider marginVertical={0} />
+                      <Separator />
                     )}
                   </React.Fragment>
                 ))}
@@ -151,38 +148,37 @@ export default function BundleDetailScreen() {
             </View>
 
             <View style={styles.benefits}>
-              <Text
-                variant="h6"
-                color="textPrimary"
-                weight="600"
-                style={styles.sectionTitle}
+              <Typography
+                type="body"
+                weight="semibold"
+                style={[styles.sectionTitle, { color: semantic.textPrimary }]}
               >
                 Why Choose This Bundle?
-              </Text>
+              </Typography>
               <View style={styles.benefitItem}>
                 <View style={styles.benefitIcon}>
                   <Ionicons name="wallet" size={18} color={semantic.success} />
                 </View>
                 <View style={styles.benefitText}>
-                  <Text variant="bodySmall" color="textPrimary" weight="500">
+                  <Typography type="body-sm" weight="semibold" style={{ color: semantic.textPrimary }}>
                     Save ₹{savings.toFixed(0)}
-                  </Text>
-                  <Text variant="bodyMedium" color="textMuted">
+                  </Typography>
+                  <Typography type="body-sm" style={{ color: semantic.textMuted }}>
                     Compared to individual service prices
-                  </Text>
+                  </Typography>
                 </View>
               </View>
               <View style={styles.benefitItem}>
                 <View style={styles.benefitIcon}>
-                  <Ionicons name="time" size={18} color={semantic.primary} />
+                  <Ionicons name="time" size={18} color={semantic.accent} />
                 </View>
                 <View style={styles.benefitText}>
-                  <Text variant="bodySmall" color="textPrimary" weight="500">
+                  <Typography type="body-sm" weight="semibold" style={{ color: semantic.textPrimary }}>
                     Convenient Scheduling
-                  </Text>
-                  <Text variant="bodyMedium" color="textMuted">
+                  </Typography>
+                  <Typography type="body-sm" style={{ color: semantic.textMuted }}>
                     All services in one appointment
-                  </Text>
+                  </Typography>
                 </View>
               </View>
               <View style={styles.benefitItem}>
@@ -190,12 +186,12 @@ export default function BundleDetailScreen() {
                   <Ionicons name="star" size={18} color={colors.orange[8]} />
                 </View>
                 <View style={styles.benefitText}>
-                  <Text variant="bodySmall" color="textPrimary" weight="500">
+                  <Typography type="body-sm" weight="semibold" style={{ color: semantic.textPrimary }}>
                     Premium Quality
-                  </Text>
-                  <Text variant="bodyMedium" color="textMuted">
+                  </Typography>
+                  <Typography type="body-sm" style={{ color: semantic.textMuted }}>
                     Curated combination of services
-                  </Text>
+                  </Typography>
                 </View>
               </View>
             </View>
@@ -206,18 +202,17 @@ export default function BundleDetailScreen() {
 
         <View style={styles.footer}>
           <View style={styles.footerPrice}>
-            <Text variant="bodyMedium" color="textMuted">
+            <Typography type="body-sm" style={{ color: semantic.textMuted }}>
               Bundle Price
-            </Text>
-            <Text variant="h5" color="primary" weight="700">
+            </Typography>
+            <Typography type="h5" weight="bold" className="text-accent">
               ₹{bundle.bundlePrice}
-            </Text>
+            </Typography>
           </View>
           <Button
             variant="primary"
-            size="lg"
             onPress={handleAddToCart}
-            isLoading={isLoading}
+            disabled={isLoading}
             style={styles.addButton}
           >
             Add to Cart
@@ -229,10 +224,6 @@ export default function BundleDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
   headerImage: {
     width: "100%",
     height: 200,
@@ -315,7 +306,7 @@ const styles = StyleSheet.create({
     padding: spacing[4],
     borderTopWidth: 1,
     borderTopColor: semantic.border,
-    backgroundColor: colors.white,
+    backgroundColor: semantic.background,
   },
   footerPrice: {
     marginRight: spacing[4],

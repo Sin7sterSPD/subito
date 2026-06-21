@@ -8,7 +8,7 @@ import Animated, {
   withSpring,
   withDelay,
 } from "react-native-reanimated"
-import { Text, Button } from "../../src/components/ui"
+import { Typography, Button } from "heroui-native"
 import { colors, semantic } from "../../src/theme/colors"
 import { spacing } from "../../src/theme/spacing"
 import { useCartStore } from "../../src/store"
@@ -63,13 +63,6 @@ export default function PaymentSuccessScreen() {
   const contentStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
   }))
-  // const handleViewBooking = () => {
-  //   if (!resolvedBookingId) return
-  //   router.replace({
-  //     pathname: "/(screens)/booking/[id]",
-  //     params: { id: resolvedBookingId },
-  //   })
-  // }
 
   const handleViewBooking = () => {
     if (!resolvedBookingId) {
@@ -89,7 +82,7 @@ export default function PaymentSuccessScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.white }}>
       <View style={styles.content}>
         <Animated.View style={[styles.iconContainer, iconStyle]}>
           <View style={styles.iconCircle}>
@@ -98,42 +91,41 @@ export default function PaymentSuccessScreen() {
         </Animated.View>
 
         <Animated.View style={[styles.textContent, contentStyle]}>
-          <Text variant="h3" color="textPrimary" weight="700" align="center">
+          <Typography type="h3" weight="bold" align="center" style={{ color: semantic.textPrimary }}>
             Payment Successful!
-          </Text>
-          <Text
-            variant="bodyMedium"
-            color="textSecondary"
+          </Typography>
+          <Typography
+            type="body"
+            color="muted"
             align="center"
             style={styles.description}
           >
             Your booking has been confirmed. Our partner will arrive at your
             scheduled time.
-          </Text>
+          </Typography>
 
           {resolvedBookingNumber && (
             <View style={styles.bookingInfo}>
-              <Text variant="bodyMedium" color="textMuted">
+              <Typography type="body-sm" color="muted">
                 Booking Number
-              </Text>
-              <Text variant="h5" color="primary" weight="700">
+              </Typography>
+              <Typography type="h5" className="text-accent" weight="bold">
                 #{resolvedBookingNumber}
-              </Text>
+              </Typography>
             </View>
           )}
 
           <View style={styles.actions}>
             <Button
               variant="primary"
-              fullWidth
-              size="lg"
               onPress={handleViewBooking}
-              disabled={!resolvedBookingId}
+              isDisabled={!resolvedBookingId}
+              className="w-full"
             >
-              View Booking
+              <Button.Label>View Booking</Button.Label>
             </Button>
-            <Button variant="ghost" fullWidth size="lg" onPress={handleGoHome}>
-              Go to Home
+            <Button variant="ghost" onPress={handleGoHome} className="w-full">
+              <Button.Label>Go to Home</Button.Label>
             </Button>
           </View>
         </Animated.View>
@@ -143,10 +135,6 @@ export default function PaymentSuccessScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
   content: {
     flex: 1,
     alignItems: "center",

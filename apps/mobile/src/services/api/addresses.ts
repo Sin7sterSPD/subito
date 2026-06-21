@@ -44,7 +44,7 @@ export const addressesApi = {
       const queryString = searchParams.toString()
       if (queryString) endpoint += `?${queryString}`
     }
-    return apiClient.get<Address[]>(endpoint)
+    return apiClient.get<{ addresses: Address[]; nearestAddress: Address | null }>(endpoint)
   },
 
   createAddress: (data: CreateAddressData) =>

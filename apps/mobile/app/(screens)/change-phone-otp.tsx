@@ -2,7 +2,7 @@ import React, { useState } from "react"
 import { View, StyleSheet, KeyboardAvoidingView, Platform } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router, useLocalSearchParams } from "expo-router"
-import { Text, Button, OTPInput } from "../../src/components/ui"
+import { Typography, Button, InputOTP, Spinner } from "heroui-native"
 import { colors } from "../../src/theme/colors"
 import { spacing } from "../../src/theme/spacing"
 import { authApi } from "../../src/services/api/auth"
@@ -62,40 +62,56 @@ export default function ChangePhoneOtpScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.white }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.flex}
+        style={{ flex: 1 }}
       >
         <View style={styles.inner}>
-          <Text variant="h3">Verify new number</Text>
-          <Text variant="bodyMedium" color="textMuted" style={styles.sub}>
+          <Typography type="h3" weight="bold">Verify new number</Typography>
+          <Typography type="body" color="muted" style={styles.sub}>
             {hasRequiredParams
               ? `Enter the code sent to +91 ${newPhone}`
               : "Session expired. Please restart phone verification."}
-          </Text>
-          <OTPInput
-            value={otp}
-            onChange={(v: string) => {
-              setOtp(v)
-              if (error) setError("")
-              if (v.length === 6) void verifyAndFinish(v)
-            }}
-          />
+          </Typography>
+
+          <View style={{ alignItems: "center", marginVertical: spacing[6] }}>
+            <InputOTP
+              maxLength={6}
+              value={otp}
+              onChange={(v: string) => {
+                setOtp(v)
+                if (error) setError("")
+                if (v.length === 6) void verifyAndFinish(v)
+              }}
+            >
+              <InputOTP.Group>
+                <InputOTP.Slot index={0} />
+                <InputOTP.Slot index={1} />
+                <InputOTP.Slot index={2} />
+              </InputOTP.Group>
+              <InputOTP.Separator />
+              <InputOTP.Group>
+                <InputOTP.Slot index={3} />
+                <InputOTP.Slot index={4} />
+                <InputOTP.Slot index={5} />
+              </InputOTP.Group>
+            </InputOTP>
+          </View>
+
           {error ? (
-            <Text variant="bodySmall" color="error">
+            <Typography type="body-sm" className="text-danger mb-4" align="center">
               {error}
-            </Text>
+            </Typography>
           ) : null}
+
           <Button
             variant="primary"
-            fullWidth
-            size="lg"
             onPress={() => void verifyAndFinish(otp)}
-            isLoading={loading}
-            disabled={loading || otp.length !== 6 || !hasRequiredParams}
+            isDisabled={loading || otp.length !== 6 || !hasRequiredParams}
+            className="w-full mt-4"
           >
-            Confirm
+            {loading ? <Spinner size="sm" /> : <Button.Label>Confirm</Button.Label>}
           </Button>
         </View>
       </KeyboardAvoidingView>
@@ -104,8 +120,6 @@ export default function ChangePhoneOtpScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.white },
-  flex: { flex: 1 },
   inner: { flex: 1, padding: spacing[4], gap: spacing[3] },
   sub: { marginBottom: spacing[2] },
 })

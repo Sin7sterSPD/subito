@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from "react"
+import React, { useEffect, useState, useRef } from "react"
 import {
   View,
   StyleSheet,
@@ -8,8 +8,8 @@ import {
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router, useLocalSearchParams } from "expo-router"
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps"
-import { Text, Card, Avatar, Button, Spinner } from "../../src/components/ui"
+import MapLibreGL from "@maplibre/maplibre-react-native"
+import { Typography, Card, Avatar, Button, Spinner } from "heroui-native"
 import { colors, semantic } from "../../src/theme/colors"
 import { spacing, borderRadius } from "../../src/theme/spacing"
 import { useBookingsStore, useUserStore } from "../../src/store"
@@ -19,6 +19,7 @@ const { width, height } = Dimensions.get("window")
 const ASPECT_RATIO = width / height
 const LATITUDE_DELTA = 0.01
 const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO
+const MAPTILER_STYLE_URL = `https://api.maptiler.com/maps/streets-v2/style.json?key=${process.env.EXPO_PUBLIC_MAPTILER_API_KEY}`
 
 export default function PartnerTrackingScreen() {
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>()
@@ -34,7 +35,7 @@ export default function PartnerTrackingScreen() {
   } = useBookingsStore()
   const { selectedAddress } = useUserStore()
   const [isLoading, setIsLoading] = useState(true)
-  const mapRef = useRef<MapView | null>(null)
+  const cameraRef = useRef<MapLibreGL.CameraRef>(null)
 
   const booking = selectedBooking
   const partner = booking?.partner
@@ -53,15 +54,6 @@ export default function PartnerTrackingScreen() {
     }
     loadData()
   }, [resolvedBookingId, fetchBookingById, fetchPartnerLocation])
-
-  // useEffect(() => {
-  //   const interval = setInterval(() => {
-  //     if (booking && ["ARRIVING", "STARTED"].includes(booking.status)) {
-  //       fetchPartnerLocation(bookingId)
-  //     }
-  //   }, 10000)
-  //   return () => clearInterval(interval)
-  // }, [booking, bookingId, fetchPartnerLocation])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -87,85 +79,97 @@ export default function PartnerTrackingScreen() {
     router.back()
   }
 
-  const mapRegion = partnerLocation
-    ? {
-        latitude: partnerLocation.latitude,
-        longitude: partnerLocation.longitude,
-        latitudeDelta: LATITUDE_DELTA,
-        longitudeDelta: LONGITUDE_DELTA,
-      }
+  const mapCenter = partnerLocation
+    ? ([partnerLocation.longitude, partnerLocation.latitude] as [number, number])
     : address
-      ? {
-          latitude: address.latitude,
-          longitude: address.longitude,
-          latitudeDelta: LATITUDE_DELTA,
-          longitudeDelta: LONGITUDE_DELTA,
-        }
+      ? ([address.longitude, address.latitude] as [number, number])
       : undefined
 
   useEffect(() => {
-    if (mapRegion && mapRef.current) {
-      mapRef.current.animateToRegion(mapRegion, 500)
+    if (mapCenter && cameraRef.current) {
+      cameraRef.current.flyTo(mapCenter, 500)
     }
-  }, [mapRegion])
+  }, [mapCenter])
 
   if (isLoading) {
-    return <Spinner fullScreen message="Loading..." />
+    return <Spinner style={{ flex: 1, justifyContent: "center" }} />
   }
 
   return (
-    <View style={styles.container}>
-      {mapRegion ? (
-        <MapView
-          ref={mapRef}
-          style={styles.map}
-          initialRegion={mapRegion}
-          provider={PROVIDER_GOOGLE}
+    <View style={{ flex: 1, backgroundColor: semantic.background }}>
+      {mapCenter ? (
+        <MapLibreGL.MapView
+          style={{ flex: 1 }}
+          styleURL={MAPTILER_STYLE_URL}
+          logoEnabled={false}
         >
+          <MapLibreGL.Camera
+            ref={cameraRef}
+            defaultSettings={{
+              centerCoordinate: mapCenter,
+              zoomLevel: 15,
+            }}
+          />
           {address && (
-            <Marker
-              coordinate={{
-                latitude: address.latitude,
-                longitude: address.longitude,
-              }}
-              title="Delivery Location"
-              description={address.addressLine1}
+            <MapLibreGL.MarkerView
+              coordinate={[address.longitude, address.latitude]}
             >
               <View style={styles.destinationMarker}>
                 <Ionicons name="home" size={20} color={colors.white} />
               </View>
-            </Marker>
+            </MapLibreGL.MarkerView>
           )}
           {partnerLocation && (
-            <Marker
-              coordinate={{
-                latitude: partnerLocation.latitude,
-                longitude: partnerLocation.longitude,
-              }}
-              title={partner?.name || "Partner"}
+            <MapLibreGL.MarkerView
+              coordinate={[partnerLocation.longitude, partnerLocation.latitude]}
             >
               <View style={styles.partnerMarker}>
                 <Ionicons name="person" size={20} color={colors.white} />
               </View>
-            </Marker>
+            </MapLibreGL.MarkerView>
           )}
-        </MapView>
+        </MapLibreGL.MapView>
       ) : (
         <View style={styles.noMapContainer}>
           <Ionicons name="map-outline" size={48} color={semantic.textMuted} />
-          <Text variant="bodyMedium" color="textMuted" style={styles.noMapText}>
+          <Typography type="body" style={[styles.noMapText, { color: semantic.textMuted }]}>
             Location not available
-          </Text>
+          </Typography>
         </View>
       )}
 
-      <SafeAreaView style={styles.overlay} edges={["top"]}>
+      <SafeAreaView
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+        }}
+        edges={["top"]}
+      >
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <Ionicons name="arrow-back" size={24} color={semantic.textPrimary} />
         </TouchableOpacity>
       </SafeAreaView>
 
-      <SafeAreaView style={styles.bottomSheet} edges={["bottom"]}>
+      <SafeAreaView
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: semantic.background,
+          borderTopLeftRadius: borderRadius["2xl"],
+          borderTopRightRadius: borderRadius["2xl"],
+          padding: spacing[4],
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+          elevation: 5,
+        }}
+        edges={["bottom"]}
+      >
         <View style={styles.handle} />
 
         <View style={styles.statusBanner}>
@@ -176,52 +180,56 @@ export default function PartnerTrackingScreen() {
               color={colors.white}
             />
           </View>
-          <Text variant="bodyMedium" color="textPrimary" weight="600">
+          <Typography type="body" weight="semibold" style={{ color: semantic.textPrimary }}>
             {booking?.status === "ARRIVING"
               ? "Partner is on the way"
               : "Service in progress"}
-          </Text>
+          </Typography>
         </View>
 
         {partner && (
-          <Card style={styles.partnerCard} variant="outlined">
+          <Card style={styles.partnerCard} variant="default">
             <View style={styles.partnerContent}>
-              <Avatar
-                source={partner.profileImage}
-                name={partner.name}
-                size="lg"
-              />
+              <Avatar style={{ width: 48, height: 48, borderRadius: 24 }}>
+                {partner.profileImage && (
+                  <Avatar.Image
+                    source={{ uri: partner.profileImage }}
+                    style={{ width: "100%", height: "100%", borderRadius: 24 }}
+                  />
+                )}
+                <Avatar.Fallback />
+              </Avatar>
               <View style={styles.partnerInfo}>
-                <Text variant="bodyMedium" color="textPrimary" weight="600">
+                <Typography type="body" weight="semibold" style={{ color: semantic.textPrimary }}>
                   {partner.name || "Service Partner"}
-                </Text>
+                </Typography>
                 {partner.rating && (
                   <View style={styles.rating}>
                     <Ionicons name="star" size={14} color={colors.orange[8]} />
-                    <Text variant="bodyMedium" color="textSecondary">
+                    <Typography type="body-sm" style={{ color: semantic.textSecondary }}>
                       {partner.rating.toFixed(1)}
-                    </Text>
+                    </Typography>
                   </View>
                 )}
               </View>
               <TouchableOpacity style={styles.callButton} onPress={handleCall}>
-                <Ionicons name="call" size={20} color={semantic.primary} />
+                <Ionicons name="call" size={20} color={semantic.accent} />
               </TouchableOpacity>
             </View>
           </Card>
         )}
 
         {booking?.status === "STARTED" && booking.endOtp && (
-          <Card style={styles.otpCard} variant="filled">
-            <Text variant="bodyMedium" color="textMuted" align="center">
+          <Card style={styles.otpCard} variant="secondary">
+            <Typography type="body-sm" style={{ color: semantic.textMuted, textAlign: "center" }}>
               End Service OTP
-            </Text>
-            <Text variant="h4" color="primary" weight="700" align="center">
+            </Typography>
+            <Typography type="h4" weight="bold" className="text-accent" style={{ textAlign: "center", marginVertical: spacing[1] }}>
               {booking.endOtp}
-            </Text>
-            <Text variant="bodyMedium" color="textMuted" align="center">
+            </Typography>
+            <Typography type="body-sm" style={{ color: semantic.textMuted, textAlign: "center" }}>
               Share this with the partner when service is complete
-            </Text>
+            </Typography>
           </Card>
         )}
 
@@ -242,13 +250,6 @@ export default function PartnerTrackingScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
-  map: {
-    flex: 1,
-  },
   noMapContainer: {
     flex: 1,
     alignItems: "center",
@@ -258,18 +259,12 @@ const styles = StyleSheet.create({
   noMapText: {
     marginTop: spacing[4],
   },
-  overlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-  },
   backButton: {
     margin: spacing[4],
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: colors.white,
+    backgroundColor: semantic.background,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
@@ -278,25 +273,10 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  bottomSheet: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: colors.white,
-    borderTopLeftRadius: borderRadius["2xl"],
-    borderTopRightRadius: borderRadius["2xl"],
-    padding: spacing[4],
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
   handle: {
     width: 40,
     height: 4,
-    backgroundColor: colors.gray[4],
+    backgroundColor: semantic.border,
     borderRadius: 2,
     alignSelf: "center",
     marginBottom: spacing[4],
@@ -313,7 +293,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: semantic.primary,
+    backgroundColor: semantic.accent,
     alignItems: "center",
     justifyContent: "center",
     marginRight: spacing[3],
@@ -344,14 +324,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   otpCard: {
-    backgroundColor: colors.green[1],
     marginBottom: spacing[4],
+    backgroundColor: colors.green[1],
+    borderColor: colors.green[3],
+    borderWidth: 1,
   },
   destinationMarker: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: semantic.primary,
+    backgroundColor: semantic.accent,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,

@@ -11,15 +11,15 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router, useLocalSearchParams, Stack } from "expo-router"
 import {
-  Text,
+  Typography,
   Card,
   Button,
-  Badge,
+  Chip,
   Spinner,
   Avatar,
-  Divider,
+  Separator,
   BottomSheet,
-} from "../../../src/components/ui"
+} from "heroui-native"
 import { colors, semantic } from "../../../src/theme/colors"
 import { spacing, borderRadius } from "../../../src/theme/spacing"
 import { useBookingsStore } from "../../../src/store"
@@ -28,23 +28,22 @@ import { Ionicons } from "@expo/vector-icons"
 
 function getStatusColor(
   status: BookingStatus
-): "primary" | "success" | "warning" | "error" | "neutral" {
+): "primary" | "success" | "warning" | "danger" | "default" {
   switch (status) {
     case "PENDING_PAYMENT":
     case "PENDING_MATCH":
       return "warning"
     case "MATCHED":
     case "ARRIVING":
-      return "primary"
     case "STARTED":
       return "primary"
     case "COMPLETED":
       return "success"
     case "CANCELLED":
     case "REFUNDED":
-      return "error"
+      return "danger"
     default:
-      return "neutral"
+      return "default"
   }
 }
 
@@ -156,13 +155,16 @@ function StatusTimeline({ status }: { status: BookingStatus }) {
                 ]}
               />
             )}
-            <Text
-              variant="bodyMedium"
-              color={isActive ? "primary" : "textMuted"}
-              style={styles.timelineLabel}
+            <Typography
+              type="body-sm"
+              weight={isActive ? "semibold" : "normal"}
+              style={[
+                styles.timelineLabel,
+                { color: isActive ? semantic.backgroundSecondary : semantic.textMuted },
+              ]}
             >
               {step.label}
-            </Text>
+            </Typography>
           </View>
         )
       })}
@@ -186,20 +188,27 @@ function PartnerCard({
   const showTrack = ["ARRIVING", "STARTED"].includes(booking.status)
 
   return (
-    <Card style={styles.partnerCard} variant="outlined">
+    <Card style={styles.partnerCard} variant="default">
       <View style={styles.partnerHeader}>
-        <Avatar source={partner.profileImage} name={partner.name} size="lg" />
+        <Avatar style={{ width: 48, height: 48, borderRadius: 24 }}>
+          {partner.profileImage && (
+            <Avatar.Image
+              source={{ uri: partner.profileImage }}
+              style={{ width: "100%", height: "100%", borderRadius: 24 }}
+            />
+          )}
+          <Avatar.Fallback />
+        </Avatar>
         <View style={styles.partnerInfo}>
-          <Text variant="bodyMedium" color="textPrimary" weight="600">
+          <Typography type="body" weight="semibold" style={{ color: semantic.textPrimary }}>
             {partner.name || "Service Partner"}
-          </Text>
+          </Typography>
           {partner.rating && (
             <View style={styles.partnerRating}>
               <Ionicons name="star" size={14} color={colors.orange[8]} />
-              <Text variant="bodyMedium" color="textSecondary">
-                {partner.rating.toFixed(1)} • {partner.totalBookings || 0}{" "}
-                services
-              </Text>
+              <Typography type="body-sm" style={{ color: semantic.textSecondary }}>
+                {partner.rating.toFixed(1)} • {partner.totalBookings || 0} services
+              </Typography>
             </View>
           )}
         </View>
@@ -207,32 +216,32 @@ function PartnerCard({
 
       {booking.status === "STARTED" && booking.startOtp && (
         <View style={styles.otpSection}>
-          <Text variant="bodyMedium" color="textMuted">
+          <Typography type="body-sm" style={{ color: semantic.textMuted }}>
             Start OTP
-          </Text>
-          <Text variant="h5" color="primary" weight="700">
+          </Typography>
+          <Typography type="h5" weight="bold" className="text-accent">
             {booking.startOtp}
-          </Text>
+          </Typography>
         </View>
       )}
 
       <View style={styles.partnerActions}>
         <TouchableOpacity style={styles.partnerAction} onPress={onCall}>
           <View style={styles.partnerActionIcon}>
-            <Ionicons name="call" size={20} color={semantic.primary} />
+            <Ionicons name="call" size={20} color={semantic.backgroundSecondary} />
           </View>
-          <Text variant="bodyLarge" color="primary" weight="500">
+          <Typography type="body-sm" weight="semibold" className="text-accent">
             Call
-          </Text>
+          </Typography>
         </TouchableOpacity>
         {showTrack && (
           <TouchableOpacity style={styles.partnerAction} onPress={onTrack}>
             <View style={styles.partnerActionIcon}>
-              <Ionicons name="location" size={20} color={semantic.primary} />
+              <Ionicons name="location" size={20} color={semantic.border} />
             </View>
-            <Text variant="bodyLarge" color="primary" weight="500">
+            <Typography type="body-sm" weight="semibold" className="text-accent">
               Track
-            </Text>
+            </Typography>
           </TouchableOpacity>
         )}
       </View>
@@ -308,7 +317,7 @@ export default function BookingDetailScreen() {
   }
 
   if (isLoading || !booking) {
-    return <Spinner fullScreen message="Loading booking..." />
+    return <Spinner style={{ flex: 1, justifyContent: "center" }} />
   }
   const canCancel = ["PENDING_PAYMENT", "PENDING_MATCH", "MATCHED"].includes(
     booking.status
@@ -326,54 +335,53 @@ export default function BookingDetailScreen() {
   return (
     <>
       <Stack.Screen options={{ title: `#${booking.bookingNumber}` }} />
-      <SafeAreaView style={styles.container} edges={["bottom"]}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: semantic.background }} edges={["bottom"]}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={[semantic.primary]}
+              colors={[semantic.primaryPressed]}
             />
           }
         >
           <View style={styles.statusSection}>
-            <Badge variant={getStatusColor(booking.status)} size="md">
+            <Chip color={getStatusColor(booking.status)} variant="solid">
               {getStatusLabel(booking.status)}
-            </Badge>
+            </Chip>
             <StatusTimeline status={booking.status} />
           </View>
 
           <View style={styles.content}>
-            <Card style={styles.scheduleCard} variant="filled">
+            <Card style={styles.scheduleCard} variant="secondary">
               <View style={styles.scheduleRow}>
-                <Ionicons name="calendar" size={20} color={semantic.primary} />
-                <Text
-                  variant="bodyMedium"
-                  color="textPrimary"
-                  weight="500"
-                  style={styles.scheduleText}
+                <Ionicons name="calendar" size={20} color={semantic.borderDark} />
+                <Typography
+                  type="body"
+                  weight="medium"
+                  style={[styles.scheduleText, { color: semantic.textPrimary }]}
                 >
                   {formatDateTime(
                     booking.scheduledDate,
                     booking.scheduledStartTime
                   )}
-                </Text>
+                </Typography>
               </View>
               {booking.address && (
                 <View style={[styles.scheduleRow, { marginTop: spacing[2] }]}>
                   <Ionicons
                     name="location"
                     size={20}
-                    color={semantic.primary}
+                    color={semantic.primaryHover}
                   />
                   <View style={styles.scheduleText}>
-                    <Text variant="bodySmall" color="textPrimary" weight="500">
+                    <Typography type="body-sm" weight="semibold" style={{ color: semantic.textPrimary }}>
                       {booking.address.name}
-                    </Text>
-                    <Text variant="bodyMedium" color="textMuted">
+                    </Typography>
+                    <Typography type="body" style={{ color: semantic.textMuted }}>
                       {booking.address.addressLine1}
-                    </Text>
+                    </Typography>
                   </View>
                 </View>
               )}
@@ -389,40 +397,39 @@ export default function BookingDetailScreen() {
             )}
 
             <View style={styles.section}>
-              <Text
-                variant="h6"
-                color="textPrimary"
-                weight="600"
-                style={styles.sectionTitle}
+              <Typography
+                type="body"
+                weight="semibold"
+                style={[styles.sectionTitle, { color: semantic.textPrimary }]}
               >
                 Services
-              </Text>
-              <Card variant="outlined" padding={0}>
+              </Typography>
+              <Card variant="default" style={{ padding: 0 }}>
                 {booking.items.map((item, idx) => (
                   <React.Fragment key={item.id}>
                     <View style={styles.serviceItem}>
                       <View style={styles.serviceInfo}>
-                        <Text
-                          variant="bodySmall"
-                          color="textPrimary"
-                          weight="500"
+                        <Typography
+                          type="body-sm"
+                          weight="semibold"
+                          style={{ color: semantic.textPrimary }}
                         >
                           {item.name}
-                        </Text>
-                        <Text variant="bodyMedium" color="textMuted">
+                        </Typography>
+                        <Typography type="body-sm" style={{ color: semantic.textMuted }}>
                           Qty: {item.quantity}
-                        </Text>
+                        </Typography>
                       </View>
-                      <Text
-                        variant="bodySmall"
-                        color="textPrimary"
-                        weight="600"
+                      <Typography
+                        type="body-sm"
+                        weight="semibold"
+                        style={{ color: semantic.textPrimary }}
                       >
                         ₹{item.totalPrice}
-                      </Text>
+                      </Typography>
                     </View>
                     {idx < booking.items.length - 1 && (
-                      <Divider marginVertical={0} />
+                      <Separator />
                     )}
                   </React.Fragment>
                 ))}
@@ -430,70 +437,68 @@ export default function BookingDetailScreen() {
             </View>
 
             <View style={styles.section}>
-              <Text
-                variant="h6"
-                color="textPrimary"
-                weight="600"
-                style={styles.sectionTitle}
+              <Typography
+                type="body"
+                weight="semibold"
+                style={[styles.sectionTitle, { color: semantic.textPrimary }]}
               >
                 Payment Summary
-              </Text>
-              <Card variant="outlined">
+              </Typography>
+              <Card variant="default">
                 {booking.subtotal && (
                   <View style={styles.priceRow}>
-                    <Text variant="bodySmall" color="textSecondary">
+                    <Typography type="body-sm" style={{ color: semantic.textSecondary }}>
                       Subtotal
-                    </Text>
-                    <Text variant="bodySmall" color="textPrimary">
+                    </Typography>
+                    <Typography type="body-sm" style={{ color: semantic.textPrimary }}>
                       ₹{booking.subtotal}
-                    </Text>
+                    </Typography>
                   </View>
                 )}
                 {parseFloat(booking.discountAmount || "0") > 0 && (
                   <View style={styles.priceRow}>
-                    <Text variant="bodySmall" color="success">
+                    <Typography type="body-sm" className="text-success">
                       Discount
-                    </Text>
-                    <Text variant="bodySmall" color="success">
+                    </Typography>
+                    <Typography type="body-sm" className="text-success">
                       -₹{booking.discountAmount}
-                    </Text>
+                    </Typography>
                   </View>
                 )}
                 {booking.gstAmount && (
                   <View style={styles.priceRow}>
-                    <Text variant="bodySmall" color="textSecondary">
+                    <Typography type="body-sm" style={{ color: semantic.textSecondary }}>
                       GST
-                    </Text>
-                    <Text variant="bodySmall" color="textPrimary">
+                    </Typography>
+                    <Typography type="body-sm" style={{ color: semantic.textPrimary }}>
                       ₹{booking.gstAmount}
-                    </Text>
+                    </Typography>
                   </View>
                 )}
                 <View style={[styles.priceRow, styles.totalRow]}>
-                  <Text variant="bodyMedium" color="textPrimary" weight="700">
+                  <Typography type="body" weight="bold" style={{ color: semantic.textPrimary }}>
                     Total
-                  </Text>
-                  <Text variant="bodyMedium" color="primary" weight="700">
+                  </Typography>
+                  <Typography type="body" weight="bold" className="text-accent">
                     ₹{booking.finalAmount || booking.totalAmount}
-                  </Text>
+                  </Typography>
                 </View>
               </Card>
             </View>
 
             {booking.customerNotes && (
               <View style={styles.section}>
-                <Text
-                  variant="h6"
-                  color="textPrimary"
-                  weight="600"
-                  style={styles.sectionTitle}
+                <Typography
+                  type="body"
+                  weight="semibold"
+                  style={[styles.sectionTitle, { color: semantic.textPrimary }]}
                 >
                   Your Notes
-                </Text>
-                <Card variant="filled">
-                  <Text variant="bodySmall" color="textSecondary">
+                </Typography>
+                <Card variant="secondary">
+                  <Typography type="body-sm" style={{ color: semantic.textSecondary }}>
                     {booking.customerNotes}
-                  </Text>
+                  </Typography>
                 </Card>
               </View>
             )}
@@ -502,14 +507,13 @@ export default function BookingDetailScreen() {
               {canCancel && (
                 <Button
                   variant="outline"
-                  fullWidth
                   onPress={() => setShowCancelSheet(true)}
                 >
                   Cancel Booking
                 </Button>
               )}
               {canRate && (
-                <Button variant="primary" fullWidth onPress={handleRating}>
+                <Button variant="primary" onPress={handleRating}>
                   Rate Service
                 </Button>
               )}
@@ -520,59 +524,54 @@ export default function BookingDetailScreen() {
         </ScrollView>
 
         <BottomSheet
-          isVisible={showCancelSheet}
-          onClose={() => setShowCancelSheet(false)}
+          isOpen={showCancelSheet}
+          onOpenChange={setShowCancelSheet}
         >
-          <View style={styles.cancelSheet}>
-            <Text
-              variant="h5"
-              color="textPrimary"
-              weight="700"
-              style={styles.cancelTitle}
-            >
-              Cancel Booking
-            </Text>
-            <Text
-              variant="bodySmall"
-              color="textSecondary"
-              style={styles.cancelSubtitle}
-            >
-              Please select a reason for cancellation
-            </Text>
-            {cancelReasons.map((reason) => (
-              <TouchableOpacity
-                key={reason}
-                style={[
-                  styles.cancelOption,
-                  cancelReason === reason && styles.cancelOptionActive,
-                ]}
-                onPress={() => setCancelReason(reason)}
-              >
-                <Text
-                  variant="bodySmall"
-                  color={cancelReason === reason ? "primary" : "textPrimary"}
+          <BottomSheet.Portal>
+            <BottomSheet.Overlay style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.4)" }} />
+            <BottomSheet.Content snapPoints={["55%"]}>
+              <View style={styles.cancelSheet}>
+                <BottomSheet.Title style={[styles.cancelTitle, { fontSize: 20, fontWeight: "bold", color: semantic.textPrimary }]}>
+                  Cancel Booking
+                </BottomSheet.Title>
+                <BottomSheet.Description style={[styles.cancelSubtitle, { color: semantic.textSecondary, marginBottom: spacing[4] }]}>
+                  Please select a reason for cancellation
+                </BottomSheet.Description>
+                {cancelReasons.map((reason) => (
+                  <TouchableOpacity
+                    key={reason}
+                    style={[
+                      styles.cancelOption,
+                      cancelReason === reason && styles.cancelOptionActive,
+                    ]}
+                    onPress={() => setCancelReason(reason)}
+                  >
+                    <Typography
+                      type="body-sm"
+                      style={{ color: cancelReason === reason ? semantic.accent : semantic.textPrimary }}
+                    >
+                      {reason}
+                    </Typography>
+                    {cancelReason === reason && (
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={20}
+                        color={semantic.accent}
+                      />
+                    )}
+                  </TouchableOpacity>
+                ))}
+                <Button
+                  variant="danger"
+                  onPress={handleCancel}
+                  disabled={!cancelReason}
+                  style={styles.cancelButton}
                 >
-                  {reason}
-                </Text>
-                {cancelReason === reason && (
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={20}
-                    color={semantic.primary}
-                  />
-                )}
-              </TouchableOpacity>
-            ))}
-            <Button
-              variant="danger"
-              fullWidth
-              onPress={handleCancel}
-              disabled={!cancelReason}
-              style={styles.cancelButton}
-            >
-              Confirm Cancellation
-            </Button>
-          </View>
+                  Confirm Cancellation
+                </Button>
+              </View>
+            </BottomSheet.Content>
+          </BottomSheet.Portal>
         </BottomSheet>
       </SafeAreaView>
     </>
@@ -580,10 +579,6 @@ export default function BookingDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
   statusSection: {
     alignItems: "center",
     paddingVertical: spacing[4],
@@ -610,7 +605,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.blue[2],
   },
   timelineIconCurrent: {
-    backgroundColor: semantic.primary,
+    backgroundColor: semantic.accent,
   },
   timelineLine: {
     position: "absolute",
@@ -622,7 +617,7 @@ const styles = StyleSheet.create({
     zIndex: -1,
   },
   timelineLineActive: {
-    backgroundColor: semantic.primary,
+    backgroundColor: semantic.accent,
   },
   timelineLabel: {
     marginTop: spacing[1],
@@ -736,7 +731,7 @@ const styles = StyleSheet.create({
   cancelOptionActive: {
     backgroundColor: colors.blue[1],
     borderWidth: 1,
-    borderColor: semantic.primary,
+    borderColor: semantic.accent,
   },
   cancelButton: {
     marginTop: spacing[4],

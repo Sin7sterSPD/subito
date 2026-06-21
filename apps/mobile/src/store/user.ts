@@ -53,19 +53,21 @@ export const useUserStore = create<UserState>((set, get) => ({
         nearestAddressRequired: true,
       })
       if (response.success && response.data) {
-        const addresses = response.data
+        const { addresses, nearestAddress } = response.data
         set({ addresses })
 
         // Auto-select default or nearest
         const defaultAddr = addresses.find((a) => a.isDefault)
         if (defaultAddr && !get().selectedAddress) {
           set({ selectedAddress: defaultAddr })
+        } else if (!get().selectedAddress && nearestAddress) {
+          set({ selectedAddress: nearestAddress })
         } else if (!get().selectedAddress && addresses.length > 0) {
           set({ selectedAddress: addresses[0] })
         }
       }
-    } catch {
-      // Silent fail
+    } catch (e) {
+      console.warn("[fetchAddresses] error:", e)
     } finally {
       set({ isLoading: false })
     }
@@ -85,7 +87,8 @@ export const useUserStore = create<UserState>((set, get) => ({
         return newAddress
       }
       return null
-    } catch {
+    } catch (e) {
+      console.warn("[addAddress] error:", e)
       return null
     } finally {
       set({ isLoading: false })

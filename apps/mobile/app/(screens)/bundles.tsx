@@ -9,9 +9,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
 import { Image } from "expo-image"
-import { Text, Card, Badge } from "../../src/components/ui"
+import { Typography, Card, Chip } from "heroui-native"
 import { colors, semantic } from "../../src/theme/colors"
-import { spacing, borderRadius } from "../../src/theme/spacing"
+import { spacing } from "../../src/theme/spacing"
 import { useListingsStore } from "../../src/store"
 import { Bundle } from "../../src/types/api"
 import { Ionicons } from "@expo/vector-icons"
@@ -32,8 +32,7 @@ function BundleCard({
     <Card
       style={styles.bundleCard}
       onPress={onPress}
-      variant="elevated"
-      shadow="sm"
+      variant="default"
     >
       {bundle.image && (
         <Image
@@ -44,41 +43,40 @@ function BundleCard({
       )}
       <View style={styles.bundleContent}>
         {discount && (
-          <Badge variant="success" size="sm">
+          <Chip size="sm" variant="soft" color="success" style={{ alignSelf: "flex-start", marginBottom: spacing[2] }}>
             {discount}% OFF
-          </Badge>
+          </Chip>
         )}
-        <Text
-          variant="bodySmall"
-          color="textPrimary"
-          weight="600"
+        <Typography
+          type="body-sm"
+          weight="semibold"
           numberOfLines={2}
-          style={styles.bundleTitle}
+          style={[styles.bundleTitle, { color: semantic.textPrimary }]}
         >
           {bundle.name}
-        </Text>
+        </Typography>
         {bundle.description && (
-          <Text variant="bodyMedium" color="textMuted" numberOfLines={2}>
+          <Typography type="body-sm" color="muted" numberOfLines={2}>
             {bundle.description}
-          </Text>
+          </Typography>
         )}
         <View style={styles.bundlePricing}>
-          <Text variant="bodyMedium" color="primary" weight="700">
+          <Typography type="body" className="text-accent" weight="bold">
             ₹{bundle.bundlePrice}
-          </Text>
-          <Text
-            variant="bodyLarge"
-            color="textMuted"
+          </Typography>
+          <Typography
+            type="body-sm"
+            color="muted"
             style={styles.originalPrice}
           >
             ₹{bundle.originalPrice}
-          </Text>
+          </Typography>
         </View>
         <View style={styles.itemsCount}>
           <Ionicons name="list-outline" size={14} color={semantic.textMuted} />
-          <Text variant="bodyMedium" color="textMuted">
-            {bundle.items.length} services included
-          </Text>
+          <Typography type="body-sm" color="muted">
+            {bundle.items.length} services
+          </Typography>
         </View>
       </View>
     </Card>
@@ -91,12 +89,12 @@ function EmptyState() {
       <View style={styles.emptyIcon}>
         <Ionicons name="layers-outline" size={48} color={semantic.textMuted} />
       </View>
-      <Text variant="h6" color="textSecondary" style={styles.emptyTitle}>
+      <Typography type="h6" weight="semibold" style={[styles.emptyTitle, { color: semantic.textSecondary }]}>
         No bundles available
-      </Text>
-      <Text variant="bodySmall" color="textMuted" align="center">
+      </Typography>
+      <Typography type="body-sm" color="muted" align="center">
         Check back later for exciting bundle offers
-      </Text>
+      </Typography>
     </View>
   )
 }
@@ -112,7 +110,7 @@ export default function BundlesScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["bottom"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: semantic.backgroundSecondary }} edges={["bottom"]}>
       <FlatList
         data={bundles}
         keyExtractor={(item) => item.id}
@@ -130,10 +128,6 @@ export default function BundlesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: semantic.backgroundSecondary,
-  },
   list: {
     padding: spacing[4],
     paddingBottom: spacing[8],
@@ -146,18 +140,17 @@ const styles = StyleSheet.create({
   bundleCard: {
     width: CARD_WIDTH,
     padding: 0,
+    overflow: "hidden",
   },
   bundleImage: {
     width: "100%",
     height: 100,
-    borderTopLeftRadius: borderRadius.xl,
-    borderTopRightRadius: borderRadius.xl,
   },
   bundleContent: {
     padding: spacing[3],
   },
   bundleTitle: {
-    marginTop: spacing[2],
+    marginBottom: spacing[1],
   },
   bundlePricing: {
     flexDirection: "row",

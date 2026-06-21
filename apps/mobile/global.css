@@ -36,7 +36,7 @@
      /* Blue */
      --blue-01: #F0F4FE;
      --blue-02: #E3EAFD;
-     --blue-03: #CCD9FA;
+     --blue-03: #2A9CFF;
      --blue-04: #B4C7F8;
      --blue-05: #93AFF6;
      --blue-06: #7196F4;
@@ -47,6 +47,8 @@
      --blue-11: #133A9A;
      --blue-12: #07296A;
      --blue-13: #03153A;
+     /* new colors */
+     --blue-14: #55B0FF;
     
      /* Green */
      --green-01: #EDFDF4;
@@ -109,9 +111,14 @@
      /* ── Typography — map to your loaded Expo font names ─────────
         Replace font names below with your exact useFonts() keys.
         Common choices: Inter, Plus Jakarta Sans, DM Sans, etc.    */
-     /* --font-normal:   'Inter_400Regular';
-     --font-medium:   'Inter_500Medium';
-     --font-semibold: 'Inter_600SemiBold'; */
+      --font-sans: 'Inter_400Regular';
+      --font-inter-regular: 'Inter_400Regular';
+      --font-inter-medium: 'Inter_500Medium';
+      --font-inter-semibold: 'Inter_600SemiBold';
+      --font-inter-bold: 'Inter_700Bold';
+      --font-jakarta-semibold: 'PlusJakartaSans_600SemiBold';
+      --font-jakarta-bold: 'PlusJakartaSans_700Bold';
+      --font-jakarta-extrabold: 'PlusJakartaSans_800ExtraBold';
     
      /* ── Custom text sizes from your Figma type scale ────────────
         Tailwind built-ins (text-sm, text-base etc.) still work,

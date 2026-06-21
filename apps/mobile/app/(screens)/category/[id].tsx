@@ -3,7 +3,7 @@ import { View, StyleSheet, FlatList, TouchableOpacity } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router, useLocalSearchParams, Stack } from "expo-router"
 import { Image } from "expo-image"
-import { Text, Card, Badge, Spinner } from "@/src/components/ui"
+import { Typography, Card, Chip, Spinner } from "heroui-native"
 import { colors, semantic } from "@/src/theme/colors"
 import { spacing, borderRadius } from "@/src/theme"
 import { useListingsStore } from "@/src/store"
@@ -20,7 +20,7 @@ function ServiceCard({
   const startingPrice = listing.catalogs?.[0]?.price || listing.basePrice
 
   return (
-    <Card style={styles.serviceCard} onPress={onPress} variant="outlined">
+    <Card style={styles.serviceCard} onPress={onPress} variant="default">
       <View style={styles.cardContent}>
         {listing.image ? (
           <Image
@@ -34,29 +34,28 @@ function ServiceCard({
           </View>
         )}
         <View style={styles.serviceInfo}>
-          <Text
-            variant="bodyMedium"
-            color="textPrimary"
-            weight="600"
+          <Typography
+            type="body"
+            weight="semibold"
             numberOfLines={2}
+            style={{ color: semantic.textPrimary }}
           >
             {listing.name}
-          </Text>
+          </Typography>
           {listing.shortDescription && (
-            <Text
-              variant="bodyMedium"
-              color="textMuted"
+            <Typography
+              type="body-sm"
               numberOfLines={2}
-              style={styles.serviceDesc}
+              style={[styles.serviceDesc, { color: semantic.textMuted }]}
             >
               {listing.shortDescription}
-            </Text>
+            </Typography>
           )}
           <View style={styles.serviceFooter}>
             {startingPrice && (
-              <Text variant="bodyMedium" color="primary" weight="700">
+              <Typography type="body" weight="bold" className="text-accent">
                 From ₹{startingPrice}
-              </Text>
+              </Typography>
             )}
             {listing.duration && (
               <View style={styles.duration}>
@@ -65,9 +64,9 @@ function ServiceCard({
                   size={14}
                   color={semantic.textMuted}
                 />
-                <Text variant="bodyMedium" color="textMuted">
+                <Typography type="body-sm" style={{ color: semantic.textMuted }}>
                   {listing.duration} min
-                </Text>
+                </Typography>
               </View>
             )}
           </View>
@@ -93,18 +92,18 @@ export default function CategoryScreen() {
   }
 
   if (isLoading) {
-    return <Spinner fullScreen message="Loading..." />
+    return <Spinner style={{ flex: 1, justifyContent: "center" }} />
   }
 
   return (
     <>
       <Stack.Screen options={{ title: name || "Category" }} />
-      <SafeAreaView style={styles.container} edges={["bottom"]}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: semantic.backgroundSecondary }} edges={["bottom"]}>
         {category?.description && (
           <View style={styles.header}>
-            <Text variant="bodySmall" color="textSecondary">
+            <Typography type="body-sm" style={{ color: semantic.textSecondary }}>
               {category.description}
-            </Text>
+            </Typography>
           </View>
         )}
 
@@ -126,16 +125,16 @@ export default function CategoryScreen() {
                 size={48}
                 color={semantic.textMuted}
               />
-              <Text
-                variant="h6"
-                color="textSecondary"
-                style={styles.emptyTitle}
+              <Typography
+                type="h6"
+                weight="semibold"
+                style={[styles.emptyTitle, { color: semantic.textSecondary }]}
               >
                 No services found
-              </Text>
-              <Text variant="bodySmall" color="textMuted" align="center">
+              </Typography>
+              <Typography type="body-sm" align="center" style={{ color: semantic.textMuted }}>
                 Check back later for new services
-              </Text>
+              </Typography>
             </View>
           }
         />
@@ -145,15 +144,11 @@ export default function CategoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: semantic.backgroundSecondary,
-  },
   header: {
     padding: spacing[4],
-    backgroundColor: colors.white,
+    backgroundColor: semantic.background,
     borderBottomWidth: 1,
-    borderBottomColor: semantic.borderLight,
+    borderBottomColor: semantic.border,
   },
   list: {
     padding: spacing[4],

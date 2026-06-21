@@ -9,9 +9,9 @@ import {
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
-import { Text, Card, Button, Spinner, Badge } from "../../src/components/ui"
+import { Typography, Card, Button, Spinner, Chip } from "heroui-native"
 import { colors, semantic } from "../../src/theme/colors"
-import { spacing, borderRadius } from "../../src/theme/spacing"
+import { spacing } from "../../src/theme/spacing"
 import { useUserStore, useLocationStore } from "../../src/store"
 import { Address } from "../../src/types/api"
 import { Ionicons } from "@expo/vector-icons"
@@ -43,7 +43,7 @@ function AddressCard({
   return (
     <Card
       style={[styles.addressCard, isSelected && styles.addressCardSelected]}
-      variant="outlined"
+      variant="default"
       onPress={onSelect}
     >
       <View style={styles.cardHeader}>
@@ -55,13 +55,13 @@ function AddressCard({
           />
         </View>
         <View style={styles.cardTitle}>
-          <Text variant="bodyMedium" color="textPrimary" weight="600">
+          <Typography type="body" weight="semibold" style={{ color: semantic.textPrimary }}>
             {address.name}
-          </Text>
+          </Typography>
           {address.isDefault && (
-            <Badge variant="primary" size="sm">
+            <Chip size="sm" variant="soft" color="accent">
               Default
-            </Badge>
+            </Chip>
           )}
         </View>
         {isSelected && (
@@ -73,37 +73,37 @@ function AddressCard({
         )}
       </View>
 
-      <Text
-        variant="bodySmall"
-        color="textSecondary"
+      <Typography
+        type="body-sm"
+        color="muted"
         style={styles.addressLine}
       >
         {address.addressLine1}
         {address.addressLine2 ? `, ${address.addressLine2}` : ""}
-      </Text>
-      <Text variant="bodyMedium" color="textMuted">
+      </Typography>
+      <Typography type="body" color="muted">
         {address.area ? `${address.area}, ` : ""}
         {address.city}, {address.state} - {address.pincode}
-      </Text>
+      </Typography>
 
       {(address.houseNo ||
         address.floor !== undefined && address.floor !== null ||
         address.landmark) && (
         <View style={styles.additionalInfo}>
           {address.houseNo && (
-            <Text variant="bodyMedium" color="textMuted">
+            <Typography type="body-sm" color="muted">
               House: {address.houseNo}
-            </Text>
+            </Typography>
           )}
           {address.floor !== undefined && address.floor !== null && (
-            <Text variant="bodyMedium" color="textMuted">
+            <Typography type="body-sm" color="muted">
               Floor: {address.floor}
-            </Text>
+            </Typography>
           )}
           {address.landmark && (
-            <Text variant="bodyMedium" color="textMuted">
+            <Typography type="body-sm" color="muted">
               Landmark: {address.landmark}
-            </Text>
+            </Typography>
           )}
         </View>
       )}
@@ -111,16 +111,16 @@ function AddressCard({
       <View style={styles.cardActions}>
         <TouchableOpacity style={styles.actionButton} onPress={onEdit}>
           <Ionicons name="create-outline" size={18} color={semantic.primary} />
-          <Text variant="bodyLarge" color="primary" weight="500">
+          <Typography type="body" className="text-accent" weight="medium">
             Edit
-          </Text>
+          </Typography>
         </TouchableOpacity>
         {address.canDelete && (
           <TouchableOpacity style={styles.actionButton} onPress={onDelete}>
             <Ionicons name="trash-outline" size={18} color={semantic.error} />
-            <Text variant="bodyLarge" color="error" weight="500">
+            <Typography type="body" className="text-danger" weight="medium">
               Delete
-            </Text>
+            </Typography>
           </TouchableOpacity>
         )}
       </View>
@@ -138,12 +138,12 @@ function EmptyState() {
           color={semantic.textMuted}
         />
       </View>
-      <Text variant="h6" color="textSecondary" style={styles.emptyTitle}>
+      <Typography type="h6" weight="semibold" style={[styles.emptyTitle, { color: semantic.textSecondary }]}>
         No saved addresses
-      </Text>
-      <Text variant="bodySmall" color="textMuted" align="center">
+      </Typography>
+      <Typography type="body-sm" color="muted" align="center">
         Add your first address to get started
-      </Text>
+      </Typography>
     </View>
   )
 }
@@ -207,11 +207,11 @@ export default function AddressesScreen() {
   }
 
   if (isLoading && addresses.length === 0) {
-    return <Spinner fullScreen message="Loading addresses..." />
+    return <Spinner size="lg" style={{ flex: 1, justifyContent: "center", alignItems: "center" }} />
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["bottom"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: semantic.backgroundSecondary }} edges={["bottom"]}>
       <FlatList
         data={addresses}
         keyExtractor={(item) => item.id}
@@ -238,12 +238,10 @@ export default function AddressesScreen() {
       <View style={styles.footer}>
         <Button
           variant="primary"
-          fullWidth
-          size="lg"
-          leftIcon={<Ionicons name="add" size={20} color={colors.white} />}
           onPress={handleAddNew}
+          className="w-full"
         >
-          Add New Address
+          <Button.Label>Add New Address</Button.Label>
         </Button>
       </View>
     </SafeAreaView>
@@ -251,10 +249,6 @@ export default function AddressesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: semantic.backgroundSecondary,
-  },
   list: {
     padding: spacing[4],
     paddingBottom: spacing[24],

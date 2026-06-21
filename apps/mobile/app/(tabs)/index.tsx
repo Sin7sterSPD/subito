@@ -32,7 +32,7 @@ const serviceImages: Record<string, number> = {
   "room cleaning": require("../../assets/home/roomclieaning.png"),
   "toilet cleaning": require("../../assets/home/toiletcleaning.png"),
   "windows cleaning": require("../../assets/home/windowscleaning.png"),
-  "clothes iron": require("../../assets/home/clothes iron.png"),
+  "clothes iron": require("../../assets/home/clothes-iron.png"),
   "dish washer": require("../../assets/home/dish waher.png"),
   "after party cleaning": require("../../assets/home/Afterpartycleaning.png"),
   default: require("../../assets/home/roomclieaning.png"),
