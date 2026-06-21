@@ -1,34 +1,46 @@
 import { randomUUID } from "node:crypto"
 import { BadRequestError } from "@/lib/errors"
+import { putObject, getPublicUrl } from "@/lib/storage"
 
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"]
+const MAX_SIZE = 5 * 1024 * 1024
+
 const MIME_TO_EXT: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
   "image/webp": "webp",
   "image/gif": "gif",
+  "image/svg+xml": "svg",
+  "image/avif": "avif",
+  "image/bmp": "bmp",
+  "image/tiff": "tiff",
+  "image/heic": "heic",
+  "image/heif": "heif",
 }
-const MAX_SIZE = 5 * 1024 * 1024
+
+function mimeToExtension(mime: string): string | undefined {
+  return MIME_TO_EXT[mime]
+}
 
 export async function uploadImage(userId: string, file: File) {
-  if (!file.type || !ALLOWED_TYPES.includes(file.type)) {
-    throw new BadRequestError(
-      `Invalid file type. Allowed: ${ALLOWED_TYPES.join(", ")}`
-    )
+  if (!file.type || !file.type.startsWith("image/")) {
+    throw new BadRequestError("Only image files are allowed")
   }
 
   if (file.size > MAX_SIZE) {
     throw new BadRequestError("File size exceeds 5MB limit")
   }
 
-  const extension = MIME_TO_EXT[file.type]
+  const extension = mimeToExtension(file.type)
   if (!extension) {
-    throw new BadRequestError("Unsupported file type")
+    throw new BadRequestError(`Unsupported image type: ${file.type}`)
   }
 
   const filename = `${userId}/${randomUUID()}.${extension}`
 
-  const url = await mockUpload(file, filename)
+  const buffer = new Uint8Array(await file.arrayBuffer())
+
+  await putObject(filename, buffer, file.type)
+  const url = getPublicUrl(filename)
 
   return {
     url,
@@ -36,11 +48,4 @@ export async function uploadImage(userId: string, file: File) {
     contentType: file.type,
     size: file.size,
   }
-}
-
-async function mockUpload(file: File, filename: string): Promise<string> {
-  const STORAGE_BASE_URL =
-    process.env.STORAGE_BASE_URL || "https://storage.subito.in"
-
-  return `${STORAGE_BASE_URL}/uploads/${filename}`
 }
