@@ -13,7 +13,11 @@ import { requireAuth } from "./middleware/auth"
 import { authRouter } from "./modules/auth/auth.routes"
 import { usersRouter } from "./modules/users/users.routes"
 import { locationRouter } from "./modules/location/location.routes"
-import { listingsRouter } from "./modules/listings/listings.routes"
+import {
+  listingsRouter,
+  categoriesRouter,
+  servicesRouter,
+} from "./modules/listings/listings.routes"
 import { cartRouter } from "./modules/cart/cart.routes"
 import { bookingsRouter } from "./modules/bookings/bookings.routes"
 import { partnersRouter } from "./modules/partners/partners.routes"
@@ -113,7 +117,8 @@ v1.route("/auth", authRouter)
 v1.route("/users", usersRouter)
 v1.route("/location", locationRouter)
 v1.route("/listings", listingsRouter)
-v1.route("/categories", listingsRouter)
+v1.route("/categories", categoriesRouter)
+v1.route("/services", servicesRouter)
 v1.route("/cart", cartRouter)
 v1.route("/bookings", bookingsRouter)
 v1.route("/partners", partnersRouter)

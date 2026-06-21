@@ -6,6 +6,8 @@ import { requireAuth, optionalAuth } from "@/middleware/auth"
 import * as listingsService from "./listings.service"
 
 export const listingsRouter = new Hono<AppEnv>()
+export const categoriesRouter = new Hono<AppEnv>()
+export const servicesRouter = new Hono<AppEnv>()
 
 const listingsQuerySchema = z.object({
   lat: z.string().transform(Number).optional(),
@@ -20,6 +22,8 @@ const extensionsQuerySchema = z.object({
 const idParamSchema = z.object({
   id: z.string().uuid(),
 })
+
+// === listingsRouter Routes ===
 
 listingsRouter.get(
   "/",
@@ -82,6 +86,7 @@ listingsRouter.get(
   }
 )
 
+// Backward compatibility routes on listingsRouter
 listingsRouter.get("/categories", optionalAuth, async (c) => {
   const categories = await listingsService.getCategories()
 
@@ -120,3 +125,47 @@ listingsRouter.get(
     })
   }
 )
+
+// === categoriesRouter Routes ===
+
+categoriesRouter.get("/", optionalAuth, async (c) => {
+  const categories = await listingsService.getCategories()
+
+  return c.json({
+    success: true,
+    data: categories,
+  })
+})
+
+categoriesRouter.get(
+  "/:id",
+  optionalAuth,
+  zValidator("param", idParamSchema),
+  async (c) => {
+    const { id } = c.req.valid("param")
+    const category = await listingsService.getCategoryById(id)
+
+    return c.json({
+      success: true,
+      data: category,
+    })
+  }
+)
+
+// === servicesRouter Routes ===
+
+servicesRouter.get(
+  "/:id",
+  optionalAuth,
+  zValidator("param", idParamSchema),
+  async (c) => {
+    const { id } = c.req.valid("param")
+    const service = await listingsService.getServiceById(id)
+
+    return c.json({
+      success: true,
+      data: service,
+    })
+  }
+)
+
