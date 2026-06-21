@@ -10,7 +10,7 @@ import {
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
-import { Text, Button, Input, Avatar } from "../../src/components/ui"
+import { Typography, Button, TextField, Input, Label, FieldError, Avatar, Spinner } from "heroui-native"
 import { colors, semantic } from "../../src/theme/colors"
 import { spacing } from "../../src/theme/spacing"
 import { useAuthStore, useUserStore } from "../../src/store"
@@ -104,10 +104,10 @@ export default function EditProfileScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["bottom"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.white }} edges={["bottom"]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardView}
+        style={{ flex: 1 }}
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -118,70 +118,76 @@ export default function EditProfileScreen() {
             style={styles.avatarContainer}
             onPress={handlePickImage}
           >
-            <Avatar
-              source={profileImage}
-              name={firstName || user?.firstName || "User"}
-              size="xl"
-            />
+            <Avatar className="w-[100px] h-[100px] rounded-full">
+              {profileImage ? (
+                <Avatar.Image source={{ uri: profileImage }} className="w-full h-full rounded-full" />
+              ) : null}
+              <Avatar.Fallback />
+            </Avatar>
             <View style={styles.editBadge}>
               <Ionicons name="camera" size={16} color={colors.white} />
             </View>
           </TouchableOpacity>
 
           <View style={styles.form}>
-            <Input
-              label="First Name *"
-              placeholder="Enter your first name"
-              value={firstName}
-              onChangeText={(text) => {
-                setFirstName(text)
-                if (errors.firstName)
-                  setErrors({ ...errors, firstName: undefined })
-              }}
-              error={errors.firstName}
-              autoCapitalize="words"
-            />
-
-            <View style={styles.inputSpacing}>
+            <TextField isRequired isInvalid={!!errors.firstName}>
+              <Label>First Name</Label>
               <Input
-                label="Last Name"
-                placeholder="Enter your last name"
-                value={lastName}
-                onChangeText={setLastName}
+                placeholder="Enter your first name"
+                value={firstName}
+                onChangeText={(text) => {
+                  setFirstName(text)
+                  if (errors.firstName)
+                    setErrors({ ...errors, firstName: undefined })
+                }}
                 autoCapitalize="words"
               />
+              {errors.firstName ? <FieldError>{errors.firstName}</FieldError> : null}
+            </TextField>
+
+            <View style={styles.inputSpacing}>
+              <TextField>
+                <Label>Last Name</Label>
+                <Input
+                  placeholder="Enter your last name"
+                  value={lastName}
+                  onChangeText={setLastName}
+                  autoCapitalize="words"
+                />
+              </TextField>
             </View>
 
             <View style={styles.inputSpacing}>
-              <Input
-                label="Email"
-                placeholder="Enter your email"
-                value={email}
-                onChangeText={(text) => {
-                  setEmail(text)
-                  if (errors.email) setErrors({ ...errors, email: undefined })
-                }}
-                error={errors.email}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
+              <TextField isInvalid={!!errors.email}>
+                <Label>Email</Label>
+                <Input
+                  placeholder="Enter your email"
+                  value={email}
+                  onChangeText={(text) => {
+                    setEmail(text)
+                    if (errors.email) setErrors({ ...errors, email: undefined })
+                  }}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+                {errors.email ? <FieldError>{errors.email}</FieldError> : null}
+              </TextField>
             </View>
 
             <View style={styles.inputSpacing}>
-              <Input
-                label="Phone"
-                value={`+91 ${user?.phone || ""}`}
-                editable={false}
-                leftIcon={
-                  <Ionicons name="call" size={20} color={semantic.textMuted} />
-                }
-              />
+              <TextField isDisabled>
+                <Label>Phone</Label>
+                <Input
+                  value={`+91 ${user?.phone || ""}`}
+                  editable={false}
+                />
+              </TextField>
               <TouchableOpacity
                 onPress={() => router.push("/(screens)/change-phone")}
               >
-                <Text variant="caption" color="primary" style={styles.hint}>
+                <Typography type="body-sm" className="text-accent" style={styles.hint}>
                   Change phone number
-                </Text>
+                </Typography>
               </TouchableOpacity>
             </View>
           </View>
@@ -190,13 +196,11 @@ export default function EditProfileScreen() {
         <View style={styles.footer}>
           <Button
             variant="primary"
-            fullWidth
-            size="lg"
             onPress={handleSave}
-            isLoading={isLoading}
-            disabled={!firstName.trim()}
+            isDisabled={isLoading || !firstName.trim()}
+            className="w-full"
           >
-            Save Changes
+            {isLoading ? <Spinner size="sm" /> : <Button.Label>Save Changes</Button.Label>}
           </Button>
         </View>
       </KeyboardAvoidingView>
@@ -205,13 +209,6 @@ export default function EditProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
-  keyboardView: {
-    flex: 1,
-  },
   scrollContent: {
     flexGrow: 1,
     padding: spacing[4],

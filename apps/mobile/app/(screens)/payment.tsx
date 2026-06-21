@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react"
 import { View, StyleSheet, Alert, BackHandler } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router, useLocalSearchParams, type Href } from "expo-router"
-import { Text, Button, Spinner, Card } from "../../src/components/ui"
+import { Typography, Button, Spinner, Card } from "heroui-native"
 import { colors, semantic } from "../../src/theme/colors"
 import { spacing } from "../../src/theme/spacing"
 import { usePaymentsStore, useCartStore } from "../../src/store"
@@ -79,7 +79,7 @@ export default function PaymentScreen() {
           currency: initiated.currency,
           order_id: initiated.razorpayOrderId,
           description: "Subito booking payment",
-          theme: { color: "#111827" },
+          theme: { color: "#1D54E2" }, // standard Blue-09 brand color
         })
 
         if (cancelled) return
@@ -208,59 +208,55 @@ export default function PaymentScreen() {
         : "Preparing..."
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: semantic.background }}>
       <View style={styles.content}>
         {paymentStatus === "pending" ||
         paymentStatus === "processing" ||
         paymentStatus === "confirming" ? (
           <View style={styles.processing}>
-            <Spinner size="large" />
-            <Text
-              variant="h5"
-              color="textPrimary"
-              weight="600"
-              style={styles.processingTitle}
+            <Spinner size="lg" />
+            <Typography
+              type="h5"
+              weight="semibold"
+              style={[styles.processingTitle, { color: semantic.textPrimary }]}
             >
               {phaseLabel}
-            </Text>
-            <Text variant="bodyMedium" color="textSecondary" align="center">
+            </Typography>
+            <Typography type="body" align="center" style={{ color: semantic.textSecondary }}>
               Please wait while we process Rs {amount}
-            </Text>
-            <Text
-              variant="caption"
-              color="textMuted"
+            </Typography>
+            <Typography
+              type="body-sm"
               align="center"
-              style={styles.warning}
+              style={[styles.warning, { color: colors.orange[11] }]}
             >
               Please do not press back or close the app
-            </Text>
+            </Typography>
           </View>
         ) : paymentStatus === "failed" ? (
           <View style={styles.failed}>
             <View style={styles.failedIcon}>
               <Ionicons name="close" size={48} color={colors.white} />
             </View>
-            <Text
-              variant="h5"
-              color="textPrimary"
-              weight="600"
-              style={styles.failedTitle}
+            <Typography
+              type="h5"
+              weight="semibold"
+              style={[styles.failedTitle, { color: semantic.textPrimary }]}
             >
               Payment Failed
-            </Text>
-            <Text variant="bodyMedium" color="textSecondary" align="center">
+            </Typography>
+            <Typography type="body" align="center" style={{ color: semantic.textSecondary }}>
               {error || "Your payment could not be processed."}
-            </Text>
+            </Typography>
             <View style={styles.failedActions}>
               <Button
                 variant="primary"
-                fullWidth
                 onPress={handleRetry}
                 disabled={isLoading}
               >
                 Try Again
               </Button>
-              <Button variant="ghost" fullWidth onPress={handleCancel}>
+              <Button variant="ghost" onPress={handleCancel}>
                 Cancel
               </Button>
             </View>
@@ -270,36 +266,35 @@ export default function PaymentScreen() {
             <View style={styles.successIcon}>
               <Ionicons name="checkmark" size={48} color={colors.white} />
             </View>
-            <Text
-              variant="h5"
-              color="textPrimary"
-              weight="600"
-              style={styles.successTitle}
+            <Typography
+              type="h5"
+              weight="semibold"
+              style={[styles.successTitle, { color: semantic.textPrimary }]}
             >
               Payment Successful!
-            </Text>
-            <Text variant="bodyMedium" color="textSecondary" align="center">
+            </Typography>
+            <Typography type="body" align="center" style={{ color: semantic.textSecondary }}>
               Redirecting to your booking...
-            </Text>
+            </Typography>
           </View>
         )}
 
-        <Card style={styles.orderSummary} variant="filled">
+        <Card style={styles.orderSummary} variant="secondary">
           <View style={styles.summaryRow}>
-            <Text variant="bodySmall" color="textMuted">
+            <Typography type="body-sm" style={{ color: semantic.textMuted }}>
               Order ID
-            </Text>
-            <Text variant="bodySmall" color="textPrimary" weight="500">
+            </Typography>
+            <Typography type="body-sm" weight="medium" style={{ color: semantic.textPrimary }}>
               {orderId}
-            </Text>
+            </Typography>
           </View>
           <View style={styles.summaryRow}>
-            <Text variant="bodySmall" color="textMuted">
+            <Typography type="body-sm" style={{ color: semantic.textMuted }}>
               Amount
-            </Text>
-            <Text variant="bodySmall" color="primary" weight="700">
+            </Typography>
+            <Typography type="body-sm" weight="bold" className="text-accent">
               Rs {amount}
-            </Text>
+            </Typography>
           </View>
         </Card>
       </View>
@@ -308,10 +303,6 @@ export default function PaymentScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
   content: {
     flex: 1,
     padding: spacing[6],
@@ -331,6 +322,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing[2],
     backgroundColor: colors.orange[1],
     borderRadius: 8,
+    overflow: "hidden",
   },
   failed: {
     alignItems: "center",
@@ -340,7 +332,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: semantic.error,
+    backgroundColor: semantic.danger,
     alignItems: "center",
     justifyContent: "center",
   },

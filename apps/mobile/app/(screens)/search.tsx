@@ -9,7 +9,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
 import { Image } from "expo-image"
-import { Text, Spinner } from "../../src/components/ui"
+import { Typography, Spinner } from "heroui-native"
 import { colors, semantic } from "../../src/theme/colors"
 import { spacing, borderRadius } from "../../src/theme/spacing"
 import { useListingsStore } from "../../src/store"
@@ -53,14 +53,6 @@ export default function SearchScreen() {
     [allListings]
   )
 
-  //   const debouncedSearch = useCallback(debounce(searchListings, 300), [
-  //     searchListings,
-  //   ])
-  //   const debouncedSearch = useCallback(
-  //     (query: string) => debounce(searchListings, 300)(query),
-  //     [searchListings]
-  //   )
-
   const debouncedSearch = useMemo(
     () => debounce(searchListings, 300),
     [searchListings]
@@ -91,7 +83,7 @@ export default function SearchScreen() {
   const popularServices = allListings.slice(0, 6)
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.white }} edges={["top"]}>
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => router.back()}
@@ -122,18 +114,17 @@ export default function SearchScreen() {
         </View>
       </View>
 
-      {isSearching && <Spinner message="Searching..." />}
+      {isSearching && <Spinner size="lg" style={{ padding: spacing[4] }} />}
 
       {query.length === 0 ? (
         <View style={styles.content}>
-          <Text
-            variant="h6"
-            color="textPrimary"
-            weight="600"
-            style={styles.sectionTitle}
+          <Typography
+            type="h6"
+            weight="semibold"
+            style={[styles.sectionTitle, { color: semantic.textPrimary }]}
           >
             Popular Services
-          </Text>
+          </Typography>
           <View style={styles.popularGrid}>
             {popularServices.map((listing) => (
               <TouchableOpacity
@@ -148,14 +139,14 @@ export default function SearchScreen() {
                     contentFit="cover"
                   />
                 )}
-                <Text
-                  variant="bodyLarge"
-                  color="textPrimary"
+                <Typography
+                  type="body-sm"
                   numberOfLines={2}
                   align="center"
+                  style={{ color: semantic.textPrimary }}
                 >
                   {listing.name}
-                </Text>
+                </Typography>
               </TouchableOpacity>
             ))}
           </View>
@@ -163,12 +154,12 @@ export default function SearchScreen() {
       ) : results.length === 0 && !isSearching ? (
         <View style={styles.emptyState}>
           <Ionicons name="search" size={48} color={semantic.textMuted} />
-          <Text variant="h6" color="textSecondary" style={styles.emptyTitle}>
+          <Typography type="h6" weight="semibold" style={[styles.emptyTitle, { color: semantic.textSecondary }]}>
             No results found
-          </Text>
-          <Text variant="bodySmall" color="textMuted" align="center">
+          </Typography>
+          <Typography type="body-sm" color="muted" align="center">
             Try searching with different keywords
-          </Text>
+          </Typography>
         </View>
       ) : (
         <FlatList
@@ -195,27 +186,27 @@ export default function SearchScreen() {
                 </View>
               )}
               <View style={styles.resultContent}>
-                <Text
-                  variant="bodyMedium"
-                  color="textPrimary"
-                  weight="500"
+                <Typography
+                  type="body"
+                  weight="medium"
                   numberOfLines={1}
+                  style={{ color: semantic.textPrimary }}
                 >
                   {item.name}
-                </Text>
+                </Typography>
                 {item.shortDescription && (
-                  <Text
-                    variant="bodyMedium"
-                    color="textMuted"
+                  <Typography
+                    type="body-sm"
+                    color="muted"
                     numberOfLines={1}
                   >
                     {item.shortDescription}
-                  </Text>
+                  </Typography>
                 )}
                 {item.basePrice && (
-                  <Text variant="bodySmall" color="primary" weight="600">
+                  <Typography type="body-sm" className="text-accent" weight="semibold">
                     From ₹{item.basePrice}
-                  </Text>
+                  </Typography>
                 )}
               </View>
               <Ionicons
@@ -234,10 +225,6 @@ export default function SearchScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
   header: {
     flexDirection: "row",
     alignItems: "center",

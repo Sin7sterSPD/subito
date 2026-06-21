@@ -10,9 +10,9 @@ import {
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router, useLocalSearchParams } from "expo-router"
-import { Text, Button, Input, Avatar } from "../../src/components/ui"
+import { Typography, Button, TextField, Input, Label, Avatar, Spinner } from "heroui-native"
 import { colors, semantic } from "../../src/theme/colors"
-import { spacing, borderRadius } from "../../src/theme/spacing"
+import { spacing } from "../../src/theme/spacing"
 import { useBookingsStore } from "../../src/store"
 import { ratingsApi } from "../../src/services/api"
 import { Ionicons } from "@expo/vector-icons"
@@ -66,10 +66,10 @@ export default function RatingScreen() {
   const ratingLabels = ["", "Poor", "Fair", "Good", "Very Good", "Excellent"]
 
   return (
-    <SafeAreaView style={styles.container} edges={["bottom"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.white }} edges={["bottom"]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardView}
+        style={{ flex: 1 }}
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -80,34 +80,34 @@ export default function RatingScreen() {
             <View style={styles.iconContainer}>
               <Ionicons name="star" size={48} color={colors.orange[8]} />
             </View>
-            <Text variant="h4" color="textPrimary" weight="700" align="center">
+            <Typography type="h4" weight="bold" align="center" style={{ color: semantic.textPrimary }}>
               Rate your experience
-            </Text>
-            <Text
-              variant="bodyMedium"
-              color="textSecondary"
+            </Typography>
+            <Typography
+              type="body"
+              color="muted"
               align="center"
               style={styles.subtitle}
             >
               Your feedback helps us improve our service
-            </Text>
+            </Typography>
           </View>
 
           {selectedBooking?.partner && (
             <View style={styles.partnerSection}>
-              <Avatar
-                source={selectedBooking.partner.profileImage}
-                name={selectedBooking.partner.name}
-                size="lg"
-              />
-              <Text
-                variant="bodyMedium"
-                color="textPrimary"
-                weight="600"
-                style={styles.partnerName}
+              <Avatar className="w-16 h-16 rounded-full mb-2">
+                {selectedBooking.partner.profileImage ? (
+                  <Avatar.Image source={{ uri: selectedBooking.partner.profileImage }} className="w-full h-full rounded-full" />
+                ) : null}
+                <Avatar.Fallback />
+              </Avatar>
+              <Typography
+                type="body"
+                weight="semibold"
+                style={[styles.partnerName, { color: semantic.textPrimary }]}
               >
                 {selectedBooking.partner.name || "Service Partner"}
-              </Text>
+              </Typography>
             </View>
           )}
 
@@ -128,36 +128,37 @@ export default function RatingScreen() {
               ))}
             </View>
             {rating > 0 && (
-              <Text
-                variant="bodyMedium"
-                color="primary"
-                weight="600"
-                style={styles.ratingLabel}
+              <Typography
+                type="body"
+                weight="semibold"
+                style={[styles.ratingLabel, { color: semantic.primary }]}
               >
                 {ratingLabels[rating]}
-              </Text>
+              </Typography>
             )}
           </View>
 
           <View style={styles.commentSection}>
-            <Input
-              label="Additional comments (optional)"
-              placeholder="Tell us more about your experience..."
-              value={comment}
-              onChangeText={setComment}
-              multiline
-              numberOfLines={4}
-            />
+            <TextField>
+              <Label>Additional comments (optional)</Label>
+              <Input
+                placeholder="Tell us more about your experience..."
+                value={comment}
+                onChangeText={setComment}
+                multiline
+                numberOfLines={4}
+              />
+            </TextField>
           </View>
 
           <View style={styles.quickFeedback}>
-            <Text
-              variant="bodyLarge"
-              color="textMuted"
+            <Typography
+              type="body-sm"
+              color="muted"
               style={styles.quickTitle}
             >
               Quick feedback
-            </Text>
+            </Typography>
             <View style={styles.quickOptions}>
               {["On time", "Professional", "Good quality", "Friendly"].map(
                 (tag) => (
@@ -175,14 +176,14 @@ export default function RatingScreen() {
                       }
                     }}
                   >
-                    <Text
-                      variant="bodyLarge"
-                      color={
-                        comment.includes(tag) ? "primary" : "textSecondary"
-                      }
+                    <Typography
+                      type="body"
+                      style={{
+                        color: comment.includes(tag) ? semantic.primary : semantic.textSecondary
+                      }}
                     >
                       {tag}
-                    </Text>
+                    </Typography>
                   </TouchableOpacity>
                 )
               )}
@@ -193,18 +194,16 @@ export default function RatingScreen() {
         <View style={styles.footer}>
           <Button
             variant="primary"
-            fullWidth
-            size="lg"
             onPress={handleSubmit}
-            isLoading={isSubmitting}
-            disabled={rating === 0}
+            isDisabled={isSubmitting || rating === 0}
+            className="w-full"
           >
-            Submit Rating
+            {isSubmitting ? <Spinner size="sm" /> : <Button.Label>Submit Rating</Button.Label>}
           </Button>
           <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
-            <Text variant="bodySmall" color="textMuted">
+            <Typography type="body-sm" color="muted">
               Skip for now
-            </Text>
+            </Typography>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -213,13 +212,6 @@ export default function RatingScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
-  keyboardView: {
-    flex: 1,
-  },
   scrollContent: {
     flexGrow: 1,
     padding: spacing[4],
@@ -278,7 +270,7 @@ const styles = StyleSheet.create({
   quickOption: {
     paddingHorizontal: spacing[3],
     paddingVertical: spacing[2],
-    borderRadius: borderRadius.full,
+    borderRadius: 100,
     backgroundColor: semantic.backgroundSecondary,
   },
   quickOptionActive: {

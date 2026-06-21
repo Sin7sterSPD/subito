@@ -1,24 +1,22 @@
 import React, { useState } from "react"
 import {
   View,
-  StyleSheet,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   TouchableOpacity,
+  Text,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
-import { Text, Button, Input, Avatar } from "../../src/components/ui"
-import { colors, semantic } from "../../src/theme/colors"
-import { spacing, borderRadius } from "../../src/theme/spacing"
+import { Button, Input, Avatar, TextField, Label, FieldError, Spinner } from "heroui-native"
 import { useAuthStore, useAppStore, useUserStore } from "../../src/store"
-import { usersApi, uploadApi } from "../../src/services/api"
+import { uploadApi } from "../../src/services/api"
 import * as ImagePicker from "expo-image-picker"
 import { Ionicons } from "@expo/vector-icons"
 
 export default function OnboardingScreen() {
-  const { user, fetchUser } = useAuthStore()
+  const { fetchUser } = useAuthStore()
   const { setOnboardingComplete } = useAppStore()
   const { updateProfile } = useUserStore()
 
@@ -109,103 +107,121 @@ export default function OnboardingScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style ={{flex:1}}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardView}
+        className="flex-1"
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={{ flexGrow: 1, padding: 24, paddingTop: 32 }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.header}>
-            <Text variant="h3" color="textPrimary" weight="700">
+          <View className="mb-8 bg-white">
+            <Text className="text-h3 font-bold text-gray-13">
               Complete your profile
             </Text>
-            <Text
-              variant="bodyMedium"
-              color="textSecondary"
-              style={styles.subtitle}
-            >
+            <Text className="text-body-m text-gray-08 mt-2">
               Help us personalize your experience
             </Text>
           </View>
 
           <TouchableOpacity
-            style={styles.avatarContainer}
+            className="self-center mb-8 relative"
             onPress={handlePickImage}
           >
             {profileImage ? (
-              <Avatar source={profileImage} size="xl" />
+              <Avatar className="w-[100px] h-[100px] rounded-full">
+                <Avatar.Image source={{ uri: profileImage }} className="w-full h-full rounded-full" />
+              </Avatar>
             ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Ionicons name="camera" size={32} color={semantic.textMuted} />
+              <View className="w-[100px] h-[100px] rounded-full bg-gray-01 items-center justify-center border-2 border-gray-03 border-dashed">
+                <Ionicons name="camera" size={32} color="#9EA2AD" />
               </View>
             )}
-            <View style={styles.editBadge}>
-              <Ionicons name="pencil" size={14} color={colors.white} />
+            <View className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-accent items-center justify-center border-2 border-white">
+              <Ionicons name="pencil" size={14} color="#FFFFFF" />
             </View>
           </TouchableOpacity>
 
-          <View style={styles.form}>
-            <Input
-              label="First Name *"
-              placeholder="Enter your first name"
-              value={firstName}
-              onChangeText={(text: React.SetStateAction<string>) => {
-                setFirstName(text)
-                if (errors.firstName)
-                  setErrors({ ...errors, firstName: undefined })
-              }}
-              error={errors.firstName}
-              autoCapitalize="words"
-            />
-
-            <View style={styles.inputSpacing}>
+          <View className="flex-1">
+            <TextField isRequired isInvalid={!!errors.firstName}>
+              <Label className="mb-1.5">First Name</Label>
               <Input
-                label="Last Name"
-                placeholder="Enter your last name"
-                value={lastName}
-                onChangeText={(text: React.SetStateAction<string>) => {
-                  setLastName(text)
-                  if (errors.lastName)
-                    setErrors({ ...errors, lastName: undefined })
+                placeholder="Enter your first name"
+                value={firstName}
+                onChangeText={(text) => {
+                  setFirstName(text)
+                  if (errors.firstName)
+                    setErrors({ ...errors, firstName: undefined })
                 }}
-                error={errors.lastName}
                 autoCapitalize="words"
+                className="h-12"
               />
+              {errors.firstName && (
+                <FieldError className="mt-1.5">{errors.firstName}</FieldError>
+              )}
+            </TextField>
+
+            <View className="mt-4">
+              <TextField isInvalid={!!errors.lastName}>
+                <Label className="mb-1.5">Last Name</Label>
+                <Input
+                  placeholder="Enter your last name"
+                  value={lastName}
+                  onChangeText={(text) => {
+                    setLastName(text)
+                    if (errors.lastName)
+                      setErrors({ ...errors, lastName: undefined })
+                  }}
+                  autoCapitalize="words"
+                  className="h-12"
+                />
+                {errors.lastName && (
+                  <FieldError className="mt-1.5">{errors.lastName}</FieldError>
+                )}
+              </TextField>
             </View>
 
-            <View style={styles.inputSpacing}>
-              <Input
-                label="Email"
-                placeholder="Enter your email (optional)"
-                value={email}
-                onChangeText={(text: React.SetStateAction<string>) => {
-                  setEmail(text)
-                  if (errors.email) setErrors({ ...errors, email: undefined })
-                }}
-                error={errors.email}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
+            <View className="mt-4">
+              <TextField isInvalid={!!errors.email}>
+                <Label className="mb-1.5">Email</Label>
+                <Input
+                  placeholder="Enter your email (optional)"
+                  value={email}
+                  onChangeText={(text) => {
+                    setEmail(text)
+                    if (errors.email)
+                      setErrors({ ...errors, email: undefined })
+                  }}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  className="h-12"
+                />
+                {errors.email && (
+                  <FieldError className="mt-1.5">{errors.email}</FieldError>
+                )}
+              </TextField>
             </View>
           </View>
 
-          <View style={styles.actions}>
+          <View className="mt-8">
             <Button
               onPress={handleSubmit}
-              isLoading={isLoading}
-              disabled={!firstName.trim()}
-              fullWidth
+              isDisabled={isLoading || !firstName.trim()}
+              variant="primary"
               size="lg"
+              className="w-full h-12"
             >
-              Continue
+              {isLoading ? (
+                <Spinner size="sm" color="white" />
+              ) : (
+                <Button.Label>Continue</Button.Label>
+              )}
             </Button>
 
-            <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
-              <Text variant="bodyMedium" color="textMuted">
+            <TouchableOpacity onPress={handleSkip} className="items-center p-4">
+              <Text className="text-body-m text-gray-06">
                 Skip for now
               </Text>
             </TouchableOpacity>
@@ -216,65 +232,3 @@ export default function OnboardingScreen() {
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    padding: spacing[6],
-    paddingTop: spacing[8],
-  },
-  header: {
-    marginBottom: spacing[8],
-  },
-  subtitle: {
-    marginTop: spacing[2],
-  },
-  avatarContainer: {
-    alignSelf: "center",
-    marginBottom: spacing[8],
-    position: "relative",
-  },
-  avatarPlaceholder: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: semantic.backgroundSecondary,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: semantic.border,
-    borderStyle: "dashed",
-  },
-  editBadge: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: semantic.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: colors.white,
-  },
-  form: {
-    flex: 1,
-  },
-  inputSpacing: {
-    marginTop: spacing[4],
-  },
-  actions: {
-    marginTop: spacing[8],
-  },
-  skipButton: {
-    alignItems: "center",
-    padding: spacing[4],
-  },
-})

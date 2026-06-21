@@ -2,7 +2,7 @@ import React from "react"
 import { View, StyleSheet, ScrollView, Linking } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Image } from "expo-image"
-import { Text, Card, Divider } from "../../src/components/ui"
+import { Typography, Card, Separator } from "heroui-native"
 import { colors, semantic } from "../../src/theme/colors"
 import { spacing } from "../../src/theme/spacing"
 import { useAppStore } from "../../src/store"
@@ -23,63 +23,62 @@ export default function AboutScreen() {
             style={styles.logo}
             contentFit="cover"
           />
-          <Text variant="h3" color="textPrimary" weight="700">
+          <Typography type="h3" weight="bold" style={{ color: semantic.textPrimary }}>
             Subito
-          </Text>
-          <Text variant="bodySmall" color="textMuted">
+          </Typography>
+          <Typography type="body-sm" color="muted">
             Version {version}
-          </Text>
+          </Typography>
         </View>
 
         <View style={styles.content}>
-          <Text
-            variant="bodyMedium"
-            color="textSecondary"
+          <Typography
+            type="body"
+            color="muted"
             align="center"
             style={styles.description}
           >
             Professional home services at your doorstep. We connect you with
             skilled partners for cleaning, maintenance, and more.
-          </Text>
+          </Typography>
 
-          <Card style={styles.statsCard} variant="filled">
+          <Card style={styles.statsCard} variant="secondary">
             <View style={styles.stat}>
-              <Text variant="h4" color="primary" weight="700">
+              <Typography type="h4" weight="bold" className="text-accent">
                 50K+
-              </Text>
-              <Text variant="bodyMedium" color="textMuted">
+              </Typography>
+              <Typography type="body" color="muted">
                 Happy Customers
-              </Text>
+              </Typography>
             </View>
-            <Divider orientation="vertical" marginHorizontal={spacing[4]} />
+            <Separator orientation="vertical" style={{ marginHorizontal: spacing[4] }} />
             <View style={styles.stat}>
-              <Text variant="h4" color="primary" weight="700">
+              <Typography type="h4" weight="bold" className="text-accent">
                 1000+
-              </Text>
-              <Text variant="bodyMedium" color="textMuted">
+              </Typography>
+              <Typography type="body" color="muted">
                 Service Partners
-              </Text>
+              </Typography>
             </View>
-            <Divider orientation="vertical" marginHorizontal={spacing[4]} />
+            <Separator orientation="vertical" style={{ marginHorizontal: spacing[4] }} />
             <View style={styles.stat}>
-              <Text variant="h4" color="primary" weight="700">
+              <Typography type="h4" weight="bold" className="text-accent">
                 10+
-              </Text>
-              <Text variant="bodyMedium" color="textMuted">
+              </Typography>
+              <Typography type="body" color="muted">
                 Cities
-              </Text>
+              </Typography>
             </View>
           </Card>
 
           <View style={styles.section}>
-            <Text
-              variant="h6"
-              color="textPrimary"
-              weight="600"
-              style={styles.sectionTitle}
+            <Typography
+              type="h6"
+              weight="semibold"
+              style={[styles.sectionTitle, { color: semantic.textPrimary }]}
             >
               Our Services
-            </Text>
+            </Typography>
             <View style={styles.services}>
               {[
                 "Home Cleaning",
@@ -92,23 +91,22 @@ export default function AboutScreen() {
                 "Office Cleaning",
               ].map((service, idx) => (
                 <View key={idx} style={styles.serviceTag}>
-                  <Text variant="bodyLarge" color="primary">
+                  <Typography type="body" className="text-accent">
                     {service}
-                  </Text>
+                  </Typography>
                 </View>
               ))}
             </View>
           </View>
 
           <View style={styles.section}>
-            <Text
-              variant="h6"
-              color="textPrimary"
-              weight="600"
-              style={styles.sectionTitle}
+            <Typography
+              type="h6"
+              weight="semibold"
+              style={[styles.sectionTitle, { color: semantic.textPrimary }]}
             >
               Connect With Us
-            </Text>
+            </Typography>
             <View style={styles.socialLinks}>
               {[
                 { name: "Facebook", url: "https://facebook.com/subito" },
@@ -119,32 +117,31 @@ export default function AboutScreen() {
                   url: "https://linkedin.com/company/subito",
                 },
               ].map((social, idx) => (
-                <Text
+                <Typography
                   key={idx}
-                  variant="bodySmall"
-                  color="primary"
-                  weight="500"
-                  style={styles.socialLink}
+                  type="body-sm"
+                  weight="medium"
+                  style={[styles.socialLink, { color: semantic.primary }]}
                   onPress={() => Linking.openURL(social.url)}
                 >
                   {social.name}
-                </Text>
+                </Typography>
               ))}
             </View>
           </View>
 
           <View style={styles.footer}>
-            <Text variant="bodyMedium" color="textMuted" align="center">
+            <Typography type="body" color="muted" align="center">
               Made with ❤️ in India
-            </Text>
-            <Text
-              variant="bodyMedium"
-              color="textMuted"
+            </Typography>
+            <Typography
+              type="body"
+              color="muted"
               align="center"
               style={styles.copyright}
             >
               © {new Date().getFullYear()} Subito. All rights reserved.
-            </Text>
+            </Typography>
           </View>
         </View>
       </ScrollView>

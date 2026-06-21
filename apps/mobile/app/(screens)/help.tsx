@@ -8,9 +8,9 @@ import {
   Alert,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { Text, Card, Divider } from "../../src/components/ui"
+import { Typography, Card, Separator } from "heroui-native"
 import { colors, semantic } from "../../src/theme/colors"
-import { spacing, borderRadius } from "../../src/theme/spacing"
+import { spacing } from "../../src/theme/spacing"
 import { useAppStore } from "../../src/store"
 import { Ionicons } from "@expo/vector-icons"
 
@@ -28,17 +28,18 @@ function HelpItem({ icon, title, subtitle, onPress }: HelpItemProps) {
         <Ionicons name={icon} size={22} color={semantic.primary} />
       </View>
       <View style={styles.helpContent}>
-        <Text variant="bodyMedium" color="textPrimary" weight="500">
+        <Typography type="body" weight="medium" style={{ color: semantic.textPrimary }}>
           {title}
-        </Text>
-        <Text variant="bodyMedium" color="textMuted">
+        </Typography>
+        <Typography type="body-sm" color="muted">
           {subtitle}
-        </Text>
+        </Typography>
       </View>
       <Ionicons name="chevron-forward" size={20} color={semantic.textMuted} />
     </TouchableOpacity>
   )
 }
+
 const openExternalUrl = async (url: string) => {
   try {
     const supported = await Linking.canOpenURL(url)
@@ -104,32 +105,31 @@ export default function HelpScreen() {
   ]
 
   return (
-    <SafeAreaView style={styles.container} edges={["bottom"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: semantic.backgroundSecondary }} edges={["bottom"]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
-          <Text
-            variant="h6"
-            color="textPrimary"
-            weight="600"
-            style={styles.sectionTitle}
+          <Typography
+            type="h6"
+            weight="semibold"
+            style={[styles.sectionTitle, { color: semantic.textPrimary }]}
           >
             Contact Us
-          </Text>
-          <Card variant="outlined" padding={0}>
+          </Typography>
+          <Card variant="default" style={{ padding: 0, overflow: "hidden" }}>
             <HelpItem
               icon="call"
               title="Call Support"
               subtitle="Available 24/7"
               onPress={handleCall}
             />
-            <Divider marginVertical={0} />
+            <Separator />
             <HelpItem
               icon="mail"
               title="Email Support"
               subtitle="Response within 24 hours"
               onPress={handleEmail}
             />
-            <Divider marginVertical={0} />
+            <Separator />
             <HelpItem
               icon="logo-whatsapp"
               title="WhatsApp"
@@ -140,48 +140,46 @@ export default function HelpScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text
-            variant="h6"
-            color="textPrimary"
-            weight="600"
-            style={styles.sectionTitle}
+          <Typography
+            type="h6"
+            weight="semibold"
+            style={[styles.sectionTitle, { color: semantic.textPrimary }]}
           >
             Frequently Asked Questions
-          </Text>
-          <Card variant="outlined" padding={0}>
+          </Typography>
+          <Card variant="default" style={{ padding: 0, overflow: "hidden" }}>
             {faqs.map((faq, idx) => (
               <React.Fragment key={idx}>
                 <FAQItem question={faq.question} answer={faq.answer} />
-                {idx < faqs.length - 1 && <Divider marginVertical={0} />}
+                {idx < faqs.length - 1 && <Separator />}
               </React.Fragment>
             ))}
           </Card>
         </View>
 
         <View style={styles.section}>
-          <Text
-            variant="h6"
-            color="textPrimary"
-            weight="600"
-            style={styles.sectionTitle}
+          <Typography
+            type="h6"
+            weight="semibold"
+            style={[styles.sectionTitle, { color: semantic.textPrimary }]}
           >
             Legal
-          </Text>
-          <Card variant="outlined" padding={0}>
+          </Typography>
+          <Card variant="default" style={{ padding: 0, overflow: "hidden" }}>
             <HelpItem
               icon="document-text"
               title="Terms of Service"
               subtitle="Read our terms"
               onPress={() => openExternalUrl("https://subito.com/terms")}
             />
-            <Divider marginVertical={0} />
+            <Separator />
             <HelpItem
               icon="shield-checkmark"
               title="Privacy Policy"
               subtitle="How we handle your data"
               onPress={() => openExternalUrl("https://subito.com/privacy")}
             />
-            <Divider marginVertical={0} />
+            <Separator />
             <HelpItem
               icon="card"
               title="Refund Policy"
@@ -203,14 +201,13 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
   return (
     <TouchableOpacity style={styles.faqItem} onPress={() => setIsOpen(!isOpen)}>
       <View style={styles.faqHeader}>
-        <Text
-          variant="bodySmall"
-          color="textPrimary"
-          weight="500"
-          style={styles.faqQuestion}
+        <Typography
+          type="body"
+          weight="medium"
+          style={[styles.faqQuestion, { color: semantic.textPrimary }]}
         >
           {question}
-        </Text>
+        </Typography>
         <Ionicons
           name={isOpen ? "chevron-up" : "chevron-down"}
           size={20}
@@ -218,23 +215,19 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
         />
       </View>
       {isOpen && (
-        <Text
-          variant="bodyLarge"
-          color="textSecondary"
+        <Typography
+          type="body"
+          color="muted"
           style={styles.faqAnswer}
         >
           {answer}
-        </Text>
+        </Typography>
       )}
     </TouchableOpacity>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: semantic.backgroundSecondary,
-  },
   section: {
     padding: spacing[4],
   },

@@ -8,7 +8,7 @@ import {
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
-import { Text, Button, Input } from "../../src/components/ui"
+import { Typography, Button, TextField, Input, Label, FieldError, Spinner } from "heroui-native"
 import { colors, semantic } from "../../src/theme/colors"
 import { spacing } from "../../src/theme/spacing"
 import { authApi } from "../../src/services/api/auth"
@@ -54,43 +54,42 @@ export default function ChangePhoneScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.white }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.flex}
+        style={{ flex: 1 }}
       >
         <ScrollView contentContainerStyle={styles.scroll}>
-          <Text variant="h3" style={styles.title}>
+          <Typography type="h3" weight="bold" style={styles.title}>
             New phone number
-          </Text>
-          <Text variant="bodyMedium" color="textMuted" style={styles.sub}>
+          </Typography>
+          <Typography type="body" color="muted" style={styles.sub}>
             We will send an OTP to verify the new number. All other devices will
             be signed out after the change.
-          </Text>
-          <Input
-            label="Mobile number"
-            value={phone}
-            onChangeText={(t: string) => {
-              setPhone(t.replace(/\D/g, "").slice(0, 10))
-              if (error) setError("")
-            }}
-            keyboardType="phone-pad"
-            maxLength={10}
-            placeholder="10-digit number"
-          />
-          {error ? (
-            <Text variant="bodySmall" color="error" style={styles.err}>
-              {error}
-            </Text>
-          ) : null}
+          </Typography>
+          
+          <TextField isInvalid={!!error} style={{ marginBottom: spacing[6] }}>
+            <Label>Mobile number</Label>
+            <Input
+              value={phone}
+              onChangeText={(t: string) => {
+                setPhone(t.replace(/\D/g, "").slice(0, 10))
+                if (error) setError("")
+              }}
+              keyboardType="phone-pad"
+              maxLength={10}
+              placeholder="10-digit number"
+            />
+            {error ? <FieldError>{error}</FieldError> : null}
+          </TextField>
+
           <Button
             variant="primary"
-            fullWidth
-            size="lg"
             onPress={() => void onContinue()}
-            isLoading={loading}
+            isDisabled={loading}
+            className="w-full mt-4"
           >
-            Continue
+            {loading ? <Spinner size="sm" /> : <Button.Label>Continue</Button.Label>}
           </Button>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -99,10 +98,7 @@ export default function ChangePhoneScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.white },
-  flex: { flex: 1 },
   scroll: { padding: spacing[4], gap: spacing[3] },
   title: { marginBottom: spacing[2] },
   sub: { marginBottom: spacing[4] },
-  err: { marginTop: -spacing[2] },
 })

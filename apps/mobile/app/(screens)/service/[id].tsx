@@ -9,15 +9,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router, useLocalSearchParams, Stack } from "expo-router"
 import { Image } from "expo-image"
-import {
-  Text,
-  Card,
-  Button,
-  Badge,
-  Spinner,
-  BottomSheet,
-  Divider,
-} from "../../../src/components/ui"
+import { Typography, Card, Button, Chip, Spinner, Separator } from "heroui-native"
 import { colors, semantic } from "../../../src/theme/colors"
 import { spacing, borderRadius } from "../../../src/theme/spacing"
 import { useListingsStore, useCartStore } from "../../../src/store"
@@ -38,38 +30,36 @@ function CatalogItem({
   const [quantity, setQuantity] = useState(catalog.minQuantity || 1)
 
   return (
-    <Card style={styles.catalogItem} variant="outlined">
+    <Card style={styles.catalogItem} variant="default">
       <View style={styles.catalogContent}>
         <View style={styles.catalogInfo}>
-          <Text variant="bodyMedium" color="textPrimary" weight="600">
+          <Typography type="body" weight="semibold" style={{ color: semantic.textPrimary }}>
             {catalog.name}
-          </Text>
+          </Typography>
           {catalog.description && (
-            <Text
-              variant="bodyMedium"
-              color="textMuted"
-              style={styles.catalogDesc}
+            <Typography
+              type="body-sm"
+              style={[styles.catalogDesc, { color: semantic.textMuted }]}
             >
               {catalog.description}
-            </Text>
+            </Typography>
           )}
           <View style={styles.catalogPricing}>
-            <Text variant="bodyMedium" color="primary" weight="700">
+            <Typography type="body" weight="bold" className="text-accent">
               ₹{catalog.discountedPrice || catalog.price}
-            </Text>
+            </Typography>
             {catalog.discountedPrice && (
-              <Text
-                variant="bodyLarge"
-                color="textMuted"
-                style={styles.originalPrice}
+              <Typography
+                type="body"
+                style={[styles.originalPrice, { color: semantic.textMuted }]}
               >
                 ₹{catalog.price}
-              </Text>
+              </Typography>
             )}
             {catalog.unit && (
-              <Text variant="bodyMedium" color="textMuted">
+              <Typography type="body-sm" style={{ color: semantic.textMuted }}>
                 / {catalog.displayUnit || catalog.unit}
-              </Text>
+              </Typography>
             )}
           </View>
         </View>
@@ -94,13 +84,13 @@ function CatalogItem({
                 color={
                   quantity <= (catalog.minQuantity || 1)
                     ? semantic.textMuted
-                    : semantic.primary
+                    : semantic.accent
                 }
               />
             </TouchableOpacity>
-            <Text variant="bodySmall" weight="600" style={styles.quantityText}>
+            <Typography type="body-sm" weight="semibold" style={styles.quantityText}>
               {quantity}
-            </Text>
+            </Typography>
             <TouchableOpacity
               style={styles.quantityButton}
               onPress={() =>
@@ -119,14 +109,13 @@ function CatalogItem({
                 color={
                   quantity >= (catalog.maxQuantity || 99)
                     ? semantic.textMuted
-                    : semantic.primary
+                    : semantic.accent
                 }
               />
             </TouchableOpacity>
           </View>
           <Button
             variant="primary"
-            size="sm"
             onPress={() => onAdd(catalog, quantity)}
             isLoading={isAdding}
           >
@@ -148,14 +137,14 @@ function AddOnItem({
   return (
     <TouchableOpacity style={styles.addOnItem} onPress={onAdd}>
       <View style={styles.addOnInfo}>
-        <Text variant="bodySmall" color="textPrimary" weight="500">
+        <Typography type="body-sm" weight="medium" style={{ color: semantic.textPrimary }}>
           {addOn.name}
-        </Text>
-        <Text variant="bodyLarge" color="primary" weight="600">
+        </Typography>
+        <Typography type="body-sm" weight="semibold" className="text-accent">
           +₹{addOn.price}
-        </Text>
+        </Typography>
       </View>
-      <Ionicons name="add-circle" size={24} color={semantic.primary} />
+      <Ionicons name="add-circle" size={24} color={semantic.accent} />
     </TouchableOpacity>
   )
 }
@@ -166,14 +155,13 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
   return (
     <TouchableOpacity style={styles.faqItem} onPress={() => setIsOpen(!isOpen)}>
       <View style={styles.faqHeader}>
-        <Text
-          variant="bodySmall"
-          color="textPrimary"
-          weight="500"
-          style={styles.faqQuestion}
+        <Typography
+          type="body-sm"
+          weight="medium"
+          style={[styles.faqQuestion, { color: semantic.textPrimary }]}
         >
           {question}
-        </Text>
+        </Typography>
         <Ionicons
           name={isOpen ? "chevron-up" : "chevron-down"}
           size={20}
@@ -181,13 +169,12 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
         />
       </View>
       {isOpen && (
-        <Text
-          variant="bodyLarge"
-          color="textSecondary"
-          style={styles.faqAnswer}
+        <Typography
+          type="body-sm"
+          style={[styles.faqAnswer, { color: semantic.textSecondary }]}
         >
           {answer}
-        </Text>
+        </Typography>
       )}
     </TouchableOpacity>
   )
@@ -216,15 +203,15 @@ export default function ServiceDetailScreen() {
   }
 
   if (isLoading) {
-    return <Spinner fullScreen message="Loading service..." />
+    return <Spinner style={{ flex: 1, justifyContent: "center" }} />
   }
   if (!selectedListing || selectedListing.id !== id) {
     return (
-      <SafeAreaView style={styles.container} edges={["bottom"]}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: semantic.background }} edges={["bottom"]}>
         <View style={styles.content}>
-          <Text variant="h6" color="textSecondary">
+          <Typography type="h6" style={{ color: semantic.textSecondary }}>
             Service not found
-          </Text>
+          </Typography>
         </View>
       </SafeAreaView>
     )
@@ -236,7 +223,7 @@ export default function ServiceDetailScreen() {
   return (
     <>
       <Stack.Screen options={{ title: listing.name }} />
-      <SafeAreaView style={styles.container} edges={["bottom"]}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: semantic.background }} edges={["bottom"]}>
         <ScrollView showsVerticalScrollIndicator={false}>
           {listing.images && listing.images.length > 0 && (
             <ScrollView
@@ -257,9 +244,13 @@ export default function ServiceDetailScreen() {
 
           <View style={styles.content}>
             <View style={styles.titleSection}>
-              <Text variant="h4" color="textPrimary" weight="700">
+              <Typography
+                type="h4"
+                weight="bold"
+                style={{ color: semantic.textPrimary }}
+              >
                 {listing.name}
-              </Text>
+              </Typography>
               {listing.duration && (
                 <View style={styles.duration}>
                   <Ionicons
@@ -267,43 +258,41 @@ export default function ServiceDetailScreen() {
                     size={16}
                     color={semantic.textMuted}
                   />
-                  <Text variant="bodyLarge" color="textMuted">
+                  <Typography type="body" style={{ color: semantic.textMuted }}>
                     {listing.duration} min
-                  </Text>
+                  </Typography>
                 </View>
               )}
             </View>
 
             {listing.shortDescription && (
-              <Text
-                variant="bodySmall"
-                color="textSecondary"
-                style={styles.description}
+              <Typography
+                type="body-sm"
+                style={[styles.description, { color: semantic.textSecondary }]}
               >
                 {listing.shortDescription}
-              </Text>
+              </Typography>
             )}
 
             {listing.tags && listing.tags.length > 0 && (
               <View style={styles.tags}>
                 {listing.tags.map((tag, idx) => (
-                  <Badge key={idx} variant="neutral" size="sm">
+                  <Chip key={idx} variant="soft" color="default">
                     {tag}
-                  </Badge>
+                  </Chip>
                 ))}
               </View>
             )}
 
             {listing.highlights && listing.highlights.length > 0 && (
               <View style={styles.section}>
-                <Text
-                  variant="h6"
-                  color="textPrimary"
-                  weight="600"
-                  style={styles.sectionTitle}
+                <Typography
+                  type="body"
+                  weight="semibold"
+                  style={[styles.sectionTitle, { color: semantic.textPrimary }]}
                 >
                   Highlights
-                </Text>
+                </Typography>
                 {listing.highlights.map((highlight, idx) => (
                   <View key={idx} style={styles.highlightItem}>
                     <Ionicons
@@ -311,13 +300,12 @@ export default function ServiceDetailScreen() {
                       size={18}
                       color={semantic.success}
                     />
-                    <Text
-                      variant="bodySmall"
-                      color="textSecondary"
-                      style={styles.highlightText}
+                    <Typography
+                      type="body-sm"
+                      style={[styles.highlightText, { color: semantic.textSecondary }]}
                     >
                       {highlight}
-                    </Text>
+                    </Typography>
                   </View>
                 ))}
               </View>
@@ -325,14 +313,13 @@ export default function ServiceDetailScreen() {
 
             {listing.catalogs && listing.catalogs.length > 0 && (
               <View style={styles.section}>
-                <Text
-                  variant="h6"
-                  color="textPrimary"
-                  weight="600"
-                  style={styles.sectionTitle}
+                <Typography
+                  type="body"
+                  weight="semibold"
+                  style={[styles.sectionTitle, { color: semantic.textPrimary }]}
                 >
                   Select Service
-                </Text>
+                </Typography>
                 {listing.catalogs.map((catalog) => (
                   <CatalogItem
                     key={catalog.id}
@@ -346,15 +333,14 @@ export default function ServiceDetailScreen() {
 
             {listing.addOns && listing.addOns.length > 0 && (
               <View style={styles.section}>
-                <Text
-                  variant="h6"
-                  color="textPrimary"
-                  weight="600"
-                  style={styles.sectionTitle}
+                <Typography
+                  type="body"
+                  weight="semibold"
+                  style={[styles.sectionTitle, { color: semantic.textPrimary }]}
                 >
                   Add-ons
-                </Text>
-                <Card variant="outlined" padding={0}>
+                </Typography>
+                <Card variant="default" style={{ padding: 0 }}>
                   {listing.addOns.map((addOn, idx) => (
                     <React.Fragment key={addOn.id}>
                       <AddOnItem
@@ -362,7 +348,7 @@ export default function ServiceDetailScreen() {
                         onAdd={() => handleAddToCart(addOn as Catalog, 1)}
                       />
                       {idx < listing.addOns!.length - 1 && (
-                        <Divider marginVertical={0} />
+                        <Separator />
                       )}
                     </React.Fragment>
                   ))}
@@ -372,32 +358,30 @@ export default function ServiceDetailScreen() {
 
             {listing.howItWorks && listing.howItWorks.length > 0 && (
               <View style={styles.section}>
-                <Text
-                  variant="h6"
-                  color="textPrimary"
-                  weight="600"
-                  style={styles.sectionTitle}
+                <Typography
+                  type="body"
+                  weight="semibold"
+                  style={[styles.sectionTitle, { color: semantic.textPrimary }]}
                 >
                   How It Works
-                </Text>
+                </Typography>
                 {listing.howItWorks.map((step, idx) => (
                   <View key={idx} style={styles.stepItem}>
                     <View style={styles.stepNumber}>
-                      <Text
-                        variant="bodyLarge"
-                        color={colors.white}
-                        weight="700"
+                      <Typography
+                        type="body"
+                        weight="bold"
+                        style={{ color: colors.white }}
                       >
                         {idx + 1}
-                      </Text>
+                      </Typography>
                     </View>
-                    <Text
-                      variant="bodySmall"
-                      color="textSecondary"
-                      style={styles.stepText}
+                    <Typography
+                      type="body-sm"
+                      style={[styles.stepText, { color: semantic.textSecondary }]}
                     >
                       {step}
-                    </Text>
+                    </Typography>
                   </View>
                 ))}
               </View>
@@ -405,20 +389,19 @@ export default function ServiceDetailScreen() {
 
             {listing.faqs && listing.faqs.length > 0 && (
               <View style={styles.section}>
-                <Text
-                  variant="h6"
-                  color="textPrimary"
-                  weight="600"
-                  style={styles.sectionTitle}
+                <Typography
+                  type="body"
+                  weight="semibold"
+                  style={[styles.sectionTitle, { color: semantic.textPrimary }]}
                 >
                   FAQs
-                </Text>
-                <Card variant="outlined" padding={0}>
+                </Typography>
+                <Card variant="default" style={{ padding: 0 }}>
                   {listing.faqs.map((faq, idx) => (
                     <React.Fragment key={idx}>
                       <FAQItem question={faq.question} answer={faq.answer} />
                       {idx < listing.faqs!.length - 1 && (
-                        <Divider marginVertical={0} />
+                        <Separator />
                       )}
                     </React.Fragment>
                   ))}
@@ -433,14 +416,14 @@ export default function ServiceDetailScreen() {
         {hasItemsInCart && (
           <View style={styles.footer}>
             <View style={styles.footerInfo}>
-              <Text variant="bodyMedium" color="textMuted">
+              <Typography type="body" style={{ color: semantic.textMuted }}>
                 {cart?.items?.length} items in cart
-              </Text>
-              <Text variant="h6" color="primary" weight="700">
+              </Typography>
+              <Typography type="h5" weight="bold" className="text-accent">
                 ₹{cart?.finalTotalAmount}
-              </Text>
+              </Typography>
             </View>
-            <Button variant="primary" size="lg" onPress={handleViewCart}>
+            <Button onPress={handleViewCart}>
               View Cart
             </Button>
           </View>
@@ -451,10 +434,6 @@ export default function ServiceDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
   headerImage: {
     width,
     height: 220,
@@ -552,7 +531,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: semantic.primary,
+    backgroundColor: semantic.accent,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -579,7 +558,7 @@ const styles = StyleSheet.create({
     padding: spacing[4],
     borderTopWidth: 1,
     borderTopColor: semantic.border,
-    backgroundColor: colors.white,
+    backgroundColor: semantic.background,
   },
   footerInfo: {
     flex: 1,

@@ -42,3 +42,5 @@ app-example
 /ios
 
 google-services.json
+# heroui-agents-md
+.heroui-docs/

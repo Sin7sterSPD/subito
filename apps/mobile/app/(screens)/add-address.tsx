@@ -10,7 +10,7 @@ import {
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router, useLocalSearchParams } from "expo-router"
-import { Text, Button, Input, Card, Spinner } from "../../src/components/ui"
+import { Typography, Button, TextField, Input, Label, FieldError, Card, Spinner, InputGroup } from "heroui-native"
 import { colors, semantic } from "../../src/theme/colors"
 import { spacing, borderRadius } from "../../src/theme/spacing"
 import { useUserStore, useLocationStore } from "../../src/store"
@@ -39,7 +39,6 @@ export default function AddAddressScreen() {
   const {
     getCurrentLocation,
     reverseGeocode,
-    geocodedAddress,
     currentLocation,
     isLoading: locationLoading,
   } = useLocationStore()
@@ -259,17 +258,24 @@ export default function AddAddressScreen() {
           contentContainerStyle={styles.scrollContent}
         >
           <View style={styles.section}>
-            <Input
-              placeholder="Search for area, street, locality..."
-              value={searchQuery}
-              onChangeText={handleSearch}
-              leftIcon={
-                <Ionicons name="search" size={20} color={semantic.textMuted} />
-              }
-            />
-            {isSearching && <Spinner size="small" />}
+            <TextField>
+              <Label>Search Location</Label>
+              <InputGroup>
+                <InputGroup.Prefix isDecorative className="flex-row items-center">
+                  <Ionicons name="search" size={20} color={semantic.textMuted} />
+                </InputGroup.Prefix>
+                <InputGroup.Input
+                  placeholder="Search for area, street, locality..."
+                  value={searchQuery}
+                  onChangeText={handleSearch}
+                />
+              </InputGroup>
+            </TextField>
+            
+            {isSearching && <Spinner size="sm" style={{ marginVertical: spacing[2] }} />}
+            
             {searchResults.length > 0 && (
-              <Card style={styles.searchResults} variant="elevated" padding={0}>
+              <Card style={styles.searchResults} variant="default">
                 {searchResults.map((result) => (
                   <TouchableOpacity
                     key={result.id}
@@ -281,14 +287,13 @@ export default function AddAddressScreen() {
                       size={18}
                       color={semantic.textMuted}
                     />
-                    <Text
-                      variant="bodySmall"
-                      color="textPrimary"
+                    <Typography
+                      type="body-sm"
                       numberOfLines={1}
                       style={styles.searchResultText}
                     >
                       {result.description}
-                    </Text>
+                    </Typography>
                   </TouchableOpacity>
                 ))}
               </Card>
@@ -301,22 +306,21 @@ export default function AddAddressScreen() {
               <View style={styles.currentLocationIcon}>
                 <Ionicons name="navigate" size={18} color={semantic.primary} />
               </View>
-              <Text variant="bodySmall" color="primary" weight="600">
+              <Typography type="body-sm" className="text-accent" weight="semibold">
                 Use current location
-              </Text>
-              {locationLoading && <Spinner size="small" />}
+              </Typography>
+              {locationLoading && <Spinner size="sm" style={{ marginLeft: spacing[2] }} />}
             </TouchableOpacity>
           </View>
 
           <View style={styles.section}>
-            <Text
-              variant="bodyMedium"
-              color="textPrimary"
-              weight="600"
-              style={styles.sectionTitle}
+            <Typography
+              type="body"
+              weight="semibold"
+              style={[styles.sectionTitle, { color: semantic.textPrimary }]}
             >
               Save as
-            </Text>
+            </Typography>
             <View style={styles.typeSelector}>
               {ADDRESS_TYPES.map((type) => (
                 <TouchableOpacity
@@ -338,134 +342,152 @@ export default function AddAddressScreen() {
                         : semantic.primary
                     }
                   />
-                  <Text
-                    variant="bodyLarge"
-                    color={
-                      formData.type === type.key ? "textInverse" : "primary"
-                    }
-                    weight="500"
+                  <Typography
+                    type="body"
+                    weight="medium"
+                    style={{
+                      color: formData.type === type.key ? colors.white : semantic.primary
+                    }}
                   >
                     {type.label}
-                  </Text>
+                  </Typography>
                 </TouchableOpacity>
               ))}
             </View>
           </View>
 
           <View style={styles.section}>
-            <Input
-              label="Name *"
-              placeholder="E.g., My Home"
-              value={formData.name}
-              onChangeText={(text) => {
-                setFormData((prev) => ({ ...prev, name: text }))
-                if (errors.name) setErrors({ ...errors, name: "" })
-              }}
-              error={errors.name}
-            />
-
-            <View style={styles.inputSpacing}>
+            <TextField isRequired isInvalid={!!errors.name}>
+              <Label>Name</Label>
               <Input
-                label="Complete Address *"
-                placeholder="House no, Building, Street"
-                value={formData.addressLine1}
+                placeholder="E.g., My Home"
+                value={formData.name}
                 onChangeText={(text) => {
-                  setFormData((prev) => ({ ...prev, addressLine1: text }))
-                  if (errors.addressLine1)
-                    setErrors({ ...errors, addressLine1: "" })
+                  setFormData((prev) => ({ ...prev, name: text }))
+                  if (errors.name) setErrors({ ...errors, name: "" })
                 }}
-                error={errors.addressLine1}
-                multiline
               />
+              {errors.name ? <FieldError>{errors.name}</FieldError> : null}
+            </TextField>
+
+            <View style={styles.inputSpacing}>
+              <TextField isRequired isInvalid={!!errors.addressLine1}>
+                <Label>Complete Address</Label>
+                <Input
+                  placeholder="House no, Building, Street"
+                  value={formData.addressLine1}
+                  onChangeText={(text) => {
+                    setFormData((prev) => ({ ...prev, addressLine1: text }))
+                    if (errors.addressLine1)
+                      setErrors({ ...errors, addressLine1: "" })
+                  }}
+                  multiline
+                />
+                {errors.addressLine1 ? <FieldError>{errors.addressLine1}</FieldError> : null}
+              </TextField>
             </View>
 
             <View style={styles.inputSpacing}>
-              <Input
-                label="Flat / House No"
-                placeholder="Optional"
-                value={formData.houseNo}
-                onChangeText={(text) =>
-                  setFormData((prev) => ({ ...prev, houseNo: text }))
-                }
-              />
+              <TextField>
+                <Label>Flat / House No</Label>
+                <Input
+                  placeholder="Optional"
+                  value={formData.houseNo}
+                  onChangeText={(text) =>
+                    setFormData((prev) => ({ ...prev, houseNo: text }))
+                  }
+                />
+              </TextField>
             </View>
 
             <View style={styles.inputSpacing}>
-              <Input
-                label="Building / Society Name"
-                placeholder="Optional"
-                value={formData.buildingName}
-                onChangeText={(text) =>
-                  setFormData((prev) => ({ ...prev, buildingName: text }))
-                }
-              />
+              <TextField>
+                <Label>Building / Society Name</Label>
+                <Input
+                  placeholder="Optional"
+                  value={formData.buildingName}
+                  onChangeText={(text) =>
+                    setFormData((prev) => ({ ...prev, buildingName: text }))
+                  }
+                />
+              </TextField>
             </View>
 
             <View style={styles.inputSpacing}>
-              <Input
-                label="Floor"
-                placeholder="Optional"
-                value={formData.floor}
-                onChangeText={(text) => {
-                  setFormData((prev) => ({ ...prev, floor: text }))
-                  if (errors.floor) setErrors({ ...errors, floor: "" })
-                }}
-                error={errors.floor}
-                keyboardType="number-pad"
-              />
+              <TextField isInvalid={!!errors.floor}>
+                <Label>Floor</Label>
+                <Input
+                  placeholder="Optional"
+                  value={formData.floor}
+                  onChangeText={(text) => {
+                    setFormData((prev) => ({ ...prev, floor: text }))
+                    if (errors.floor) setErrors({ ...errors, floor: "" })
+                  }}
+                  keyboardType="number-pad"
+                />
+                {errors.floor ? <FieldError>{errors.floor}</FieldError> : null}
+              </TextField>
             </View>
 
             <View style={styles.inputSpacing}>
-              <Input
-                label="Landmark"
-                placeholder="Near school, temple, etc."
-                value={formData.landmark}
-                onChangeText={(text) =>
-                  setFormData((prev) => ({ ...prev, landmark: text }))
-                }
-              />
+              <TextField>
+                <Label>Landmark</Label>
+                <Input
+                  placeholder="Near school, temple, etc."
+                  value={formData.landmark}
+                  onChangeText={(text) =>
+                    setFormData((prev) => ({ ...prev, landmark: text }))
+                  }
+                />
+              </TextField>
             </View>
 
             <View style={styles.row}>
               <View style={[styles.halfInput, styles.inputSpacing]}>
-                <Input
-                  label="City *"
-                  placeholder="City"
-                  value={formData.city}
-                  onChangeText={(text) => {
-                    setFormData((prev) => ({ ...prev, city: text }))
-                    if (errors.city) setErrors({ ...errors, city: "" })
-                  }}
-                  error={errors.city}
-                />
+                <TextField isRequired isInvalid={!!errors.city}>
+                  <Label>City</Label>
+                  <Input
+                    placeholder="City"
+                    value={formData.city}
+                    onChangeText={(text) => {
+                      setFormData((prev) => ({ ...prev, city: text }))
+                      if (errors.city) setErrors({ ...errors, city: "" })
+                    }}
+                  />
+                  {errors.city ? <FieldError>{errors.city}</FieldError> : null}
+                </TextField>
               </View>
               <View style={[styles.halfInput, styles.inputSpacing]}>
-                <Input
-                  label="State *"
-                  placeholder="State"
-                  value={formData.state}
-                  onChangeText={(text) => {
-                    setFormData((prev) => ({ ...prev, state: text }))
-                    if (errors.state) setErrors({ ...errors, state: "" })
-                  }}
-                  error={errors.state}
-                />
+                <TextField isRequired isInvalid={!!errors.state}>
+                  <Label>State</Label>
+                  <Input
+                    placeholder="State"
+                    value={formData.state}
+                    onChangeText={(text) => {
+                      setFormData((prev) => ({ ...prev, state: text }))
+                      if (errors.state) setErrors({ ...errors, state: "" })
+                    }}
+                  />
+                  {errors.state ? <FieldError>{errors.state}</FieldError> : null}
+                </TextField>
               </View>
             </View>
 
             <View style={styles.inputSpacing}>
-              <Input
-                label="Pincode *"
-                placeholder="Pincode"
-                value={formData.pincode}
-                onChangeText={(text) => {
-                  setFormData((prev) => ({ ...prev, pincode: text }))
-                  if (errors.pincode) setErrors({ ...errors, pincode: "" })
-                }}
-                error={errors.pincode}
-                keyboardType="number-pad"
-                maxLength={6}
-              />
+              <TextField isRequired isInvalid={!!errors.pincode}>
+                <Label>Pincode</Label>
+                <Input
+                  placeholder="Pincode"
+                  value={formData.pincode}
+                  onChangeText={(text) => {
+                    setFormData((prev) => ({ ...prev, pincode: text }))
+                    if (errors.pincode) setErrors({ ...errors, pincode: "" })
+                  }}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                />
+                {errors.pincode ? <FieldError>{errors.pincode}</FieldError> : null}
+              </TextField>
             </View>
           </View>
         </ScrollView>
@@ -473,12 +495,15 @@ export default function AddAddressScreen() {
         <View style={styles.footer}>
           <Button
             variant="primary"
-            fullWidth
-            size="lg"
             onPress={handleSave}
-            isLoading={isSaving}
+            isDisabled={isSaving}
+            className="w-full"
           >
-            {isEditMode ? "Update Address" : "Save Address"}
+            {isSaving ? (
+              <Spinner size="sm" />
+            ) : (
+              <Button.Label>{isEditMode ? "Update Address" : "Save Address"}</Button.Label>
+            )}
           </Button>
         </View>
       </KeyboardAvoidingView>
@@ -508,6 +533,8 @@ const styles = StyleSheet.create({
   searchResults: {
     marginTop: spacing[2],
     maxHeight: 200,
+    padding: 0,
+    overflow: "hidden",
   },
   searchResult: {
     flexDirection: "row",
@@ -545,7 +572,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: spacing[2],
     paddingVertical: spacing[3],
-    borderRadius: borderRadius.lg,
+    borderRadius: 12,
     backgroundColor: colors.blue[1],
   },
   typeButtonActive: {

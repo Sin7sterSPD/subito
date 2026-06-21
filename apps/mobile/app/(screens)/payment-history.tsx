@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react"
 import { View, StyleSheet, FlatList, RefreshControl } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { Text, Card, Badge, Spinner } from "../../src/components/ui"
+import { Typography, Card, Chip, Spinner } from "heroui-native"
 import { colors, semantic } from "../../src/theme/colors"
-import { spacing, borderRadius } from "../../src/theme/spacing"
+import { spacing } from "../../src/theme/spacing"
 import { paymentsApi } from "../../src/services/api"
 import { Ionicons } from "@expo/vector-icons"
 
@@ -27,16 +27,16 @@ function PaymentCard({ payment }: { payment: Payment }) {
     })
   }
 
-  const getStatusVariant = () => {
+  const getStatusColor = (): "success" | "warning" | "danger" | "default" => {
     switch (payment.status.toLowerCase()) {
       case "success":
         return "success"
       case "pending":
         return "warning"
       case "failed":
-        return "error"
+        return "danger"
       default:
-        return "neutral"
+        return "default"
     }
   }
 
@@ -55,7 +55,7 @@ function PaymentCard({ payment }: { payment: Payment }) {
   }
 
   return (
-    <Card style={styles.paymentCard} variant="outlined">
+    <Card style={styles.paymentCard} variant="default">
       <View style={styles.cardContent}>
         <View
           style={[
@@ -67,24 +67,24 @@ function PaymentCard({ payment }: { payment: Payment }) {
         </View>
         <View style={styles.paymentInfo}>
           <View style={styles.row}>
-            <Text variant="bodyMedium" color="textPrimary" weight="600">
+            <Typography type="body" weight="semibold" style={{ color: semantic.textPrimary }}>
               {payment.type === "refund" ? "Refund" : "Payment"}
-            </Text>
-            <Badge variant={getStatusVariant()} size="sm">
+            </Typography>
+            <Chip size="sm" variant="soft" color={getStatusColor()}>
               {payment.status}
-            </Badge>
+            </Chip>
           </View>
-          <Text variant="bodyMedium" color="textMuted" style={styles.date}>
+          <Typography type="body-sm" color="muted" style={styles.date}>
             {formatDate(payment.createdAt)}
-          </Text>
+          </Typography>
         </View>
-        <Text
-          variant="bodyMedium"
-          color={payment.type === "refund" ? "success" : "textPrimary"}
-          weight="700"
+        <Typography
+          type="body"
+          weight="bold"
+          style={{ color: payment.type === "refund" ? semantic.success : semantic.textPrimary }}
         >
           {payment.type === "refund" ? "+" : ""}₹{payment.amount}
-        </Text>
+        </Typography>
       </View>
     </Card>
   )
@@ -96,12 +96,12 @@ function EmptyState() {
       <View style={styles.emptyIcon}>
         <Ionicons name="card-outline" size={48} color={semantic.textMuted} />
       </View>
-      <Text variant="h6" color="textSecondary" style={styles.emptyTitle}>
+      <Typography type="h6" weight="semibold" style={[styles.emptyTitle, { color: semantic.textSecondary }]}>
         No payment history
-      </Text>
-      <Text variant="bodySmall" color="textMuted" align="center">
+      </Typography>
+      <Typography type="body-sm" color="muted" align="center">
         Your payment transactions will appear here
-      </Text>
+      </Typography>
     </View>
   )
 }
@@ -144,11 +144,11 @@ export default function PaymentHistoryScreen() {
   }
 
   if (isLoading) {
-    return <Spinner fullScreen message="Loading..." />
+    return <Spinner size="lg" style={{ flex: 1, justifyContent: "center", alignItems: "center" }} />
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["bottom"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: semantic.backgroundSecondary }} edges={["bottom"]}>
       <FlatList
         data={payments}
         keyExtractor={(item) => `${item.type}-${item.id}`}
@@ -169,10 +169,6 @@ export default function PaymentHistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: semantic.backgroundSecondary,
-  },
   list: {
     padding: spacing[4],
     flexGrow: 1,

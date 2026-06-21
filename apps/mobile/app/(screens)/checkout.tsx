@@ -9,14 +9,16 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
 import {
-  Text,
+  Typography,
   Card,
   Button,
   Spinner,
-  Badge,
+  Chip,
+  TextField,
   Input,
-  Divider,
-} from "../../src/components/ui"
+  Label,
+  Separator,
+} from "heroui-native"
 import { colors, semantic } from "../../src/theme/colors"
 import { spacing, borderRadius } from "../../src/theme/spacing"
 import {
@@ -68,77 +70,54 @@ function SlotSelector({
 
   return (
     <View>
-      <Text
-        variant="bodyMedium"
-        color="textPrimary"
-        weight="600"
-        style={styles.slotTitle}
+      <Typography
+        type="body"
+        weight="semibold"
+        style={[styles.slotTitle, { color: semantic.textPrimary }]}
       >
         Select Date
-      </Text>
+      </Typography>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.dateScroll}
       >
         {availableDates.map((date) => (
-          <TouchableOpacity
+          <Chip
             key={date}
-            style={[
-              styles.dateChip,
-              selectedDate === date && styles.dateChipActive,
-            ]}
             onPress={() => onDateChange(date)}
+            variant={selectedDate === date ? "solid" : "soft"}
+            color={selectedDate === date ? "primary" : "default"}
+            style={{ marginRight: spacing[2] }}
           >
-            <Text
-              variant="bodyLarge"
-              color={selectedDate === date ? "textInverse" : "textPrimary"}
-              weight={selectedDate === date ? "600" : "400"}
-            >
-              {formatDateLabel(date)}
-            </Text>
-          </TouchableOpacity>
+            {formatDateLabel(date)}
+          </Chip>
         ))}
       </ScrollView>
 
       {selectedDate && dateSlots.length > 0 && (
         <>
-          <Text
-            variant="bodyMedium"
-            color="textPrimary"
-            weight="600"
-            style={styles.slotTitle}
+          <Typography
+            type="body"
+            weight="semibold"
+            style={[styles.slotTitle, { color: semantic.textPrimary }]}
           >
             Select Time
-          </Text>
+          </Typography>
           <View style={styles.slotsGrid}>
             {dateSlots.map((slot, idx) => (
-              <TouchableOpacity
-                key={idx}
-                style={[
-                  styles.slotChip,
-                  selectedSlot?.startTime === slot.startTime &&
-                    styles.slotChipActive,
-                  slot.isFull && styles.slotChipDisabled,
-                ]}
-                onPress={() => !slot.isFull && onSlotChange(slot)}
-                disabled={slot.isFull}
-              >
-                <Text
-                  variant="bodyLarge"
-                  color={
-                    slot.isFull
-                      ? "textMuted"
-                      : selectedSlot?.startTime === slot.startTime
-                        ? "textInverse"
-                        : "textPrimary"
-                  }
-                  weight={
-                    selectedSlot?.startTime === slot.startTime ? "600" : "400"
-                  }
+              <View key={idx} style={{ position: "relative" }}>
+                <Chip
+                  onPress={() => !slot.isFull && onSlotChange(slot)}
+                  disabled={slot.isFull}
+                  variant={selectedSlot?.startTime === slot.startTime ? "solid" : "soft"}
+                  color={selectedSlot?.startTime === slot.startTime ? "primary" : "default"}
+                  style={[
+                    slot.isFull && { opacity: 0.45 },
+                  ]}
                 >
                   {formatTime(slot.startTime)}
-                </Text>
+                </Chip>
                 {slot.isExperiencingSurge && (
                   <View style={styles.surgeBadge}>
                     <Ionicons
@@ -148,7 +127,7 @@ function SlotSelector({
                     />
                   </View>
                 )}
-              </TouchableOpacity>
+              </View>
             ))}
           </View>
         </>
@@ -251,23 +230,22 @@ export default function CheckoutScreen() {
   }
 
   if (!cart) {
-    return <Spinner fullScreen message="Loading..." />
+    return <Spinner style={{ flex: 1, justifyContent: "center" }} />
   }
 
   const isInstant = cart.bookingType === "INSTANT"
 
   return (
-    <SafeAreaView style={styles.container} edges={["bottom"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: semantic.background }} edges={["bottom"]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
-          <Text
-            variant="bodyMedium"
-            color="textPrimary"
-            weight="600"
-            style={styles.sectionTitle}
+          <Typography
+            type="body"
+            weight="semibold"
+            style={[styles.sectionTitle, { color: semantic.textPrimary }]}
           >
             Delivery Address
-          </Text>
+          </Typography>
           <TouchableOpacity
             style={styles.addressCard}
             onPress={() => router.push("/(screens)/addresses")}
@@ -278,38 +256,38 @@ export default function CheckoutScreen() {
                   <Ionicons
                     name="location"
                     size={20}
-                    color={semantic.primary}
+                    color={semantic.accent}
                   />
                 </View>
                 <View style={styles.addressContent}>
-                  <Text variant="bodySmall" color="textPrimary" weight="600">
+                  <Typography type="body-sm" weight="semibold" style={{ color: semantic.textPrimary }}>
                     {selectedAddress.name}
-                  </Text>
-                  <Text
-                    variant="bodyMedium"
-                    color="textMuted"
+                  </Typography>
+                  <Typography
+                    type="body-sm"
                     numberOfLines={2}
+                    style={{ color: semantic.textMuted }}
                   >
                     {selectedAddress.addressLine1}, {selectedAddress.city}
-                  </Text>
+                  </Typography>
                 </View>
-                <Text variant="bodyLarge" color="primary" weight="500">
+                <Typography type="body" weight="medium" className="text-accent">
                   Change
-                </Text>
+                </Typography>
               </>
             ) : (
               <>
                 <View style={styles.addressIcon}>
-                  <Ionicons name="add" size={20} color={semantic.primary} />
+                  <Ionicons name="add" size={20} color={semantic.accent} />
                 </View>
-                <Text
-                  variant="bodySmall"
-                  color="primary"
-                  weight="600"
+                <Typography
+                  type="body-sm"
+                  weight="semibold"
+                  className="text-accent"
                   style={styles.addressContent}
                 >
                   Add Delivery Address
-                </Text>
+                </Typography>
               </>
             )}
           </TouchableOpacity>
@@ -318,7 +296,7 @@ export default function CheckoutScreen() {
         {!isInstant && (
           <View style={styles.section}>
             {slotsLoading ? (
-              <Spinner message="Loading available slots..." />
+              <Spinner style={{ paddingVertical: spacing[4] }} />
             ) : (
               <SlotSelector
                 slots={slots}
@@ -330,21 +308,19 @@ export default function CheckoutScreen() {
               />
             )}
             {selectedSlot?.isExperiencingSurge && (
-              <Card style={styles.surgeWarning} variant="filled">
+              <Card style={styles.surgeWarning} variant="secondary">
                 <View style={styles.surgeContent}>
                   <Ionicons
                     name="trending-up"
                     size={20}
                     color={colors.orange[9]}
                   />
-                  <Text
-                    variant="bodyLarge"
-                    color="textSecondary"
-                    style={styles.surgeText}
+                  <Typography
+                    type="body"
+                    style={[styles.surgeText, { color: colors.orange[11] }]}
                   >
-                    High demand! Surge pricing of ₹{selectedSlot.surgePrice}{" "}
-                    applies
-                  </Text>
+                    High demand! Surge pricing of ₹{selectedSlot.surgePrice} applies
+                  </Typography>
                 </View>
               </Card>
             )}
@@ -352,32 +328,31 @@ export default function CheckoutScreen() {
         )}
 
         <View style={styles.section}>
-          <Text
-            variant="bodyMedium"
-            color="textPrimary"
-            weight="600"
-            style={styles.sectionTitle}
+          <Typography
+            type="body"
+            weight="semibold"
+            style={[styles.sectionTitle, { color: semantic.textPrimary }]}
           >
             Order Summary
-          </Text>
-          <Card variant="outlined">
+          </Typography>
+          <Card variant="default">
             {cart.items.map((item, idx) => (
               <React.Fragment key={item.id}>
                 <View style={styles.orderItem}>
                   <View style={styles.orderItemInfo}>
-                    <Text variant="bodySmall" color="textPrimary">
+                    <Typography type="body-sm" style={{ color: semantic.textPrimary }}>
                       {item.catalog?.name || "Service"}
-                    </Text>
-                    <Text variant="bodyMedium" color="textMuted">
+                    </Typography>
+                    <Typography type="body-sm" style={{ color: semantic.textMuted }}>
                       Qty: {item.quantity}
-                    </Text>
+                    </Typography>
                   </View>
-                  <Text variant="bodySmall" color="textPrimary" weight="500">
+                  <Typography type="body-sm" weight="medium" style={{ color: semantic.textPrimary }}>
                     ₹{item.totalPrice}
-                  </Text>
+                  </Typography>
                 </View>
                 {idx < cart.items.length - 1 && (
-                  <Divider marginVertical={spacing[2]} />
+                  <Separator style={{ marginVertical: spacing[2] }} />
                 )}
               </React.Fragment>
             ))}
@@ -385,61 +360,64 @@ export default function CheckoutScreen() {
         </View>
 
         <View style={styles.section}>
-          <Input
-            label="Notes for partner (optional)"
-            placeholder="Any special instructions..."
-            value={notes}
-            onChangeText={setNotes}
-            multiline
-            numberOfLines={3}
-          />
+          <TextField>
+            <Label>Notes for partner (optional)</Label>
+            <Input
+              placeholder="Any special instructions..."
+              value={notes}
+              onChangeText={setNotes}
+              multiline
+              numberOfLines={3}
+              style={{ minHeight: 80, textAlignVertical: "top" }}
+            />
+          </TextField>
         </View>
 
         <View style={styles.section}>
-          <Card variant="filled">
+          <Card variant="secondary">
             <View style={styles.priceRow}>
-              <Text variant="bodySmall" color="textSecondary">
+              <Typography type="body-sm" style={{ color: semantic.textSecondary }}>
                 Subtotal
-              </Text>
-              <Text variant="bodySmall" color="textPrimary">
+              </Typography>
+              <Typography type="body-sm" style={{ color: semantic.textPrimary }}>
                 ₹{cart.totalPrice}
-              </Text>
+              </Typography>
             </View>
             {parseFloat(cart.discountAmount) > 0 && (
               <View style={styles.priceRow}>
-                <Text variant="bodySmall" color="success">
+                <Typography type="body-sm" className="text-success">
                   Discount
-                </Text>
-                <Text variant="bodySmall" color="success">
+                </Typography>
+                <Typography type="body-sm" className="text-success">
                   -₹{cart.discountAmount}
-                </Text>
+                </Typography>
               </View>
             )}
             {parseFloat(cart.surgePrice) > 0 && (
               <View style={styles.priceRow}>
-                <Text variant="bodySmall" color="warning">
+                <Typography type="body-sm" className="text-warning">
                   Surge
-                </Text>
-                <Text variant="bodySmall" color="warning">
+                </Typography>
+                <Typography type="body-sm" className="text-warning">
                   +₹{cart.surgePrice}
-                </Text>
+                </Typography>
               </View>
             )}
             <View style={styles.priceRow}>
-              <Text variant="bodySmall" color="textSecondary">
+              <Typography type="body-sm" style={{ color: semantic.textSecondary }}>
                 GST
-              </Text>
-              <Text variant="bodySmall" color="textPrimary">
+              </Typography>
+              <Typography type="body-sm" style={{ color: semantic.textPrimary }}>
                 ₹{cart.gst}
-              </Text>
+              </Typography>
             </View>
             <View style={[styles.priceRow, styles.totalRow]}>
-              <Text variant="bodyMedium" color="textPrimary" weight="700">
+              <Typography type="body" weight="bold" style={{ color: semantic.textPrimary }}>
                 Total
-              </Text>
-              <Text variant="bodyMedium" color="primary" weight="700">
+              </Typography>
+              <Typography type="body" weight="bold" className="text-accent">
                 ₹{cart.finalTotalAmount}
-              </Text>
+              </Typography>
             </View>
           </Card>
         </View>
@@ -449,22 +427,20 @@ export default function CheckoutScreen() {
 
       <View style={styles.footer}>
         <View style={styles.footerPrice}>
-          <Text variant="bodyMedium" color="textMuted">
+          <Typography type="body-sm" style={{ color: semantic.textMuted }}>
             Total
-          </Text>
-          <Text variant="h5" color="primary" weight="700">
+          </Typography>
+          <Typography type="h5" weight="bold" className="text-accent">
             ₹{cart.finalTotalAmount}
-          </Text>
+          </Typography>
         </View>
         <Button
           variant="primary"
-          size="lg"
           onPress={handleCheckout}
-          isLoading={isProcessing || cartLoading}
-          disabled={!selectedAddress || (!isInstant && !selectedSlot)}
+          disabled={!selectedAddress || (!isInstant && !selectedSlot) || isProcessing || cartLoading}
           style={styles.checkoutButton}
         >
-          Proceed to Pay
+          {isProcessing ? "Processing..." : "Proceed to Pay"}
         </Button>
       </View>
     </SafeAreaView>
@@ -472,14 +448,10 @@ export default function CheckoutScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
   section: {
     padding: spacing[4],
     borderBottomWidth: 1,
-    borderBottomColor: semantic.borderLight,
+    borderBottomColor: semantic.border,
   },
   sectionTitle: {
     marginBottom: spacing[3],
@@ -509,33 +481,10 @@ const styles = StyleSheet.create({
   dateScroll: {
     marginBottom: spacing[4],
   },
-  dateChip: {
-    paddingHorizontal: spacing[4],
-    paddingVertical: spacing[2],
-    borderRadius: borderRadius.full,
-    backgroundColor: semantic.backgroundSecondary,
-    marginRight: spacing[2],
-  },
-  dateChipActive: {
-    backgroundColor: semantic.primary,
-  },
   slotsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing[2],
-  },
-  slotChip: {
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[2],
-    borderRadius: borderRadius.md,
-    backgroundColor: semantic.backgroundSecondary,
-    position: "relative",
-  },
-  slotChipActive: {
-    backgroundColor: semantic.primary,
-  },
-  slotChipDisabled: {
-    opacity: 0.5,
   },
   surgeBadge: {
     position: "absolute",
@@ -544,10 +493,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.orange[1],
     borderRadius: 8,
     padding: 2,
+    zIndex: 10,
   },
   surgeWarning: {
     marginTop: spacing[3],
     backgroundColor: colors.orange[1],
+    borderColor: colors.orange[3],
+    borderWidth: 1,
   },
   surgeContent: {
     flexDirection: "row",
@@ -583,7 +535,7 @@ const styles = StyleSheet.create({
     padding: spacing[4],
     borderTopWidth: 1,
     borderTopColor: semantic.border,
-    backgroundColor: colors.white,
+    backgroundColor: semantic.background,
   },
   footerPrice: {
     marginRight: spacing[4],
