@@ -11,7 +11,6 @@ import { router } from "expo-router"
 import { Image } from "expo-image"
 import {
   Button,
-  Input,
   TextField,
   Label,
   Spinner,
@@ -113,11 +112,11 @@ export default function LoginScreen() {
           {/* Content Card */}
           <View className="-mt-8 flex-1 rounded-t-[32px] bg-white px-6 pt-8">
             <View className="items-center">
-              <Text className="text-h6 text-gray-13 font-bold">
+              <Text className="text-h6 text-gray-13 font-jakarta-bold">
                 Sign in to Subito
               </Text>
 
-              <Text className="text-body-s text-gray-08 mt-2 text-center">
+              <Text className="text-body-s text-gray-08 font-inter-regular mt-2 text-center">
                 Professional home services at your doorstep
               </Text>
             </View>
@@ -134,7 +133,7 @@ export default function LoginScreen() {
                   >
                     <Text className="text-body-m">🇮🇳</Text>
 
-                    <Text className="text-body-s text-gray-13 font-medium">
+                    <Text className="text-body-s text-gray-13 font-inter-medium">
                       +91
                     </Text>
 
@@ -151,7 +150,9 @@ export default function LoginScreen() {
                 </InputGroup>
 
                 {error ? (
-                  <Text className="text-danger mt-2">{error}</Text>
+                  <Text className="text-danger font-inter-medium mt-2">
+                    {error}
+                  </Text>
                 ) : (
                   <Description>
                     We&apos;ll send a verification code to this number
@@ -173,14 +174,18 @@ export default function LoginScreen() {
               )}
             </Button>
 
+            <View className="flex-1" />
+
             {/* Terms */}
-            <Text className="text-caption-l text-gray-07 mt-6 text-center">
+            <Text className="text-caption-l text-gray-07 font-inter-regular mt-6 text-center">
               By continuing, you agree to our{" "}
-              <Text className="font-semibold text-accent">
+              <Text className="font-inter-semibold text-blue-06">
                 Terms of Service
               </Text>{" "}
               and{" "}
-              <Text className="font-semibold text-accent">Privacy Policy</Text>
+              <Text className="font-inter-semibold text-blue-06">
+                Privacy Policy
+              </Text>
             </Text>
 
             {/* Bottom spacing */}

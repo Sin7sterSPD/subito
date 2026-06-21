@@ -187,13 +187,13 @@ export default function OTPScreen() {
 
         <View className="flex-1 p-6 pt-4">
           <View className="mb-8">
-            <Text className="text-h3 text-gray-13 font-bold">
+            <Text className="text-h6 text-gray-13 font-jakarta-bold">
               Verify your number
             </Text>
-            <Text className="text-body-m text-gray-08 mt-2">
+            <Text className="text-body-s text-gray-08 font-inter-regular mt-2">
               Enter the 6-digit code sent to
             </Text>
-            <Text className="text-body-m font-semibold text-accent">
+            <Text className="text-body-s font-inter-semibold text-blue-03 mt-1">
               {mobileNumber}
             </Text>
           </View>
@@ -216,7 +216,7 @@ export default function OTPScreen() {
               </InputOTP.Group>
             </InputOTP>
             {error && (
-              <Text className="text-body-m text-danger mt-3 text-center">
+              <Text className="text-body-s text-danger font-inter-medium mt-3 text-center">
                 {error}
               </Text>
             )}
@@ -224,12 +224,12 @@ export default function OTPScreen() {
 
           <View className="mb-6 items-center">
             {resendTimer > 0 ? (
-              <Text className="text-body-s text-gray-06">
+              <Text className="text-body-s text-gray-06 font-inter-regular">
                 Resend code in {resendTimer}s
               </Text>
             ) : (
               <TouchableOpacity onPress={handleResend} disabled={isLoading}>
-                <Text className="text-body-s font-semibold text-accent">
+                <Text className="text-body-s font-inter-semibold text-blue-03 mt-1">
                   Resend Code
                 </Text>
               </TouchableOpacity>
@@ -241,7 +241,7 @@ export default function OTPScreen() {
             isDisabled={isLoading || otp.length !== 6}
             variant="primary"
             size="lg"
-            className="h-12 w-full"
+            className="h-12 w-full bg-blue-03"
           >
             {isLoading ? (
               <Spinner size="sm" color="white" />

@@ -111,9 +111,14 @@
      /* ── Typography — map to your loaded Expo font names ─────────
         Replace font names below with your exact useFonts() keys.
         Common choices: Inter, Plus Jakarta Sans, DM Sans, etc.    */
-     /* --font-normal:   'Inter_400Regular';
-     --font-medium:   'Inter_500Medium';
-     --font-semibold: 'Inter_600SemiBold'; */
+      --font-sans: 'Inter_400Regular';
+      --font-inter-regular: 'Inter_400Regular';
+      --font-inter-medium: 'Inter_500Medium';
+      --font-inter-semibold: 'Inter_600SemiBold';
+      --font-inter-bold: 'Inter_700Bold';
+      --font-jakarta-semibold: 'PlusJakartaSans_600SemiBold';
+      --font-jakarta-bold: 'PlusJakartaSans_700Bold';
+      --font-jakarta-extrabold: 'PlusJakartaSans_800ExtraBold';
     
      /* ── Custom text sizes from your Figma type scale ────────────
         Tailwind built-ins (text-sm, text-base etc.) still work,

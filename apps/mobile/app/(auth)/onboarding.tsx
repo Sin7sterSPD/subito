@@ -9,7 +9,15 @@ import {
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
-import { Button, Input, Avatar, TextField, Label, FieldError, Spinner } from "heroui-native"
+import {
+  Button,
+  Input,
+  Avatar,
+  TextField,
+  Label,
+  FieldError,
+  Spinner,
+} from "heroui-native"
 import { useAuthStore, useAppStore, useUserStore } from "../../src/store"
 import { uploadApi } from "../../src/services/api"
 import * as ImagePicker from "expo-image-picker"
@@ -107,7 +115,7 @@ export default function OnboardingScreen() {
   }
 
   return (
-    <SafeAreaView style ={{flex:1}}>
+    <SafeAreaView style={{ flex: 1 }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
@@ -117,29 +125,32 @@ export default function OnboardingScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View className="mb-8 bg-white">
-            <Text className="text-h3 font-bold text-gray-13">
+          <View className="mb-8">
+            <Text className="text-h6 font-jakarta-bold text-gray-13">
               Complete your profile
             </Text>
-            <Text className="text-body-m text-gray-08 mt-2">
+            <Text className="text-body-s text-gray-08 font-inter-regular mt-2">
               Help us personalize your experience
             </Text>
           </View>
 
           <TouchableOpacity
-            className="self-center mb-8 relative"
+            className="relative mb-8 self-center"
             onPress={handlePickImage}
           >
             {profileImage ? (
-              <Avatar className="w-[100px] h-[100px] rounded-full">
-                <Avatar.Image source={{ uri: profileImage }} className="w-full h-full rounded-full" />
+              <Avatar className="h-[100px] w-[100px] rounded-full">
+                <Avatar.Image
+                  source={{ uri: profileImage }}
+                  className="h-full w-full rounded-full"
+                />
               </Avatar>
             ) : (
-              <View className="w-[100px] h-[100px] rounded-full bg-gray-01 items-center justify-center border-2 border-gray-03 border-dashed">
+              <View className="bg-gray-01 border-gray-03 h-[100px] w-[100px] items-center justify-center rounded-full border-2 border-dashed">
                 <Ionicons name="camera" size={32} color="#9EA2AD" />
               </View>
             )}
-            <View className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-accent items-center justify-center border-2 border-white">
+            <View className="absolute right-0 bottom-0 h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-accent">
               <Ionicons name="pencil" size={14} color="#FFFFFF" />
             </View>
           </TouchableOpacity>
@@ -156,7 +167,7 @@ export default function OnboardingScreen() {
                     setErrors({ ...errors, firstName: undefined })
                 }}
                 autoCapitalize="words"
-                className="h-12"
+                className="h-12 rounded-sm focus:border-blue-03"
               />
               {errors.firstName && (
                 <FieldError className="mt-1.5">{errors.firstName}</FieldError>
@@ -175,7 +186,7 @@ export default function OnboardingScreen() {
                       setErrors({ ...errors, lastName: undefined })
                   }}
                   autoCapitalize="words"
-                  className="h-12"
+                  className="h-12 rounded-sm focus:border-blue-03"
                 />
                 {errors.lastName && (
                   <FieldError className="mt-1.5">{errors.lastName}</FieldError>
@@ -191,12 +202,11 @@ export default function OnboardingScreen() {
                   value={email}
                   onChangeText={(text) => {
                     setEmail(text)
-                    if (errors.email)
-                      setErrors({ ...errors, email: undefined })
+                    if (errors.email) setErrors({ ...errors, email: undefined })
                   }}
                   keyboardType="email-address"
                   autoCapitalize="none"
-                  className="h-12"
+                  className="focus:border-blue-03 h-12 rounded-sm"
                 />
                 {errors.email && (
                   <FieldError className="mt-1.5">{errors.email}</FieldError>
@@ -211,7 +221,7 @@ export default function OnboardingScreen() {
               isDisabled={isLoading || !firstName.trim()}
               variant="primary"
               size="lg"
-              className="w-full h-12"
+              className="bg-blue-03 h-12 w-full"
             >
               {isLoading ? (
                 <Spinner size="sm" color="white" />
@@ -221,7 +231,7 @@ export default function OnboardingScreen() {
             </Button>
 
             <TouchableOpacity onPress={handleSkip} className="items-center p-4">
-              <Text className="text-body-m text-gray-06">
+              <Text className="text-body-s text-gray-06 font-inter-regular">
                 Skip for now
               </Text>
             </TouchableOpacity>
@@ -231,4 +241,3 @@ export default function OnboardingScreen() {
     </SafeAreaView>
   )
 }
-
