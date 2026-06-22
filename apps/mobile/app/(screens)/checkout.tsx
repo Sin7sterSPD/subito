@@ -86,8 +86,8 @@ function SlotSelector({
           <Chip
             key={date}
             onPress={() => onDateChange(date)}
-            variant={selectedDate === date ? "solid" : "soft"}
-            color={selectedDate === date ? "primary" : "default"}
+            variant="soft"
+            color={selectedDate === date ? "accent" : "default"}
             style={{ marginRight: spacing[2] }}
           >
             {formatDateLabel(date)}
@@ -110,8 +110,8 @@ function SlotSelector({
                 <Chip
                   onPress={() => !slot.isFull && onSlotChange(slot)}
                   disabled={slot.isFull}
-                  variant={selectedSlot?.startTime === slot.startTime ? "solid" : "soft"}
-                  color={selectedSlot?.startTime === slot.startTime ? "primary" : "default"}
+                  variant="soft"
+                  color={selectedSlot?.startTime === slot.startTime ? "accent" : "default"}
                   style={[
                     slot.isFull && { opacity: 0.45 },
                   ]}
@@ -256,7 +256,7 @@ export default function CheckoutScreen() {
                   <Ionicons
                     name="location"
                     size={20}
-                    color={semantic.accent}
+                    color={semantic.primary}
                   />
                 </View>
                 <View style={styles.addressContent}>
@@ -278,7 +278,7 @@ export default function CheckoutScreen() {
             ) : (
               <>
                 <View style={styles.addressIcon}>
-                  <Ionicons name="add" size={20} color={semantic.accent} />
+                  <Ionicons name="add" size={20} color={semantic.primary} />
                 </View>
                 <Typography
                   type="body-sm"
@@ -437,7 +437,7 @@ export default function CheckoutScreen() {
         <Button
           variant="primary"
           onPress={handleCheckout}
-          disabled={!selectedAddress || (!isInstant && !selectedSlot) || isProcessing || cartLoading}
+          isDisabled={!selectedAddress || (!isInstant && !selectedSlot) || isProcessing || cartLoading}
           style={styles.checkoutButton}
         >
           {isProcessing ? "Processing..." : "Proceed to Pay"}

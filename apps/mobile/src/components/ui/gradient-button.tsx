@@ -1,8 +1,8 @@
 import React from "react"
-import { TouchableOpacity, View } from "react-native"
+import { TouchableOpacity, View,Text } from "react-native"
 import { LinearGradient } from "expo-linear-gradient"
 import { Spinner } from "heroui-native"
-import { Text } from "react-native"
+
 
 interface GradientButtonProps {
   title: string

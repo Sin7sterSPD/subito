@@ -29,57 +29,58 @@ function BundleCard({
   const discount = bundle.discountPercentage
 
   return (
-    <Card
-      style={styles.bundleCard}
-      onPress={onPress}
-      variant="default"
-    >
-      {bundle.image && (
-        <Image
-          source={{ uri: bundle.image }}
-          style={styles.bundleImage}
-          contentFit="cover"
-        />
-      )}
-      <View style={styles.bundleContent}>
-        {discount && (
-          <Chip size="sm" variant="soft" color="success" style={{ alignSelf: "flex-start", marginBottom: spacing[2] }}>
-            {discount}% OFF
-          </Chip>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.9}>
+      <Card
+        style={styles.bundleCard}
+        variant="default"
+      >
+        {bundle.image && (
+          <Image
+            source={{ uri: bundle.image }}
+            style={styles.bundleImage}
+            contentFit="cover"
+          />
         )}
-        <Typography
-          type="body-sm"
-          weight="semibold"
-          numberOfLines={2}
-          style={[styles.bundleTitle, { color: semantic.textPrimary }]}
-        >
-          {bundle.name}
-        </Typography>
-        {bundle.description && (
-          <Typography type="body-sm" color="muted" numberOfLines={2}>
-            {bundle.description}
-          </Typography>
-        )}
-        <View style={styles.bundlePricing}>
-          <Typography type="body" className="text-accent" weight="bold">
-            ₹{bundle.bundlePrice}
-          </Typography>
+        <View style={styles.bundleContent}>
+          {discount && (
+            <Chip size="sm" variant="soft" color="success" style={{ alignSelf: "flex-start", marginBottom: spacing[2] }}>
+              {discount}% OFF
+            </Chip>
+          )}
           <Typography
             type="body-sm"
-            color="muted"
-            style={styles.originalPrice}
+            weight="semibold"
+            numberOfLines={2}
+            style={[styles.bundleTitle, { color: semantic.textPrimary }]}
           >
-            ₹{bundle.originalPrice}
+            {bundle.name}
           </Typography>
+          {bundle.description && (
+            <Typography type="body-sm" color="muted" numberOfLines={2}>
+              {bundle.description}
+            </Typography>
+          )}
+          <View style={styles.bundlePricing}>
+            <Typography type="body" className="text-accent" weight="bold">
+              ₹{bundle.bundlePrice}
+            </Typography>
+            <Typography
+              type="body-sm"
+              color="muted"
+              style={styles.originalPrice}
+            >
+              ₹{bundle.originalPrice}
+            </Typography>
+          </View>
+          <View style={styles.itemsCount}>
+            <Ionicons name="list-outline" size={14} color={semantic.textMuted} />
+            <Typography type="body-sm" color="muted">
+              {bundle.items.length} services
+            </Typography>
+          </View>
         </View>
-        <View style={styles.itemsCount}>
-          <Ionicons name="list-outline" size={14} color={semantic.textMuted} />
-          <Typography type="body-sm" color="muted">
-            {bundle.items.length} services
-          </Typography>
-        </View>
-      </View>
-    </Card>
+      </Card>
+    </TouchableOpacity>
   )
 }
 

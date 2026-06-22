@@ -8,6 +8,7 @@ import {
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router, useLocalSearchParams } from "expo-router"
+// @ts-ignore
 import MapLibreGL from "@maplibre/maplibre-react-native"
 import { Typography, Card, Avatar, Button, Spinner } from "heroui-native"
 import { colors, semantic } from "../../src/theme/colors"
@@ -87,7 +88,7 @@ export default function PartnerTrackingScreen() {
 
   useEffect(() => {
     if (mapCenter && cameraRef.current) {
-      cameraRef.current.flyTo(mapCenter, 500)
+      cameraRef.current.flyTo(mapCenter)
     }
   }, [mapCenter])
 
@@ -105,10 +106,8 @@ export default function PartnerTrackingScreen() {
         >
           <MapLibreGL.Camera
             ref={cameraRef}
-            defaultSettings={{
-              centerCoordinate: mapCenter,
-              zoomLevel: 15,
-            }}
+            centerCoordinate={mapCenter}
+            zoomLevel={15}
           />
           {address && (
             <MapLibreGL.MarkerView
@@ -213,7 +212,7 @@ export default function PartnerTrackingScreen() {
                 )}
               </View>
               <TouchableOpacity style={styles.callButton} onPress={handleCall}>
-                <Ionicons name="call" size={20} color={semantic.accent} />
+                <Ionicons name="call" size={20} color={semantic.primary} />
               </TouchableOpacity>
             </View>
           </Card>
@@ -293,7 +292,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: semantic.accent,
+    backgroundColor: semantic.primary,
     alignItems: "center",
     justifyContent: "center",
     marginRight: spacing[3],
@@ -333,7 +332,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: semantic.accent,
+    backgroundColor: semantic.primary,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,

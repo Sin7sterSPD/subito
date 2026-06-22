@@ -84,7 +84,7 @@ function CatalogItem({
                 color={
                   quantity <= (catalog.minQuantity || 1)
                     ? semantic.textMuted
-                    : semantic.accent
+                    : semantic.primary
                 }
               />
             </TouchableOpacity>
@@ -109,7 +109,7 @@ function CatalogItem({
                 color={
                   quantity >= (catalog.maxQuantity || 99)
                     ? semantic.textMuted
-                    : semantic.accent
+                    : semantic.primary
                 }
               />
             </TouchableOpacity>
@@ -117,9 +117,9 @@ function CatalogItem({
           <Button
             variant="primary"
             onPress={() => onAdd(catalog, quantity)}
-            isLoading={isAdding}
+            isDisabled={isAdding}
           >
-            Add
+            {isAdding ? "Adding..." : "Add"}
           </Button>
         </View>
       </View>
@@ -144,7 +144,7 @@ function AddOnItem({
           +₹{addOn.price}
         </Typography>
       </View>
-      <Ionicons name="add-circle" size={24} color={semantic.accent} />
+      <Ionicons name="add-circle" size={24} color={semantic.primary} />
     </TouchableOpacity>
   )
 }
@@ -221,17 +221,37 @@ export default function ServiceDetailScreen() {
   const hasItemsInCart = (cart?.items?.length || 0) > 0
 
   const resolveImage = (img: string) => {
-    if (!img) return require("../../../assets/home/roomclieaning.png")
+    if (!img) return require("../../../assets/home/main/vaccum-floor.jpg")
+    
+    const serviceImages: Record<string, number> = {
+      "floor.png": require("../../../assets/home/main/floor-cleaning.jpg"),
+      "bathroom.png": require("../../../assets/home/main/vaccum-floor.jpg"),
+      "cupboard-cleaning.png": require("../../../assets/home/preview/cupboard-cleaning.png"),
+      "utensils.png": require("../../../assets/home/main/cook-preview.jpg"),
+      "roomclieaning.png": require("../../../assets/home/main/vaccum-floor.jpg"),
+      "plumbing.jpg": require("../../../assets/home/main/plumbing.jpg"),
+      "toilet-clean.jpg": require("../../../assets/home/main/vaccum-floor.jpg"),
+      "ac-repair.jpg": require("../../../assets/home/main/ac-repair.jpg"),
+      "painting.jpg": require("../../../assets/home/main/painting.jpg"),
+      "bundle-clean.png": require("../../../assets/home/main/bundle-clean.png"),
+      "bundle-cook.png": require("../../../assets/home/main/bundle-cook.png"),
+    }
+    
+    const filename = img.substring(img.lastIndexOf("/") + 1)
+    if (serviceImages[filename]) return serviceImages[filename]
+    if (serviceImages[img]) return serviceImages[img]
     if (img.startsWith("http")) return { uri: img }
-    if (img === "floor.png") return require("../../../assets/home/floor.png")
-    if (img === "bathroom.png") return require("../../../assets/home/bathroom.png")
-    if (img === "cupboard-cleaning.png") return require("../../../assets/home/cupboard-cleaning.png")
-    if (img === "utensils.png") return require("../../../assets/home/utensils.png")
-    if (img === "roomclieaning.png") return require("../../../assets/home/roomclieaning.png")
-    if (img === "toiletcleaning.png") return require("../../../assets/home/toiletcleaning.png")
-    if (img === "windowscleaning.png") return require("../../../assets/home/windowscleaning.png")
-    if (img === "Afterpartycleaning.png") return require("../../../assets/home/Afterpartycleaning.png")
-    return require("../../../assets/home/roomclieaning.png")
+    
+    const lowercaseImg = img.toLowerCase()
+    if (lowercaseImg.includes("floor")) return require("../../../assets/home/main/floor-cleaning.jpg")
+    if (lowercaseImg.includes("bathroom") || lowercaseImg.includes("toilet")) return require("../../../assets/home/main/vaccum-floor.jpg")
+    if (lowercaseImg.includes("cupboard")) return require("../../../assets/home/preview/cupboard-cleaning.png")
+    if (lowercaseImg.includes("utensils") || lowercaseImg.includes("cook")) return require("../../../assets/home/main/cook-preview.jpg")
+    if (lowercaseImg.includes("plumbing")) return require("../../../assets/home/main/plumbing.jpg")
+    if (lowercaseImg.includes("ac") || lowercaseImg.includes("repair") || lowercaseImg.includes("appliance")) return require("../../../assets/home/main/ac-repair.jpg")
+    if (lowercaseImg.includes("paint")) return require("../../../assets/home/main/painting.jpg")
+    
+    return require("../../../assets/home/main/vaccum-floor.jpg")
   }
 
   return (
@@ -545,7 +565,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: semantic.accent,
+    backgroundColor: semantic.primary,
     alignItems: "center",
     justifyContent: "center",
   },

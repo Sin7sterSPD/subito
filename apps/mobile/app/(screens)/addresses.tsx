@@ -41,90 +41,91 @@ function AddressCard({
   }
 
   return (
-    <Card
-      style={[styles.addressCard, isSelected && styles.addressCardSelected]}
-      variant="default"
-      onPress={onSelect}
-    >
-      <View style={styles.cardHeader}>
-        <View style={[styles.typeIcon, isSelected && styles.typeIconSelected]}>
-          <Ionicons
-            name={getTypeIcon()}
-            size={18}
-            color={isSelected ? colors.white : semantic.primary}
-          />
-        </View>
-        <View style={styles.cardTitle}>
-          <Typography type="body" weight="semibold" style={{ color: semantic.textPrimary }}>
-            {address.name}
-          </Typography>
-          {address.isDefault && (
-            <Chip size="sm" variant="soft" color="accent">
-              Default
-            </Chip>
-          )}
-        </View>
-        {isSelected && (
-          <Ionicons
-            name="checkmark-circle"
-            size={24}
-            color={semantic.primary}
-          />
-        )}
-      </View>
-
-      <Typography
-        type="body-sm"
-        color="muted"
-        style={styles.addressLine}
+    <TouchableOpacity onPress={onSelect} activeOpacity={0.9}>
+      <Card
+        style={[styles.addressCard, isSelected && styles.addressCardSelected]}
+        variant="default"
       >
-        {address.addressLine1}
-        {address.addressLine2 ? `, ${address.addressLine2}` : ""}
-      </Typography>
-      <Typography type="body" color="muted">
-        {address.area ? `${address.area}, ` : ""}
-        {address.city}, {address.state} - {address.pincode}
-      </Typography>
-
-      {(address.houseNo ||
-        address.floor !== undefined && address.floor !== null ||
-        address.landmark) && (
-        <View style={styles.additionalInfo}>
-          {address.houseNo && (
-            <Typography type="body-sm" color="muted">
-              House: {address.houseNo}
+        <View style={styles.cardHeader}>
+          <View style={[styles.typeIcon, isSelected && styles.typeIconSelected]}>
+            <Ionicons
+              name={getTypeIcon()}
+              size={18}
+              color={isSelected ? colors.white : semantic.primary}
+            />
+          </View>
+          <View style={styles.cardTitle}>
+            <Typography type="body" weight="semibold" style={{ color: semantic.textPrimary }}>
+              {address.name}
             </Typography>
-          )}
-          {address.floor !== undefined && address.floor !== null && (
-            <Typography type="body-sm" color="muted">
-              Floor: {address.floor}
-            </Typography>
-          )}
-          {address.landmark && (
-            <Typography type="body-sm" color="muted">
-              Landmark: {address.landmark}
-            </Typography>
+            {address.isDefault && (
+              <Chip size="sm" variant="soft" color="accent">
+                Default
+              </Chip>
+            )}
+          </View>
+          {isSelected && (
+            <Ionicons
+              name="checkmark-circle"
+              size={24}
+              color={semantic.primary}
+            />
           )}
         </View>
-      )}
 
-      <View style={styles.cardActions}>
-        <TouchableOpacity style={styles.actionButton} onPress={onEdit}>
-          <Ionicons name="create-outline" size={18} color={semantic.primary} />
-          <Typography type="body" className="text-accent" weight="medium">
-            Edit
-          </Typography>
-        </TouchableOpacity>
-        {address.canDelete && (
-          <TouchableOpacity style={styles.actionButton} onPress={onDelete}>
-            <Ionicons name="trash-outline" size={18} color={semantic.error} />
-            <Typography type="body" className="text-danger" weight="medium">
-              Delete
+        <Typography
+          type="body-sm"
+          color="muted"
+          style={styles.addressLine}
+        >
+          {address.addressLine1}
+          {address.addressLine2 ? `, ${address.addressLine2}` : ""}
+        </Typography>
+        <Typography type="body" color="muted">
+          {address.area ? `${address.area}, ` : ""}
+          {address.city}, {address.state} - {address.pincode}
+        </Typography>
+
+        {(address.houseNo ||
+          address.floor !== undefined && address.floor !== null ||
+          address.landmark) && (
+          <View style={styles.additionalInfo}>
+            {address.houseNo && (
+              <Typography type="body-sm" color="muted">
+                House: {address.houseNo}
+              </Typography>
+            )}
+            {address.floor !== undefined && address.floor !== null && (
+              <Typography type="body-sm" color="muted">
+                Floor: {address.floor}
+              </Typography>
+            )}
+            {address.landmark && (
+              <Typography type="body-sm" color="muted">
+                Landmark: {address.landmark}
+              </Typography>
+            )}
+          </View>
+        )}
+
+        <View style={styles.cardActions}>
+          <TouchableOpacity style={styles.actionButton} onPress={onEdit}>
+            <Ionicons name="create-outline" size={18} color={semantic.primary} />
+            <Typography type="body" className="text-accent" weight="medium">
+              Edit
             </Typography>
           </TouchableOpacity>
-        )}
-      </View>
-    </Card>
+          {address.canDelete && (
+            <TouchableOpacity style={styles.actionButton} onPress={onDelete}>
+              <Ionicons name="trash-outline" size={18} color={semantic.error} />
+              <Typography type="body" className="text-danger" weight="medium">
+                Delete
+              </Typography>
+            </TouchableOpacity>
+          )}
+        </View>
+      </Card>
+    </TouchableOpacity>
   )
 }
 

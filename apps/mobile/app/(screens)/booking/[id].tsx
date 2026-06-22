@@ -28,7 +28,7 @@ import { Ionicons } from "@expo/vector-icons"
 
 function getStatusColor(
   status: BookingStatus
-): "primary" | "success" | "warning" | "danger" | "default" {
+): "accent" | "success" | "warning" | "danger" | "default" {
   switch (status) {
     case "PENDING_PAYMENT":
     case "PENDING_MATCH":
@@ -36,7 +36,7 @@ function getStatusColor(
     case "MATCHED":
     case "ARRIVING":
     case "STARTED":
-      return "primary"
+      return "accent"
     case "COMPLETED":
       return "success"
     case "CANCELLED":
@@ -347,7 +347,7 @@ export default function BookingDetailScreen() {
           }
         >
           <View style={styles.statusSection}>
-            <Chip color={getStatusColor(booking.status)} variant="solid">
+            <Chip color={getStatusColor(booking.status)} variant="soft">
               {getStatusLabel(booking.status)}
             </Chip>
             <StatusTimeline status={booking.status} />
@@ -529,7 +529,7 @@ export default function BookingDetailScreen() {
         >
           <BottomSheet.Portal>
             <BottomSheet.Overlay style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.4)" }} />
-            <BottomSheet.Content snapPoints={["55%"]}>
+            <BottomSheet.Content>
               <View style={styles.cancelSheet}>
                 <BottomSheet.Title style={[styles.cancelTitle, { fontSize: 20, fontWeight: "bold", color: semantic.textPrimary }]}>
                   Cancel Booking
@@ -548,7 +548,7 @@ export default function BookingDetailScreen() {
                   >
                     <Typography
                       type="body-sm"
-                      style={{ color: cancelReason === reason ? semantic.accent : semantic.textPrimary }}
+                      style={{ color: cancelReason === reason ? semantic.primary : semantic.textPrimary }}
                     >
                       {reason}
                     </Typography>
@@ -556,7 +556,7 @@ export default function BookingDetailScreen() {
                       <Ionicons
                         name="checkmark-circle"
                         size={20}
-                        color={semantic.accent}
+                        color={semantic.primary}
                       />
                     )}
                   </TouchableOpacity>
@@ -564,7 +564,7 @@ export default function BookingDetailScreen() {
                 <Button
                   variant="danger"
                   onPress={handleCancel}
-                  disabled={!cancelReason}
+                  isDisabled={!cancelReason}
                   style={styles.cancelButton}
                 >
                   Confirm Cancellation
@@ -605,7 +605,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.blue[2],
   },
   timelineIconCurrent: {
-    backgroundColor: semantic.accent,
+    backgroundColor: semantic.primary,
   },
   timelineLine: {
     position: "absolute",
@@ -617,7 +617,7 @@ const styles = StyleSheet.create({
     zIndex: -1,
   },
   timelineLineActive: {
-    backgroundColor: semantic.accent,
+    backgroundColor: semantic.primary,
   },
   timelineLabel: {
     marginTop: spacing[1],
@@ -731,7 +731,7 @@ const styles = StyleSheet.create({
   cancelOptionActive: {
     backgroundColor: colors.blue[1],
     borderWidth: 1,
-    borderColor: semantic.accent,
+    borderColor: semantic.primary,
   },
   cancelButton: {
     marginTop: spacing[4],

@@ -252,7 +252,7 @@ export default function PaymentScreen() {
               <Button
                 variant="primary"
                 onPress={handleRetry}
-                disabled={isLoading}
+                isDisabled={isLoading}
               >
                 Try Again
               </Button>
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: semantic.danger,
+    backgroundColor: semantic.error,
     alignItems: "center",
     justifyContent: "center",
   },

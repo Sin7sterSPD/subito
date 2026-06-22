@@ -1,7 +1,7 @@
 import { create } from "zustand"
 import { Category, Listing, Bundle } from "../types/api"
 import { listingsApi } from "../services/api"
-import { MOCK_CATEGORIES, ALL_MOCK_LISTINGS, CategoryWithListings } from "./mockData"
+import { MOCK_CATEGORIES, ALL_MOCK_LISTINGS, CategoryWithListings, MOCK_BUNDLES } from "./mockData"
 
 interface ListingsState {
   categories: CategoryWithListings[]
@@ -47,6 +47,16 @@ function mergeWithMocks(dbCategories: CategoryWithListings[]): CategoryWithListi
   return result.sort((a, b) => (a.sortOrder || 99) - (b.sortOrder || 99))
 }
 
+function mergeBundles(dbBundles: Bundle[]): Bundle[] {
+  const result = [...dbBundles]
+  for (const mockBundle of MOCK_BUNDLES) {
+    if (!result.some((b) => b.id === mockBundle.id || b.slug === mockBundle.slug)) {
+      result.push(mockBundle)
+    }
+  }
+  return result
+}
+
 export const useListingsStore = create<ListingsState>((set) => ({
   categories: [],
   bundles: [],
@@ -64,13 +74,13 @@ export const useListingsStore = create<ListingsState>((set) => ({
         const merged = mergeWithMocks(dbCats)
         set({
           categories: merged,
-          bundles: response.data.bundles || [],
+          bundles: mergeBundles(response.data.bundles || []),
         })
       } else {
-        set({ categories: MOCK_CATEGORIES, bundles: [] })
+        set({ categories: MOCK_CATEGORIES, bundles: MOCK_BUNDLES })
       }
     } catch {
-      set({ categories: MOCK_CATEGORIES, bundles: [], error: "Failed to fetch listings" })
+      set({ categories: MOCK_CATEGORIES, bundles: MOCK_BUNDLES, error: "Failed to fetch listings" })
     } finally {
       set({ isLoading: false })
     }
@@ -85,13 +95,13 @@ export const useListingsStore = create<ListingsState>((set) => ({
         const merged = mergeWithMocks(dbCats)
         set({
           categories: merged,
-          bundles: response.data.bundles || [],
+          bundles: mergeBundles(response.data.bundles || []),
         })
       } else {
-        set({ categories: MOCK_CATEGORIES, bundles: [] })
+        set({ categories: MOCK_CATEGORIES, bundles: MOCK_BUNDLES })
       }
     } catch {
-      set({ categories: MOCK_CATEGORIES, bundles: [], error: "Failed to fetch listings" })
+      set({ categories: MOCK_CATEGORIES, bundles: MOCK_BUNDLES, error: "Failed to fetch listings" })
     } finally {
       set({ isLoading: false })
     }

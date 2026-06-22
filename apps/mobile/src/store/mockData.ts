@@ -1,4 +1,4 @@
-import { Category, Listing } from "../types/api"
+import { Category, Listing, Bundle } from "../types/api"
 
 export interface CategoryWithListings extends Category {
   listings: Listing[]
@@ -14,11 +14,11 @@ export const MOCK_CATEGORIES: CategoryWithListings[] = [
     listings: [
       {
         id: "listing-floor-cleaning",
-        name: "Floor Cleaning & Polishing",
+        name: "Floor Cleaning",
         slug: "floor-cleaning",
         description: "Professional deep cleaning, scrubbing, and polishing of all floor types to remove deep stains and restore shine.",
-        shortDescription: "Deep scrubbing, stain removal & polishing",
-        basePrice: "599",
+        shortDescription: "Deep cleaning & polishing for a spotless home.",
+        basePrice: "899",
         duration: 90,
         tags: ["Floor", "Polishing", "Scrubbing"],
         image: "floor.png",
@@ -28,7 +28,7 @@ export const MOCK_CATEGORIES: CategoryWithListings[] = [
             id: "cat-floor-cleaning-std",
             name: "Standard Floor Scrubbing (up to 2 BHK)",
             price: "899",
-            discountedPrice: "599",
+            discountedPrice: "899",
             unit: "sq ft",
             minQuantity: 1,
             maxQuantity: 5,
@@ -45,11 +45,11 @@ export const MOCK_CATEGORIES: CategoryWithListings[] = [
       },
       {
         id: "listing-bathroom-cleaning",
-        name: "Bathroom Deep Cleaning",
+        name: "Bathroom Cleaning",
         slug: "bathroom-cleaning",
         description: "Tackle tough water stains, descale chrome fixtures, sanitize toilet bowl & tiles, and deep clean windows & ventilation exhaust.",
-        shortDescription: "Descaling, tiles scrubbing & disinfection",
-        basePrice: "499",
+        shortDescription: "Deep cleaning & sanitation for a hygienic space.",
+        basePrice: "699",
         duration: 75,
         tags: ["Bathroom", "Sanitization", "Descaling"],
         image: "bathroom.png",
@@ -59,7 +59,7 @@ export const MOCK_CATEGORIES: CategoryWithListings[] = [
             id: "cat-bathroom-cleaning-1",
             name: "1 Bathroom Deep Cleaning",
             price: "699",
-            discountedPrice: "499",
+            discountedPrice: "699",
             unit: "room",
             minQuantity: 1,
             maxQuantity: 4,
@@ -107,11 +107,11 @@ export const MOCK_CATEGORIES: CategoryWithListings[] = [
       },
       {
         id: "listing-utensils-cleaning",
-        name: "Utensils & Sink Scrubbing",
+        name: "Utensils & Sink Cleaning",
         slug: "utensils-cleaning",
         description: "Scrubbing and washing of all kitchen utensils, pots, and pans, along with deep cleaning and sanitization of the sink area.",
-        shortDescription: "Wash, scrub & sanitize sink area",
-        basePrice: "299",
+        shortDescription: "Scrubbing & sanitation for a sparkling clean sink.",
+        basePrice: "499",
         duration: 45,
         tags: ["Kitchen", "Utensils", "Dishes"],
         image: "utensils.png",
@@ -120,8 +120,8 @@ export const MOCK_CATEGORIES: CategoryWithListings[] = [
           {
             id: "cat-utensils-cleaning-std",
             name: "Daily Sink Washing (Up to 30 utensils)",
-            price: "399",
-            discountedPrice: "299",
+            price: "499",
+            discountedPrice: "499",
             unit: "load",
             minQuantity: 1,
             maxQuantity: 5,
@@ -179,8 +179,8 @@ export const MOCK_CATEGORIES: CategoryWithListings[] = [
         basePrice: "149",
         duration: 30,
         tags: ["Plumbing", "Tap Repair", "Leakage"],
-        image: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=350&auto=format&fit=crop",
-        images: ["https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=800&auto=format&fit=crop"],
+        image: "plumbing.jpg",
+        images: ["plumbing.jpg"],
         catalogs: [
           {
             id: "cat-tap-repair-std",
@@ -204,8 +204,8 @@ export const MOCK_CATEGORIES: CategoryWithListings[] = [
         basePrice: "299",
         duration: 45,
         tags: ["Plumbing", "Blockage", "Drainage"],
-        image: "https://images.unsplash.com/photo-1504148455328-c376907d081c?q=80&w=350&auto=format&fit=crop",
-        images: ["https://images.unsplash.com/photo-1504148455328-c376907d081c?q=80&w=800&auto=format&fit=crop"],
+        image: "toilet-clean.jpg",
+        images: ["toilet-clean.jpg"],
         catalogs: [
           {
             id: "cat-toilet-blockage-std",
@@ -238,8 +238,8 @@ export const MOCK_CATEGORIES: CategoryWithListings[] = [
         basePrice: "99",
         duration: 30,
         tags: ["Electrical", "Switchboard", "Repair"],
-        image: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?q=80&w=350&auto=format&fit=crop",
-        images: ["https://images.unsplash.com/photo-1621905251189-08b45d6a269e?q=80&w=800&auto=format&fit=crop"],
+        image: "ac-repair.jpg",
+        images: ["ac-repair.jpg"],
         catalogs: [
           {
             id: "cat-switch-repair-std",
@@ -263,8 +263,8 @@ export const MOCK_CATEGORIES: CategoryWithListings[] = [
         basePrice: "499",
         duration: 60,
         tags: ["AC", "Service", "Cooling"],
-        image: "https://images.unsplash.com/photo-1527689368864-3a821dbccc34?q=80&w=350&auto=format&fit=crop",
-        images: ["https://images.unsplash.com/photo-1527689368864-3a821dbccc34?q=80&w=800&auto=format&fit=crop"],
+        image: "ac-repair.jpg",
+        images: ["ac-repair.jpg"],
         catalogs: [
           {
             id: "cat-ac-jet-wash-split",
@@ -297,8 +297,8 @@ export const MOCK_CATEGORIES: CategoryWithListings[] = [
         basePrice: "1999",
         duration: 180,
         tags: ["Painting", "Wall Accent", "Decor"],
-        image: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=350&auto=format&fit=crop",
-        images: ["https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=800&auto=format&fit=crop"],
+        image: "painting.jpg",
+        images: ["painting.jpg"],
         catalogs: [
           {
             id: "cat-painting-accent-std",
@@ -331,8 +331,8 @@ export const MOCK_CATEGORIES: CategoryWithListings[] = [
         basePrice: "399",
         duration: 90,
         tags: ["Appliance", "Washing Machine", "Repair"],
-        image: "https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?q=80&w=350&auto=format&fit=crop",
-        images: ["https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?q=80&w=800&auto=format&fit=crop"],
+        image: "ac-repair.jpg",
+        images: ["ac-repair.jpg"],
         catalogs: [
           {
             id: "cat-wm-visit-diagnostic",
@@ -391,3 +391,226 @@ export function getListingMockMeta(id: string) {
     }
   )
 }
+
+export const MOCK_BUNDLES: Bundle[] = [
+  {
+    id: "bundle-home-cleaning",
+    name: "Home Cleaning Bundle",
+    slug: "home-cleaning-bundle",
+    description: "Complete home cleaning with expert care.",
+    image: "bundle-clean.png",
+    originalPrice: "2199",
+    bundlePrice: "1499",
+    discountPercentage: "32",
+    items: [
+      {
+        catalogId: "cat-floor-cleaning-std",
+        quantity: 1,
+        catalog: {
+          id: "cat-floor-cleaning-std",
+          name: "Floor Scrubbing & Polishing",
+          description: "Stain removal and machine scrubbing",
+          price: "599",
+          minQuantity: 1,
+          maxQuantity: 5,
+          stepQuantity: 1
+        }
+      },
+      {
+        catalogId: "cat-bathroom-cleaning-1",
+        quantity: 2,
+        catalog: {
+          id: "cat-bathroom-cleaning-1",
+          name: "Bathroom Deep Cleaning",
+          description: "Descaling tiles & sanitization",
+          price: "499",
+          minQuantity: 1,
+          maxQuantity: 4,
+          stepQuantity: 1
+        }
+      },
+      {
+        catalogId: "kitchen-wiping",
+        quantity: 1,
+        catalog: {
+          id: "kitchen-wiping",
+          name: "Kitchen Wiping & Degreasing",
+          description: "Stove and countertop wipe",
+          price: "299",
+          minQuantity: 1,
+          maxQuantity: 1,
+          stepQuantity: 1
+        }
+      },
+      {
+        catalogId: "cupboard-organising",
+        quantity: 1,
+        catalog: {
+          id: "cupboard-organising",
+          name: "Cupboard & Wardrobe Organising",
+          description: "Folding clothes and neat arrangement",
+          price: "199",
+          minQuantity: 1,
+          maxQuantity: 1,
+          stepQuantity: 1
+        }
+      },
+      {
+        catalogId: "window-cleaning",
+        quantity: 1,
+        catalog: {
+          id: "window-cleaning",
+          name: "Window Glass Cleaning (All rooms)",
+          description: "Wiping, staining and frame dusting",
+          price: "149",
+          minQuantity: 1,
+          maxQuantity: 1,
+          stepQuantity: 1
+        }
+      },
+      {
+        catalogId: "balcony-cleaning",
+        quantity: 1,
+        catalog: {
+          id: "balcony-cleaning",
+          name: "Balcony Floor Deep Clean",
+          description: "Scrubbing floor tiles and washing grids",
+          price: "99",
+          minQuantity: 1,
+          maxQuantity: 1,
+          stepQuantity: 1
+        }
+      },
+      {
+        catalogId: "door-sanitisation",
+        quantity: 1,
+        catalog: {
+          id: "door-sanitisation",
+          name: "Door & Handle Sanitisation",
+          description: "Disinfection of all touchpoints",
+          price: "49",
+          minQuantity: 1,
+          maxQuantity: 1,
+          stepQuantity: 1
+        }
+      },
+      {
+        catalogId: "living-room-dusting",
+        quantity: 1,
+        catalog: {
+          id: "living-room-dusting",
+          name: "Living Room Dusting & Vacuuming",
+          description: "Sofa vacuuming and cabinet dusting",
+          price: "199",
+          minQuantity: 1,
+          maxQuantity: 1,
+          stepQuantity: 1
+        }
+      }
+    ]
+  },
+  {
+    id: "bundle-cooking",
+    name: "Cooking Bundle",
+    slug: "cooking-bundle",
+    description: "Delicious home-cooked meals made easy.",
+    image: "bundle-cook.png",
+    originalPrice: "1799",
+    bundlePrice: "1299",
+    discountPercentage: "28",
+    items: [
+      {
+        catalogId: "rice-prep",
+        quantity: 1,
+        catalog: {
+          id: "rice-prep",
+          name: "Rice Preparation",
+          description: "Premium basmati or regular rice cooked to perfection",
+          price: "150",
+          minQuantity: 1,
+          maxQuantity: 1,
+          stepQuantity: 1
+        }
+      },
+      {
+        catalogId: "curry-prep",
+        quantity: 1,
+        catalog: {
+          id: "curry-prep",
+          name: "Curry (Veg / Non-Veg)",
+          description: "Flavourful Indian gravy dishes",
+          price: "300",
+          minQuantity: 1,
+          maxQuantity: 1,
+          stepQuantity: 1
+        }
+      },
+      {
+        catalogId: "dal-prep",
+        quantity: 1,
+        catalog: {
+          id: "dal-prep",
+          name: "Dal Tadka / Fry",
+          description: "Authentic cooked lentils with rich tempering",
+          price: "150",
+          minQuantity: 1,
+          maxQuantity: 1,
+          stepQuantity: 1
+        }
+      },
+      {
+        catalogId: "omelette-prep",
+        quantity: 1,
+        catalog: {
+          id: "omelette-prep",
+          name: "Fluffy Omelette",
+          description: "Prepared with chopped onions, green chilies & spices",
+          price: "100",
+          minQuantity: 1,
+          maxQuantity: 1,
+          stepQuantity: 1
+        }
+      },
+      {
+        catalogId: "roti-prep",
+        quantity: 1,
+        catalog: {
+          id: "roti-prep",
+          name: "Chapati / Roti (Up to 10 pcs)",
+          description: "Freshly made hot wheat rotis",
+          price: "200",
+          minQuantity: 1,
+          maxQuantity: 1,
+          stepQuantity: 1
+        }
+      },
+      {
+        catalogId: "veg-sides",
+        quantity: 1,
+        catalog: {
+          id: "veg-sides",
+          name: "Vegetable Side Dishes",
+          description: "Healthy dry sautes / bhaji",
+          price: "150",
+          minQuantity: 1,
+          maxQuantity: 1,
+          stepQuantity: 1
+        }
+      },
+      {
+        catalogId: "kitchen-prep-clean",
+        quantity: 1,
+        catalog: {
+          id: "kitchen-prep-clean",
+          name: "Kitchen Utensils Cleaning",
+          description: "Post-cooking dishwashing and sink scrubbing",
+          price: "249",
+          minQuantity: 1,
+          maxQuantity: 1,
+          stepQuantity: 1
+        }
+      }
+    ]
+  }
+]
+

@@ -9,6 +9,23 @@ import { spacing, borderRadius } from "@/src/theme/spacing"
 import { useListingsStore, useCartStore } from "@/src/store"
 import { Ionicons } from "@expo/vector-icons"
 
+const bundleImages: Record<string, number> = {
+  "bundle-clean.png": require("../../../assets/home/main/bundle-clean.png"),
+  "bundle-cook.png": require("../../../assets/home/main/bundle-cook.png"),
+}
+
+function getBundleImage(name: string, image?: string) {
+  if (image && image.startsWith("http")) {
+    return { uri: image }
+  }
+  if (image && bundleImages[image]) {
+    return bundleImages[image]
+  }
+  const lowercaseName = name.toLowerCase()
+  if (lowercaseName.includes("cook") || lowercaseName.includes("kitchen")) return require("../../../assets/home/main/bundle-cook.png")
+  return require("../../../assets/home/main/bundle-clean.png")
+}
+
 export default function BundleDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { bundles } = useListingsStore()
@@ -51,7 +68,7 @@ export default function BundleDetailScreen() {
         <ScrollView showsVerticalScrollIndicator={false}>
           {bundle.image && (
             <Image
-              source={{ uri: bundle.image }}
+              source={getBundleImage(bundle.name, bundle.image)}
               style={styles.headerImage}
               contentFit="cover"
             />
@@ -170,7 +187,7 @@ export default function BundleDetailScreen() {
               </View>
               <View style={styles.benefitItem}>
                 <View style={styles.benefitIcon}>
-                  <Ionicons name="time" size={18} color={semantic.accent} />
+                  <Ionicons name="time" size={18} color={semantic.primary} />
                 </View>
                 <View style={styles.benefitText}>
                   <Typography type="body-sm" weight="semibold" style={{ color: semantic.textPrimary }}>
@@ -212,7 +229,7 @@ export default function BundleDetailScreen() {
           <Button
             variant="primary"
             onPress={handleAddToCart}
-            disabled={isLoading}
+            isDisabled={isLoading}
             style={styles.addButton}
           >
             Add to Cart

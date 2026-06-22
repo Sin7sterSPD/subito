@@ -20,60 +20,62 @@ function ServiceCard({
   const startingPrice = listing.catalogs?.[0]?.price || listing.basePrice
 
   return (
-    <Card style={styles.serviceCard} onPress={onPress} variant="default">
-      <View style={styles.cardContent}>
-        {listing.image ? (
-          <Image
-            source={{ uri: listing.image }}
-            style={styles.serviceImage}
-            contentFit="cover"
-          />
-        ) : (
-          <View style={styles.imagePlaceholder}>
-            <Ionicons name="sparkles" size={24} color={semantic.textMuted} />
-          </View>
-        )}
-        <View style={styles.serviceInfo}>
-          <Typography
-            type="body"
-            weight="semibold"
-            numberOfLines={2}
-            style={{ color: semantic.textPrimary }}
-          >
-            {listing.name}
-          </Typography>
-          {listing.shortDescription && (
-            <Typography
-              type="body-sm"
-              numberOfLines={2}
-              style={[styles.serviceDesc, { color: semantic.textMuted }]}
-            >
-              {listing.shortDescription}
-            </Typography>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.9}>
+      <Card style={styles.serviceCard} variant="default">
+        <View style={styles.cardContent}>
+          {listing.image ? (
+            <Image
+              source={{ uri: listing.image }}
+              style={styles.serviceImage}
+              contentFit="cover"
+            />
+          ) : (
+            <View style={styles.imagePlaceholder}>
+              <Ionicons name="sparkles" size={24} color={semantic.textMuted} />
+            </View>
           )}
-          <View style={styles.serviceFooter}>
-            {startingPrice && (
-              <Typography type="body" weight="bold" className="text-accent">
-                From ₹{startingPrice}
+          <View style={styles.serviceInfo}>
+            <Typography
+              type="body"
+              weight="semibold"
+              numberOfLines={2}
+              style={{ color: semantic.textPrimary }}
+            >
+              {listing.name}
+            </Typography>
+            {listing.shortDescription && (
+              <Typography
+                type="body-sm"
+                numberOfLines={2}
+                style={[styles.serviceDesc, { color: semantic.textMuted }]}
+              >
+                {listing.shortDescription}
               </Typography>
             )}
-            {listing.duration && (
-              <View style={styles.duration}>
-                <Ionicons
-                  name="time-outline"
-                  size={14}
-                  color={semantic.textMuted}
-                />
-                <Typography type="body-sm" style={{ color: semantic.textMuted }}>
-                  {listing.duration} min
+            <View style={styles.serviceFooter}>
+              {startingPrice && (
+                <Typography type="body" weight="bold" className="text-accent">
+                  From ₹{startingPrice}
                 </Typography>
-              </View>
-            )}
+              )}
+              {listing.duration && (
+                <View style={styles.duration}>
+                  <Ionicons
+                    name="time-outline"
+                    size={14}
+                    color={semantic.textMuted}
+                  />
+                  <Typography type="body-sm" style={{ color: semantic.textMuted }}>
+                    {listing.duration} min
+                  </Typography>
+                </View>
+              )}
+            </View>
           </View>
+          <Ionicons name="chevron-forward" size={20} color={semantic.textMuted} />
         </View>
-        <Ionicons name="chevron-forward" size={20} color={semantic.textMuted} />
-      </View>
-    </Card>
+      </Card>
+    </TouchableOpacity>
   )
 }
 
