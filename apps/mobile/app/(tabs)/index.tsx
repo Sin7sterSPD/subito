@@ -1,4 +1,4 @@
-// main Index file — Revamped Home Layout
+// main Index file — Premium Marketplace Home
 
 import React, { useEffect, useState, useCallback, useMemo } from "react"
 import {
@@ -9,15 +9,12 @@ import {
   Text,
   Dimensions,
   StyleSheet,
-  FlatList,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
 import { Image } from "expo-image"
 import { LinearGradient } from "expo-linear-gradient"
-import { Card, Spinner, Avatar } from "heroui-native"
-import { colors, semantic } from "../../src/theme/colors"
-import { spacing } from "../../src/theme/spacing"
+import { Spinner, Avatar } from "heroui-native"
 import {
   useAuthStore,
   useUserStore,
@@ -26,24 +23,10 @@ import {
   useAppStore,
 } from "../../src/store"
 import { Ionicons } from "@expo/vector-icons"
-import { Category, Listing, Bundle } from "../../src/types/api"
-import { getListingMockMeta } from "../../src/store/mockData"
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withDelay,
-  withSpring,
-  Easing,
-  FadeIn,
-  FadeInDown,
-  FadeInRight,
-  interpolate,
-  runOnJS,
-} from "react-native-reanimated"
+import { Listing, Bundle } from "../../src/types/api"
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window")
-const HORIZONTAL_PADDING = 20
+const SECTION_PADDING = 24
 
 // ─── Image Lookups ──────────────────────────────────────────────
 
@@ -103,9 +86,8 @@ function getBundleImage(name: string, image?: string) {
   return require("../../assets/home/main/bundle-clean.png")
 }
 
-// ─── Category Images & Icons ────────────────────────────────────
-
-const categoryImageMap: Record<string, number> = {
+// Category chip images
+const categoryChipImages: Record<string, number> = {
   cleaning: require("../../assets/home/main/floor-cleaning.jpg"),
   plumbing: require("../../assets/home/main/plumbing.jpg"),
   electrical: require("../../assets/home/main/ac-repair.jpg"),
@@ -115,93 +97,7 @@ const categoryImageMap: Record<string, number> = {
   "appliance repair": require("../../assets/home/main/ac-repair.jpg"),
 }
 
-const categoryIconMap: Record<string, keyof typeof Ionicons.glyphMap> = {
-  all: "grid",
-  cleaning: "sparkles",
-  plumbing: "construct",
-  electrical: "flash",
-  painting: "color-fill",
-  cooking: "restaurant",
-  "ac service": "snow",
-  "appliance repair": "build",
-}
-
-function getCategoryImage(name: string) {
-  return categoryImageMap[name.toLowerCase()] || require("../../assets/home/main/vaccum-floor.jpg")
-}
-
-function getCategoryIcon(name: string): keyof typeof Ionicons.glyphMap {
-  return categoryIconMap[name.toLowerCase()] || "sparkles"
-}
-
-// ─── Animated Pressable (scale 0.96 on press) ───────────────────
-
-function AnimatedPressable({
-  children,
-  onPress,
-  style,
-  ...rest
-}: {
-  children: React.ReactNode
-  onPress?: () => void
-  style?: any
-}) {
-  const scale = useSharedValue(1)
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }))
-
-  return (
-    <Animated.View style={[animatedStyle, style]}>
-      <TouchableOpacity
-        activeOpacity={1}
-        onPressIn={() => {
-          scale.value = withSpring(0.96, { damping: 15, stiffness: 300 })
-        }}
-        onPressOut={() => {
-          scale.value = withSpring(1, { damping: 15, stiffness: 300 })
-        }}
-        onPress={onPress}
-        {...rest}
-      >
-        {children}
-      </TouchableOpacity>
-    </Animated.View>
-  )
-}
-
-// ─── Stagger Animation Wrapper ──────────────────────────────────
-
-function StaggerItem({
-  children,
-  index,
-  direction = "up",
-}: {
-  children: React.ReactNode
-  index: number
-  direction?: "up" | "right"
-}) {
-  const entering = direction === "right"
-    ? FadeInRight.delay(index * 80)
-        .duration(400)
-        .springify()
-        .damping(18)
-        .stiffness(200)
-    : FadeInDown.delay(index * 100)
-        .duration(400)
-        .springify()
-        .damping(18)
-        .stiffness(200)
-
-  return (
-    <Animated.View entering={entering}>
-      {children}
-    </Animated.View>
-  )
-}
-
-// ─── Header Components ──────────────────────────────────────────
+// ─── Address Selector ───────────────────────────────────────────
 
 function AddressSelector() {
   const { selectedAddress } = useUserStore()
@@ -210,17 +106,17 @@ function AddressSelector() {
     <TouchableOpacity
       className="flex-row items-center"
       onPress={() => router.push("/(screens)/addresses")}
-      activeOpacity={0.8}
+      activeOpacity={0.7}
     >
-      <View className="w-10 h-10 rounded-full bg-[#E3EAFD] items-center justify-center">
-        <Ionicons name="location" size={20} color="#1D54E2" />
+      <View className="w-9 h-9 rounded-full bg-blue-01 items-center justify-center">
+        <Ionicons name="location" size={18} color="#2a9cff" />
       </View>
       <View className="ml-2.5">
-        <Text className="text-[11px] font-inter-regular text-gray-07">
+        <Text className="text-caption-s font-inter-regular text-gray-07">
           Deliver to
         </Text>
-        <View className="flex-row items-center gap-1">
-          <Text className="text-[15px] font-jakarta-bold text-gray-12">
+        <View className="flex-row items-center gap-0.5">
+          <Text className="text-caption-l font-jakarta-bold text-gray-12">
             {selectedAddress?.name || "Home"}
           </Text>
           <Ionicons name="chevron-down" size={14} color="#1F2228" />
@@ -230,276 +126,35 @@ function AddressSelector() {
   )
 }
 
+// ─── Section Header ─────────────────────────────────────────────
+
 function SectionHeader({
   title,
-  subtitle,
   showSeeAll = false,
   seeAllText = "See all",
   onSeeAllPress,
 }: {
   title: string
-  subtitle?: string
   showSeeAll?: boolean
   seeAllText?: string
   onSeeAllPress?: () => void
 }) {
   return (
-    <View className="mb-3 px-5 mt-6">
-      <View className="flex-row items-center justify-between">
-        <Text className="font-jakarta-bold text-[19px] text-gray-12">
-          {title}
-        </Text>
-        {showSeeAll && (
-          <TouchableOpacity onPress={onSeeAllPress} activeOpacity={0.7}>
-            <Text className="font-inter-semibold text-[13px] text-[#1D54E2]">
-              {seeAllText}
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View>
-      {subtitle && (
-        <Text className="font-inter-regular text-[12px] text-gray-07 mt-1">
-          {subtitle}
-        </Text>
+    <View
+      className="flex-row items-center justify-between"
+      style={{ paddingHorizontal: SECTION_PADDING, marginBottom: 14, marginTop: 28 }}
+    >
+      <Text className="font-jakarta-bold text-gray-12" style={{ fontSize: 20 }}>
+        {title}
+      </Text>
+      {showSeeAll && (
+        <TouchableOpacity onPress={onSeeAllPress} activeOpacity={0.7}>
+          <Text className="font-inter-semibold text-caption-l text-blue-03">
+            {seeAllText}
+          </Text>
+        </TouchableOpacity>
       )}
     </View>
-  )
-}
-
-// ─── Category Tile ──────────────────────────────────────────────
-
-const CATEGORY_TILE_WIDTH = (SCREEN_WIDTH - HORIZONTAL_PADDING * 2 - 24) / 3
-const CATEGORY_TILE_HEIGHT = 120
-
-function CategoryTile({
-  name,
-  selected,
-  onPress,
-  index,
-}: {
-  name: string
-  selected: boolean
-  onPress: () => void
-  index: number
-}) {
-  const icon = getCategoryIcon(name)
-  const image = name.toLowerCase() !== "all" ? getCategoryImage(name) : null
-
-  return (
-    <StaggerItem index={index} direction="right">
-      <AnimatedPressable onPress={onPress}>
-        <View
-          style={[
-            styles.categoryTile,
-            {
-              width: CATEGORY_TILE_WIDTH,
-              height: CATEGORY_TILE_HEIGHT,
-              borderColor: selected ? "#1D54E2" : "transparent",
-              borderWidth: selected ? 2 : 0,
-            },
-          ]}
-        >
-          {/* Image background */}
-          {image ? (
-            <View style={styles.categoryImageWrap}>
-              <Image
-                source={image}
-                style={StyleSheet.absoluteFillObject}
-                contentFit="cover"
-              />
-              {/* Subtle dark overlay for readability */}
-              <View style={styles.categoryImageOverlay} />
-            </View>
-          ) : (
-            <View style={[styles.categoryImageWrap, { backgroundColor: "#F0F4FE" }]} />
-          )}
-
-          {/* Icon circle — positioned over the image */}
-          <View
-            style={[
-              styles.categoryIconCircle,
-              {
-                backgroundColor: selected ? "#1D54E2" : "rgba(255,255,255,0.95)",
-              },
-            ]}
-          >
-            <Ionicons
-              name={icon}
-              size={18}
-              color={selected ? "#FFFFFF" : "#1D54E2"}
-            />
-          </View>
-
-          {/* Label */}
-          <Text
-            style={[
-              styles.categoryLabel,
-              { color: selected ? "#1D54E2" : colors.gray[12] },
-            ]}
-            numberOfLines={1}
-          >
-            {name}
-          </Text>
-        </View>
-      </AnimatedPressable>
-    </StaggerItem>
-  )
-}
-
-// ─── Service Card (Image-first, 170×220) ────────────────────────
-
-const SERVICE_CARD_WIDTH = 170
-const SERVICE_CARD_HEIGHT = 220
-const SERVICE_IMAGE_HEIGHT = SERVICE_CARD_HEIGHT * 0.7 // 70% image
-
-function ServiceCard({
-  listing,
-  onPress,
-  index,
-}: {
-  listing: Listing
-  onPress: () => void
-  index: number
-}) {
-  const imageSource = getServiceImage(listing.name, listing.image)
-  const startingPrice = listing.catalogs?.[0]?.price || listing.basePrice
-
-  return (
-    <StaggerItem index={index} direction="right">
-      <AnimatedPressable onPress={onPress}>
-        <View style={[styles.serviceCard, { width: SERVICE_CARD_WIDTH, height: SERVICE_CARD_HEIGHT }]}>
-          {/* Image Section — 70% */}
-          <View style={{ height: SERVICE_IMAGE_HEIGHT, width: "100%", overflow: "hidden", borderTopLeftRadius: 16, borderTopRightRadius: 16 }}>
-            <Image
-              source={imageSource}
-              style={StyleSheet.absoluteFillObject}
-              contentFit="cover"
-            />
-            {/* Subtle image outline per skill principle */}
-            <View
-              style={{
-                ...StyleSheet.absoluteFillObject,
-                borderTopLeftRadius: 16,
-                borderTopRightRadius: 16,
-                borderWidth: 1,
-                borderColor: "rgba(0,0,0,0.08)",
-              }}
-            />
-          </View>
-
-          {/* Info Section — 30% */}
-          <View style={styles.serviceCardInfo}>
-            <Text
-              style={styles.serviceCardTitle}
-              numberOfLines={1}
-            >
-              {listing.name}
-            </Text>
-
-            <View style={styles.serviceCardFooter}>
-              <Text style={styles.serviceCardPrice}>
-                From ₹{startingPrice}
-              </Text>
-              <View style={styles.serviceCardBookBtn}>
-                <Text style={styles.serviceCardBookText}>Book</Text>
-                <Ionicons name="arrow-forward" size={12} color="#1D54E2" />
-              </View>
-            </View>
-          </View>
-        </View>
-      </AnimatedPressable>
-    </StaggerItem>
-  )
-}
-
-// ─── Premium Bundle Card ────────────────────────────────────────
-
-const BUNDLE_CARD_WIDTH = SCREEN_WIDTH - HORIZONTAL_PADDING * 2 - 12
-const BUNDLE_CARD_HEIGHT = 200
-
-function BundleCard({
-  bundle,
-  onPress,
-  index,
-}: {
-  bundle: Bundle
-  onPress: () => void
-  index: number
-}) {
-  const discount = bundle.discountPercentage
-  const servicesCount = bundle.items?.length || 0
-  const isKitchen =
-    bundle.name.toLowerCase().includes("cook") ||
-    bundle.name.toLowerCase().includes("kitchen")
-
-  const gradientColors = isKitchen
-    ? (["transparent", "rgba(255,87,34,0.85)"] as const)
-    : (["transparent", "rgba(29,84,226,0.85)"] as const)
-
-  const accentColor = isKitchen ? "#FF5722" : "#1D54E2"
-
-  return (
-    <StaggerItem index={index} direction="up">
-      <AnimatedPressable onPress={onPress}>
-        <View style={[styles.bundleCard, { width: BUNDLE_CARD_WIDTH, height: BUNDLE_CARD_HEIGHT }]}>
-          {/* Full-bleed background image */}
-          <Image
-            source={getBundleImage(bundle.name, bundle.image)}
-            style={StyleSheet.absoluteFillObject}
-            contentFit="cover"
-          />
-
-          {/* Gradient overlay for text readability */}
-          <LinearGradient
-            colors={["transparent", "rgba(0,0,0,0.3)", "rgba(0,0,0,0.75)"]}
-            locations={[0, 0.4, 1]}
-            style={StyleSheet.absoluteFillObject}
-          />
-
-          {/* Discount badge */}
-          {discount && (
-            <View style={[styles.bundleDiscountBadge, { backgroundColor: accentColor }]}>
-              <Text style={styles.bundleDiscountText}>{discount}% OFF</Text>
-            </View>
-          )}
-
-          {/* Services count pill */}
-          <View style={styles.bundleServicesPill}>
-            <Ionicons name="layers" size={12} color="#FFFFFF" />
-            <Text style={styles.bundleServicesText}>
-              {servicesCount} Services
-            </Text>
-          </View>
-
-          {/* Bottom content */}
-          <View style={styles.bundleContent}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.bundleTitle} numberOfLines={1}>
-                {bundle.name}
-              </Text>
-              {bundle.description && (
-                <Text style={styles.bundleDescription} numberOfLines={1}>
-                  {bundle.description}
-                </Text>
-              )}
-            </View>
-
-            <View style={styles.bundleFooter}>
-              <View>
-                <Text style={styles.bundlePriceLabel}>Starting from</Text>
-                <Text style={styles.bundlePrice}>
-                  ₹{bundle.bundlePrice}
-                </Text>
-              </View>
-              <View style={[styles.bundleBookBtn, { backgroundColor: accentColor }]}>
-                <Text style={styles.bundleBookText}>View Bundle</Text>
-                <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
-              </View>
-            </View>
-          </View>
-        </View>
-      </AnimatedPressable>
-    </StaggerItem>
   )
 }
 
@@ -507,61 +162,265 @@ function BundleCard({
 
 function MarketingBanner({ onBookPress }: { onBookPress: () => void }) {
   return (
-    <StaggerItem index={0} direction="up">
-      <AnimatedPressable onPress={onBookPress}>
-        <View className="relative mx-5 mt-4 overflow-visible">
-          <LinearGradient
-            colors={["#2a9cff", "#70bdff"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+    <TouchableOpacity activeOpacity={0.95} onPress={onBookPress}>
+      <View style={{ marginHorizontal: SECTION_PADDING, marginTop: 16 }}>
+        <LinearGradient
+          colors={["#2a9cff", "#70bdff"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{
+            height: 180,
+            borderRadius: 20,
+            overflow: "hidden",
+          }}
+        >
+          {/* Background Circles */}
+          <View className="absolute -top-20 -left-20 h-56 w-56 rounded-full bg-white/10" />
+          <View className="absolute top-0 right-0 h-40 w-40 rounded-full bg-white/5" />
+          <View className="absolute -bottom-10 left-20 h-32 w-32 rounded-full bg-white/5" />
+
+          {/* Text Content */}
+          <View className="z-20 flex-1 justify-center pl-6" style={{ paddingRight: 140 }}>
+            <Text className="font-jakarta-bold text-white" style={{ fontSize: 22, lineHeight: 28 }}>
+              Get Your Home{"\n"}Sparkling Clean
+            </Text>
+            <Text className="font-inter-regular text-caption-l mt-1.5 text-white/90">
+              Trusted professionals at your doorstep.
+            </Text>
+            <TouchableOpacity
+              onPress={onBookPress}
+              activeOpacity={0.8}
+              className="mt-4 self-start rounded-2xl bg-white px-5 py-2.5"
+              style={styles.bannerBtn}
+            >
+              <Text className="font-inter-semibold text-blue-03 text-caption-l">
+                Book Service
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <Image
+            source={require("../../assets/home/girl-clean.png")}
+            contentFit="contain"
             style={{
-              height: 190,
-              borderRadius: 28,
-              overflow: "hidden",
+              position: "absolute",
+              bottom: -10,
+              right: -10,
+              width: 140,
+              height: 195,
+              zIndex: 30,
             }}
-            className="relative w-full"
-          >
-            {/* Background Circles */}
-            <View className="absolute -top-20 -left-20 h-56 w-56 rounded-full bg-white/10" />
-            <View className="absolute top-0 right-0 h-40 w-40 rounded-full bg-white/5" />
-            <View className="absolute -bottom-10 left-20 h-32 w-32 rounded-full bg-white/5" />
+          />
+        </LinearGradient>
+      </View>
+    </TouchableOpacity>
+  )
+}
 
-            {/* Text Content */}
-            <View className="z-20 flex-1 justify-center pr-[135px] pl-6">
-              <Text className="font-jakarta-bold text-[24px] leading-7 text-white">
-                Get Your Home{"\n"}Sparkling Clean
-              </Text>
+// ─── Category Chip ──────────────────────────────────────────────
 
-              <Text className="font-inter-regular text-caption-l mt-2 leading-4 text-white/95">
-                Trusted professionals at your doorstep.
-              </Text>
+function CategoryChip({
+  name,
+  selected,
+  onPress,
+}: {
+  name: string
+  selected: boolean
+  onPress: () => void
+}) {
+  const chipImage = categoryChipImages[name.toLowerCase()]
 
-              <TouchableOpacity
-                onPress={onBookPress}
-                activeOpacity={0.8}
-                className="mt-4.5 self-start rounded-2xl bg-white px-5 py-2.5 shadow-sm"
-              >
-                <Text className="font-inter-semibold text-blue-03 text-caption-l">
-                  Book Service
-                </Text>
-              </TouchableOpacity>
-            </View>
-            <Image
-              source={require("../../assets/home/girl-clean.png")}
-              contentFit="contain"
-              style={{
-                position: "absolute",
-                bottom: -10,
-                right: -10,
-                width: 145,
-                height: 205,
-                zIndex: 30,
-              }}
-            />
-          </LinearGradient>
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.7}
+      className={
+        selected
+          ? "flex-row items-center bg-blue-03 rounded-full"
+          : "flex-row items-center bg-white rounded-full border border-gray-02"
+      }
+      style={[
+        styles.categoryChip,
+        !chipImage && styles.categoryChipNoImage,
+        !selected && styles.categoryChipShadow,
+      ]}
+    >
+      {chipImage && (
+        <Image
+          source={chipImage}
+          style={styles.categoryChipImage}
+          contentFit="cover"
+        />
+      )}
+      <Text
+        className={
+          selected
+            ? "font-inter-semibold text-caption-l text-white"
+            : "font-inter-medium text-caption-l text-gray-12"
+        }
+      >
+        {name}
+      </Text>
+    </TouchableOpacity>
+  )
+}
+
+// ─── Service Card (Image-first, 220px wide) ─────────────────────
+
+const SERVICE_CARD_WIDTH = 160
+
+function ServiceCard({
+  listing,
+  onPress,
+}: {
+  listing: Listing
+  onPress: () => void
+}) {
+  const imageSource = getServiceImage(listing.name, listing.image)
+  const startingPrice = listing.catalogs?.[0]?.price || listing.basePrice
+
+  return (
+    <TouchableOpacity activeOpacity={0.9} onPress={onPress}>
+      <View
+        style={[styles.serviceCard, { width: SERVICE_CARD_WIDTH }]}
+      >
+        {/* Image — top corners only rounded */}
+        <View style={styles.serviceImageWrap}>
+          <Image
+            source={imageSource}
+            style={StyleSheet.absoluteFillObject}
+            contentFit="cover"
+          />
         </View>
-      </AnimatedPressable>
-    </StaggerItem>
+
+        {/* Content */}
+        <View style={styles.serviceCardBody}>
+          <Text
+            className="font-jakarta-semibold text-gray-12"
+            style={styles.serviceCardTitle}
+            numberOfLines={1}
+          >
+            {listing.name}
+          </Text>
+
+          <Text
+            className="font-inter-regular text-gray-07"
+            style={styles.serviceCardDesc}
+            numberOfLines={2}
+          >
+            {listing.shortDescription || "Professional service at your convenience"}
+          </Text>
+
+          <View style={styles.serviceCardBottom}>
+            <View style={styles.priceContainer}>
+              <Text style={styles.priceLabel}>Starts at</Text>
+              <Text
+                className="font-jakarta-bold text-gray-12"
+                style={styles.priceValue}
+              >
+                ₹{startingPrice}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={onPress}
+              activeOpacity={0.7}
+              style={styles.bookBtn}
+            >
+              <Text style={styles.bookBtnText}>Book</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  )
+}
+
+// ─── Bundle Card (Horizontal) ───────────────────────────────────
+
+function BundleCard({
+  bundle,
+  onPress,
+}: {
+  bundle: Bundle
+  onPress: () => void
+}) {
+  const servicesCount = bundle.items?.length || 0
+  const discount = bundle.discountPercentage
+  const isKitchen =
+    bundle.name.toLowerCase().includes("cook") ||
+    bundle.name.toLowerCase().includes("kitchen")
+  const accentColor = isKitchen ? "#FF5722" : "#2a9cff"
+
+  return (
+    <TouchableOpacity activeOpacity={0.9} onPress={onPress}>
+      <View
+        style={styles.bundleCard}
+      >
+        {/* Collage image — 35% */}
+        <View style={styles.bundleImageWrap}>
+          <Image
+            source={getBundleImage(bundle.name, bundle.image)}
+            style={StyleSheet.absoluteFillObject}
+            contentFit="cover"
+          />
+          {discount && (
+            <View
+              className="absolute top-2 left-2 rounded px-1.5 py-0.5"
+              style={{ backgroundColor: accentColor }}
+            >
+              <Text className="font-inter-bold text-white" style={{ fontSize: 9 }}>
+                {discount}% OFF
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Content — 65% */}
+        <View style={styles.bundleContent}>
+          <View style={{ flex: 1, justifyContent: "space-between" }}>
+            <View>
+              <Text
+                className="font-jakarta-bold text-gray-12"
+                style={styles.bundleTitle}
+                numberOfLines={1}
+              >
+                {bundle.name}
+              </Text>
+
+              {bundle.description && (
+                <Text
+                  className="font-inter-regular text-gray-07"
+                  style={styles.bundleDesc}
+                  numberOfLines={2}
+                >
+                  {bundle.description}
+                </Text>
+              )}
+            </View>
+
+            <View style={styles.bundleMetaRow}>
+              <Ionicons name="layers-outline" size={13} color="#7E869A" />
+              <Text className="font-inter-medium text-gray-07" style={styles.bundleMetaText}>
+                {servicesCount} Services
+              </Text>
+            </View>
+
+            <View style={styles.bundleFooter}>
+              <Text
+                className="font-jakarta-bold text-gray-12"
+                style={styles.bundlePriceText}
+              >
+                From ₹{bundle.bundlePrice}
+              </Text>
+
+              <View style={styles.bundleAction}>
+                <Text style={styles.bundleActionText}>View Bundle</Text>
+                <Ionicons name="arrow-forward" size={12} color="#2a9cff" />
+              </View>
+            </View>
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
   )
 }
 
@@ -573,7 +432,7 @@ const WHY_CHOOSE_US = [
     subtitle: "Background checked professionals",
     icon: "shield-checkmark" as keyof typeof Ionicons.glyphMap,
     bg: "#F0F4FE",
-    iconColor: "#1D54E2",
+    iconColor: "#2a9cff",
   },
   {
     title: "On-time Service",
@@ -597,39 +456,6 @@ const WHY_CHOOSE_US = [
     iconColor: "#e6483d",
   },
 ]
-
-function WhyChooseUsCard({
-  item,
-  index,
-}: {
-  item: (typeof WHY_CHOOSE_US)[number]
-  index: number
-}) {
-  const cardWidth = (SCREEN_WIDTH - HORIZONTAL_PADDING * 2 - 12) / 2
-
-  return (
-    <StaggerItem index={index} direction="up">
-      <View
-        style={[
-          styles.whyChooseCard,
-          { backgroundColor: item.bg, width: cardWidth },
-        ]}
-      >
-        <View style={styles.whyChooseIconWrap}>
-          <Ionicons name={item.icon} size={18} color={item.iconColor} />
-        </View>
-        <View style={{ marginLeft: 10, flex: 1 }}>
-          <Text style={styles.whyChooseTitle} numberOfLines={1}>
-            {item.title}
-          </Text>
-          <Text style={styles.whyChooseSubtitle} numberOfLines={2}>
-            {item.subtitle}
-          </Text>
-        </View>
-      </View>
-    </StaggerItem>
-  )
-}
 
 // ─── Main Home Screen ───────────────────────────────────────────
 
@@ -721,13 +547,12 @@ export default function HomeScreen() {
     return cat ? cat.listings || [] : []
   }, [selectedCategory, categories, allListings])
 
-  // Category names for the tile selector
+  // Category names for the chip selector
   const categoryNames = useMemo(() => {
     const names = ["All"]
     for (const cat of categories) {
       if (!names.includes(cat.name)) names.push(cat.name)
     }
-    // Ensure these appear even if not from API
     for (const extra of ["Cleaning", "Plumbing", "Electrical", "Painting", "Cooking", "AC Service"]) {
       if (!names.find((n) => n.toLowerCase() === extra.toLowerCase())) {
         names.push(extra)
@@ -752,55 +577,55 @@ export default function HomeScreen() {
     return <Spinner style={{ flex: 1, justifyContent: "center" }} />
   }
 
+  const whyCardWidth = (SCREEN_WIDTH - SECTION_PADDING * 2 - 12) / 2
+
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: "#F7F7F8" }}
       edges={["top"]}
     >
       {/* ── Header ─────────────────────────────────────────── */}
-      <Animated.View entering={FadeIn.duration(300)}>
-        <View className="bg-white px-5 pt-3 pb-2 flex-row items-center justify-between">
-          <AddressSelector />
-          <View className="flex-row items-center gap-3">
-            <TouchableOpacity
-              className="w-10 h-10 rounded-full bg-white items-center justify-center"
-              style={styles.headerIconBtn}
-              onPress={() => router.push("/(screens)/notifications")}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="notifications-outline" size={20} color="#1F2228" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => router.push("/(tabs)/profile")}
-              activeOpacity={0.8}
-            >
-              <Avatar size="md" className="border-gray-100 rounded-full border">
-                {user?.profileImage ? (
-                  <Avatar.Image source={{ uri: user.profileImage }} />
-                ) : null}
-                <Avatar.Fallback>
-                  {user?.firstName ? user.firstName[0].toUpperCase() : "U"}
-                </Avatar.Fallback>
-              </Avatar>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* ── Search Bar ────────────────────────────────────── */}
-        <View className="px-5 pb-4 pt-2 bg-white">
+      <View className="bg-white flex-row items-center justify-between" style={{ paddingHorizontal: SECTION_PADDING, paddingTop: 12, paddingBottom: 8 }}>
+        <AddressSelector />
+        <View className="flex-row items-center gap-3">
           <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={() => router.push("/(screens)/search")}
-            className="h-12 rounded-full px-4 flex-row items-center bg-white"
-            style={styles.searchBar}
+            className="w-10 h-10 rounded-full bg-white items-center justify-center"
+            style={styles.headerIconBtn}
+            onPress={() => router.push("/(screens)/notifications")}
+            activeOpacity={0.7}
           >
-            <Ionicons name="search" size={18} color="#7E869A" />
-            <Text className="text-gray-05 font-inter-regular text-[14px] ml-2">
-              Search for services...
-            </Text>
+            <Ionicons name="notifications-outline" size={20} color="#1F2228" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push("/(tabs)/profile")}
+            activeOpacity={0.8}
+          >
+            <Avatar size="md" className="rounded-full border border-gray-02">
+              {user?.profileImage ? (
+                <Avatar.Image source={{ uri: user.profileImage }} />
+              ) : null}
+              <Avatar.Fallback>
+                {user?.firstName ? user.firstName[0].toUpperCase() : "U"}
+              </Avatar.Fallback>
+            </Avatar>
           </TouchableOpacity>
         </View>
-      </Animated.View>
+      </View>
+
+      {/* ── Search Bar ────────────────────────────────────── */}
+      <View className="bg-white" style={{ paddingHorizontal: SECTION_PADDING, paddingBottom: 14, paddingTop: 6 }}>
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => router.push("/(screens)/search")}
+          className="h-11 rounded-xl flex-row items-center bg-gray-01 border border-gray-02"
+          style={{ paddingHorizontal: 14 }}
+        >
+          <Ionicons name="search" size={18} color="#9EA2AD" />
+          <Text className="text-gray-06 font-inter-regular text-caption-l ml-2.5">
+            Search for services...
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       {/* ── Scrollable Content ──────────────────────────────── */}
       <ScrollView
@@ -810,104 +635,127 @@ export default function HomeScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["#1D54E2"]}
+            colors={["#2a9cff"]}
           />
         }
       >
-        {/* ── Marketing Banner ─────────────────────────────── */}
+        {/* ── Marketing Banner ──────────────────────────────── */}
         <MarketingBanner onBookPress={() => router.push("/(screens)/search")} />
 
-        {/* ── Categories (horizontal scroll, image tiles) ─── */}
-        <SectionHeader title="Categories" />
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: HORIZONTAL_PADDING, gap: 12 }}
-        >
-          {categoryNames.map((name, index) => (
-            <CategoryTile
-              key={name}
-              name={name}
-              selected={selectedCategory === name}
-              onPress={() => setSelectedCategory(name)}
-              index={index}
-            />
-          ))}
-        </ScrollView>
+        {/* ── Categories (horizontal pill chips) ────────────── */}
+        <View style={{ marginTop: 20, marginBottom: 4 }}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: SECTION_PADDING, gap: 10 }}
+          >
+            {categoryNames.map((name) => (
+              <CategoryChip
+                key={name}
+                name={name}
+                selected={selectedCategory === name}
+                onPress={() => setSelectedCategory(name)}
+              />
+            ))}
+          </ScrollView>
+        </View>
 
-        {/* ── Popular Services (horizontal scroll, image-first) ── */}
+        {/* ── Popular Services ──────────────────────────────── */}
         <SectionHeader
           title="Popular Services"
-          subtitle="Book top-rated services near you"
           showSeeAll
           seeAllText="See all"
         />
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingHorizontal: HORIZONTAL_PADDING,
-            gap: 14,
-          }}
-        >
-          {filteredListings.length > 0 ? (
-            filteredListings.map((listing, index) => (
+        {filteredListings.length > 0 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{
+              paddingHorizontal: SECTION_PADDING,
+              gap: 12,
+            }}
+          >
+            {filteredListings.map((listing) => (
               <ServiceCard
                 key={listing.id}
                 listing={listing}
                 onPress={() => handleServicePress(listing)}
-                index={index}
               />
-            ))
-          ) : (
-            <View style={styles.emptyState}>
-              <Ionicons name="sparkles-outline" size={40} color="#9ea2ad" />
-              <Text style={styles.emptyStateText}>
-                No services available
-              </Text>
-            </View>
-          )}
-        </ScrollView>
+            ))}
+          </ScrollView>
+        ) : (
+          <View style={[styles.emptyState, { marginHorizontal: SECTION_PADDING }]}>
+            <Ionicons name="sparkles-outline" size={36} color="#9ea2ad" />
+            <Text className="font-inter-medium text-caption-l text-gray-07 mt-3">
+              No services available
+            </Text>
+          </View>
+        )}
 
-        {/* ── Best Value Bundles (premium full-width cards) ─── */}
+        {/* ── Best Value Bundles ─────────────────────────────── */}
         {displayBundles.length > 0 && (
           <>
             <SectionHeader
               title="Best Value Bundles"
-              subtitle="Save more with curated packages"
               showSeeAll
               seeAllText="All bundles"
             />
-            <View style={{ paddingHorizontal: HORIZONTAL_PADDING, gap: 16 }}>
-              {displayBundles.map((bundle, index) => (
+            <View style={{ paddingHorizontal: SECTION_PADDING, gap: 12 }}>
+              {displayBundles.map((bundle) => (
                 <BundleCard
                   key={bundle.id}
                   bundle={bundle}
                   onPress={() => handleBundlePress(bundle)}
-                  index={index}
                 />
               ))}
             </View>
           </>
         )}
 
-        {/* ── Why Choose Us (2×2 grid) ────────────────────── */}
+        {/* ── Why Choose Us ─────────────────────────────────── */}
         <SectionHeader title="Why Choose Us" />
         <View
           style={{
-            paddingHorizontal: HORIZONTAL_PADDING,
+            paddingHorizontal: SECTION_PADDING,
             flexDirection: "row",
             flexWrap: "wrap",
             gap: 12,
           }}
         >
           {WHY_CHOOSE_US.map((item, idx) => (
-            <WhyChooseUsCard key={idx} item={item} index={idx} />
+            <View
+              key={idx}
+              className="flex-row items-center"
+              style={[
+                styles.whyChooseCard,
+                { backgroundColor: item.bg, width: whyCardWidth },
+              ]}
+            >
+              <View style={styles.whyChooseIconWrap}>
+                <Ionicons name={item.icon} size={17} color={item.iconColor} />
+              </View>
+              <View style={{ marginLeft: 10, flex: 1 }}>
+                <Text
+                  className="font-jakarta-bold text-gray-12"
+                  style={{ fontSize: 12 }}
+                  numberOfLines={1}
+                >
+                  {item.title}
+                </Text>
+                <Text
+                  className="font-inter-regular text-gray-07"
+                  style={{ fontSize: 10, marginTop: 2 }}
+                  numberOfLines={2}
+                >
+                  {item.subtitle}
+                </Text>
+              </View>
+            </View>
           ))}
         </View>
 
         {/* Bottom spacing */}
-        <View style={{ height: 40 }} />
+        <View style={{ height: 32 }} />
       </ScrollView>
     </SafeAreaView>
   )
@@ -920,267 +768,216 @@ const styles = StyleSheet.create({
   headerIconBtn: {
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.05,
     shadowRadius: 3,
     elevation: 2,
   },
 
-  // Search
-  searchBar: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
-  },
-
-  // Category Tiles
-  categoryTile: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    overflow: "hidden",
-    alignItems: "center",
-    // Layered shadow (shadow-as-border principle)
+  // Banner button
+  bannerBtn: {
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  categoryImageWrap: {
-    width: "100%",
-    height: 64,
-    overflow: "hidden",
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-  },
-  categoryImageOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.15)",
-  },
-  // Concentric radius: outer = 16, padding ≈ 0, icon circle = 14
-  categoryIconCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+
+  // Category Chips
+  categoryChip: {
+    height: 40,
+    paddingLeft: 6,
+    paddingRight: 14,
+    gap: 8,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: -17,
-    // Shadow for depth
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderRadius: 20,
   },
-  categoryLabel: {
-    fontFamily: "JakartaBold",
-    fontSize: 11,
-    marginTop: 4,
-    textAlign: "center",
-    paddingHorizontal: 4,
+  categoryChipNoImage: {
+    paddingLeft: 14,
+  },
+  categoryChipShadow: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  categoryChipImage: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
   },
 
   // Service Card
   serviceCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
-    overflow: "hidden",
-    // Shadow-as-border (no solid border)
+    borderWidth: 1,
+    borderColor: "#F1F2F4",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 4,
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 2,
+    overflow: "hidden",
   },
-  serviceCardInfo: {
-    flex: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    justifyContent: "space-between",
+  serviceImageWrap: {
+    height: 100,
+    width: "100%",
+    overflow: "hidden",
+  },
+  serviceCardBody: {
+    padding: 10,
   },
   serviceCardTitle: {
-    fontFamily: "JakartaBold",
     fontSize: 14,
+    fontFamily: "PlusJakartaSans_600SemiBold",
     color: "#1F2228",
   },
-  serviceCardFooter: {
+  serviceCardDesc: {
+    fontSize: 11,
+    lineHeight: 15,
+    fontFamily: "Inter_400Regular",
+    color: "#7E869A",
+    marginTop: 2,
+  },
+  serviceCardBottom: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    marginTop: 8,
   },
-  serviceCardPrice: {
-    fontFamily: "InterSemiBold",
-    fontSize: 12,
-    color: "#1D54E2",
-    // Tabular nums for price stability
-    fontVariant: ["tabular-nums"],
+  priceContainer: {
+    flexDirection: "column",
   },
-  serviceCardBookBtn: {
-    flexDirection: "row",
+  priceLabel: {
+    fontSize: 9,
+    fontFamily: "Inter_400Regular",
+    color: "#7E869A",
+  },
+  priceValue: {
+    fontSize: 14,
+    fontFamily: "PlusJakartaSans_700Bold",
+    color: "#1F2228",
+  },
+  bookBtn: {
+    backgroundColor: "#EAF4FF",
+    borderColor: "#2a9cff",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    justifyContent: "center",
     alignItems: "center",
-    gap: 2,
   },
-  serviceCardBookText: {
-    fontFamily: "InterSemiBold",
+  bookBtnText: {
+    color: "#2a9cff",
     fontSize: 12,
-    color: "#1D54E2",
+    fontFamily: "Inter_600SemiBold",
   },
 
   // Bundle Card
   bundleCard: {
-    borderRadius: 20,
-    overflow: "hidden",
-    position: "relative",
-    // Shadow-as-border
+    backgroundColor: "#FFFFFF",
+    flexDirection: "row",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#F1F2F4",
+    height: 135,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 2,
+    overflow: "hidden",
   },
-  bundleDiscountBadge: {
-    position: "absolute",
-    top: 14,
-    left: 14,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+  bundleImageWrap: {
+    width: "35%",
+    height: "100%",
+    overflow: "hidden",
   },
-  bundleDiscountText: {
-    fontFamily: "InterBold",
+  bundleContent: {
+    flex: 1,
+    padding: 12,
+  },
+  bundleTitle: {
+    fontSize: 14,
+    fontFamily: "PlusJakartaSans_700Bold",
+    color: "#1F2228",
+    marginBottom: 2,
+  },
+  bundleDesc: {
     fontSize: 11,
-    color: "#FFFFFF",
-    letterSpacing: 0.3,
+    lineHeight: 15,
+    fontFamily: "Inter_400Regular",
+    color: "#7E869A",
+    marginBottom: 6,
   },
-  bundleServicesPill: {
-    position: "absolute",
-    top: 14,
-    right: 14,
+  bundleMetaRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    marginBottom: 6,
   },
-  bundleServicesText: {
-    fontFamily: "InterSemiBold",
+  bundleMetaText: {
     fontSize: 11,
-    color: "#FFFFFF",
-  },
-  bundleContent: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    paddingTop: 8,
-  },
-  bundleTitle: {
-    fontFamily: "JakartaBold",
-    fontSize: 18,
-    color: "#FFFFFF",
-  },
-  bundleDescription: {
-    fontFamily: "InterRegular",
-    fontSize: 12,
-    color: "rgba(255,255,255,0.8)",
-    marginTop: 2,
+    fontFamily: "Inter_500Medium",
+    color: "#7E869A",
   },
   bundleFooter: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 10,
+    marginTop: "auto",
   },
-  bundlePriceLabel: {
-    fontFamily: "InterRegular",
-    fontSize: 10,
-    color: "rgba(255,255,255,0.7)",
+  bundlePriceText: {
+    fontSize: 15,
+    fontFamily: "PlusJakartaSans_700Bold",
+    color: "#1F2228",
   },
-  bundlePrice: {
-    fontFamily: "JakartaBold",
-    fontSize: 20,
-    color: "#FFFFFF",
-    fontVariant: ["tabular-nums"],
-  },
-  bundleBookBtn: {
+  bundleAction: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    gap: 2,
   },
-  bundleBookText: {
-    fontFamily: "InterBold",
-    fontSize: 13,
-    color: "#FFFFFF",
+  bundleActionText: {
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+    color: "#2a9cff",
   },
 
   // Why Choose Us
   whyChooseCard: {
     padding: 12,
-    borderRadius: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    // Shadow-as-border
+    borderRadius: 14,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  whyChooseIconWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-    // Shadow for icon container
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.04,
     shadowRadius: 3,
     elevation: 1,
   },
-  whyChooseTitle: {
-    fontFamily: "JakartaBold",
-    fontSize: 12,
-    color: "#1F2228",
-  },
-  whyChooseSubtitle: {
-    fontFamily: "InterRegular",
-    fontSize: 10,
-    color: "#7E869A",
-    marginTop: 2,
+  whyChooseIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
 
   // Empty State
   emptyState: {
-    width: SCREEN_WIDTH - HORIZONTAL_PADDING * 2,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 48,
+    paddingVertical: 40,
     backgroundColor: "#FFFFFF",
     borderRadius: 20,
-    // Shadow-as-border
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  emptyStateText: {
-    fontFamily: "InterMedium",
-    fontSize: 14,
-    color: "#7E869A",
-    marginTop: 12,
+    borderWidth: 1,
+    borderColor: "#EAEAEA",
   },
 })
