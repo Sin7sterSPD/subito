@@ -1,10 +1,7 @@
 import { create } from "zustand"
 import { Category, Listing, Bundle } from "../types/api"
 import { listingsApi } from "../services/api"
-
-interface CategoryWithListings extends Category {
-  listings: Listing[]
-}
+import { MOCK_CATEGORIES, ALL_MOCK_LISTINGS, CategoryWithListings } from "./mockData"
 
 interface ListingsState {
   categories: CategoryWithListings[]
@@ -23,6 +20,33 @@ interface ListingsState {
   reset: () => void
 }
 
+function mergeWithMocks(dbCategories: CategoryWithListings[]): CategoryWithListings[] {
+  const result = [...dbCategories]
+  for (const mockCat of MOCK_CATEGORIES) {
+    const existingIndex = result.findIndex(
+      (c) => c.slug === mockCat.slug || c.name.toLowerCase() === mockCat.name.toLowerCase()
+    )
+    if (existingIndex > -1) {
+      const existingCat = result[existingIndex]
+      const existingListings = existingCat.listings || []
+      const mergedListings = [...existingListings]
+      
+      for (const mockList of mockCat.listings) {
+        if (!mergedListings.some((l) => l.id === mockList.id || l.slug === mockList.slug)) {
+          mergedListings.push(mockList)
+        }
+      }
+      result[existingIndex] = {
+        ...existingCat,
+        listings: mergedListings
+      }
+    } else {
+      result.push(mockCat)
+    }
+  }
+  return result.sort((a, b) => (a.sortOrder || 99) - (b.sortOrder || 99))
+}
+
 export const useListingsStore = create<ListingsState>((set) => ({
   categories: [],
   bundles: [],
@@ -30,43 +54,55 @@ export const useListingsStore = create<ListingsState>((set) => ({
   selectedListing: null,
   isLoading: false,
   error: null,
+  
   fetchListings: async (lat, lng) => {
-    set({ isLoading: true , error:null})
+    set({ isLoading: true , error: null })
     try {
       const response = await listingsApi.getListings({ lat, lng })
       if (response.success && response.data) {
+        const dbCats = (response.data.categories || []) as CategoryWithListings[]
+        const merged = mergeWithMocks(dbCats)
         set({
-          categories: response.data.categories as CategoryWithListings[],
+          categories: merged,
           bundles: response.data.bundles || [],
         })
+      } else {
+        set({ categories: MOCK_CATEGORIES, bundles: [] })
       }
     } catch {
-      set({ error: "Failed to fetch listings" })
-      // Silent fail
+      set({ categories: MOCK_CATEGORIES, bundles: [], error: "Failed to fetch listings" })
     } finally {
       set({ isLoading: false })
     }
   },
 
   fetchPublicListings: async (lat, lng) => {
-    set({ isLoading: true })
+    set({ isLoading: true, error: null })
     try {
       const response = await listingsApi.getPublicListings({ lat, lng })
       if (response.success && response.data) {
+        const dbCats = (response.data.categories || []) as CategoryWithListings[]
+        const merged = mergeWithMocks(dbCats)
         set({
-          categories: response.data.categories as CategoryWithListings[],
+          categories: merged,
           bundles: response.data.bundles || [],
         })
+      } else {
+        set({ categories: MOCK_CATEGORIES, bundles: [] })
       }
     } catch {
-      // Silent fail
-      set({ error: "Failed to fetch listings" })
+      set({ categories: MOCK_CATEGORIES, bundles: [], error: "Failed to fetch listings" })
     } finally {
       set({ isLoading: false })
     }
   },
 
   fetchListingById: async (id) => {
+    const mockItem = ALL_MOCK_LISTINGS.find((item) => item.id === id)
+    if (mockItem) {
+      set({ selectedListing: mockItem })
+      return mockItem
+    }
     set({ isLoading: true })
     try {
       const response = await listingsApi.getListingById(id)
@@ -83,6 +119,11 @@ export const useListingsStore = create<ListingsState>((set) => ({
   },
 
   fetchServiceById: async (id) => {
+    const mockItem = ALL_MOCK_LISTINGS.find((item) => item.id === id)
+    if (mockItem) {
+      set({ selectedListing: mockItem })
+      return mockItem
+    }
     set({ isLoading: true })
     try {
       const response = await listingsApi.getServiceById(id)
@@ -107,7 +148,7 @@ export const useListingsStore = create<ListingsState>((set) => ({
       bundles: [],
       selectedCategory: null,
       selectedListing: null,
-         isLoading: false,
-          error: null,
+      isLoading: false,
+      error: null,
     }),
 }))

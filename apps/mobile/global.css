@@ -10,264 +10,258 @@
  */
 @source "./node_modules/heroui-native/lib";
 
-
-
 @theme {
- 
-     /* ── Primitive color palette (your Figma swatches, raw hex) ──
+  /* ── Primitive color palette (your Figma swatches, raw hex) ──
         Use these as building blocks in @layer theme below.
         Never use these directly in className — use semantic tokens. */
-    
-     /* Gray */
-     --gray-01: #F7F7F8;
-     --gray-02: #E9EAEC;
-     --gray-03: #DEE0E3;
-     --gray-04: #C8CAD0;
-     --gray-05: #BABDC5;
-     --gray-06: #9EA2AD;
-     --gray-07: #7E869A;
-     --gray-08: #717684;
-     --gray-09: #5E636E;
-     --gray-10: #464A53;
-     --gray-11: #333333;
-     --gray-12: #1F2228;
-     --gray-13: #14151A;
-    
-     /* Blue */
-     --blue-01: #F0F4FE;
-     --blue-02: #E3EAFD;
-     --blue-03: #2A9CFF;
-     --blue-04: #B4C7F8;
-     --blue-05: #93AFF6;
-     --blue-06: #7196F4;
-     --blue-07: #5984F2;
-     --blue-08: #4778F5;
-     --blue-09: #1D54E2;
-     --blue-10: #1A4AC7;
-     --blue-11: #133A9A;
-     --blue-12: #07296A;
-     --blue-13: #03153A;
-     /* new colors */
-     --blue-14: #55B0FF;
-    
-     /* Green */
-     --green-01: #EDFDF4;
-     --green-02: #D1FAE4;
-     --green-03: #C3F8DC;
-     --green-04: #9AF4C3;
-     --green-05: #8CE8B6;
-     --green-06: #6AE1A1;
-     --green-07: #40D986;
-     --green-08: #26BD6C;
-     --green-09: #21A65E;
-     --green-10: #1D9052;
-     --green-11: #166E3F;
-     --green-12: #0F4C2C;
-     --green-13: #072213;
-    
-     /* Orange */
-     --orange-01: #FEF4EC;
-     --orange-02: #FDEAD8;
-     --orange-03: #FCDDC0;
-     --orange-04: #FAD0A9;
-     --orange-05: #F9C594;
-     --orange-06: #F8B577;
-     --orange-07: #F6A355;
-     --orange-08: #F48E2F;
-     --orange-09: #D9760C;
-     --orange-10: #D56C0B;
-     --orange-11: #AE590A;
-     --orange-12: #613105;
-     --orange-13: #301903;
-    
-     /* Red */
-     --red-01: #FDF2F1;
-     --red-02: #FCE5E4;
-     --red-03: #F9D4D2;
-     --red-04: #F7C3C0;
-     --red-05: #F5B2AD;
-     --red-06: #F08B85;
-     --red-07: #EB6960;
-     --red-08: #E6483D;
-     --red-09: #D9281C;
-     --red-10: #B32318;
-     --red-11: #9A1C13;
-     --red-12: #64120D;
-     --red-13: #360A07;
-    
-     /* ── Border radius ──────────────────────────────────────────
+
+  /* Gray */
+  --gray-01: #f7f7f8;
+  --gray-02: #e9eaec;
+  --gray-03: #dee0e3;
+  --gray-04: #c8cad0;
+  --gray-05: #babdc5;
+  --gray-06: #9ea2ad;
+  --gray-07: #7e869a;
+  --gray-08: #717684;
+  --gray-09: #5e636e;
+  --gray-10: #464a53;
+  --gray-11: #333333;
+  --gray-12: #1f2228;
+  --gray-13: #14151a;
+
+  /* Blue */
+  --blue-01: #f0f4fe;
+  --blue-02: #70bdff;
+  --blue-03: #2a9cff;
+  --blue-04: #b4c7f8;
+  --blue-05: #93aff6;
+  --blue-06: #7196f4;
+  --blue-07: #5984f2;
+  --blue-08: #55b0ff;
+  --blue-09: #1d54e2;
+  --blue-10: #1a4ac7;
+  --blue-11: #133a9a;
+  --blue-12: #07296a;
+  --blue-13: #03153a;
+  /* new colors */
+
+  /* Green */
+  --green-01: #edfdf4;
+  --green-02: #d1fae4;
+  --green-03: #c3f8dc;
+  --green-04: #9af4c3;
+  --green-05: #8ce8b6;
+  --green-06: #6ae1a1;
+  --green-07: #40d986;
+  --green-08: #26bd6c;
+  --green-09: #21a65e;
+  --green-10: #1d9052;
+  --green-11: #166e3f;
+  --green-12: #0f4c2c;
+  --green-13: #072213;
+
+  /* Orange */
+  --orange-01: #fef4ec;
+  --orange-02: #fdead8;
+  --orange-03: #fcddc0;
+  --orange-04: #fad0a9;
+  --orange-05: #f9c594;
+  --orange-06: #f8b577;
+  --orange-07: #f6a355;
+  --orange-08: #f48e2f;
+  --orange-09: #d9760c;
+  --orange-10: #d56c0b;
+  --orange-11: #ae590a;
+  --orange-12: #613105;
+  --orange-13: #301903;
+
+  /* Red */
+  --red-01: #fdf2f1;
+  --red-02: #fce5e4;
+  --red-03: #f9d4d2;
+  --red-04: #f7c3c0;
+  --red-05: #f5b2ad;
+  --red-06: #f08b85;
+  --red-07: #eb6960;
+  --red-08: #e6483d;
+  --red-09: #d9281c;
+  --red-10: #b32318;
+  --red-11: #9a1c13;
+  --red-12: #64120d;
+  --red-13: #360a07;
+
+  /* ── Border radius ──────────────────────────────────────────
         --radius is the base. All component radii derive from it.
         Change this one value to restyle the whole app's corners. */
-     --radius: 0.75rem;                          /* 12px base */
-     --field-radius: calc(var(--radius) * 1);    /* 12px inputs */
-    
-     /* ── Border widths ────────────────────────────────────────── */
-     --border-width:       1px;
-     --field-border-width: 0px;   /* inputs: no visible border by default */
-    
-     /* ── Disabled state ───────────────────────────────────────── */
-     --opacity-disabled: 0.45;
-    
-     /* ── Typography — map to your loaded Expo font names ─────────
+  --radius: 0.75rem; /* 12px base */
+  --field-radius: calc(var(--radius) * 1); /* 12px inputs */
+
+  /* ── Border widths ────────────────────────────────────────── */
+  --border-width: 1px;
+  --field-border-width: 0px; /* inputs: no visible border by default */
+
+  /* ── Disabled state ───────────────────────────────────────── */
+  --opacity-disabled: 0.45;
+
+  /* ── Typography — map to your loaded Expo font names ─────────
         Replace font names below with your exact useFonts() keys.
         Common choices: Inter, Plus Jakarta Sans, DM Sans, etc.    */
-      --font-sans: 'Inter_400Regular';
-      --font-inter-regular: 'Inter_400Regular';
-      --font-inter-medium: 'Inter_500Medium';
-      --font-inter-semibold: 'Inter_600SemiBold';
-      --font-inter-bold: 'Inter_700Bold';
-      --font-jakarta-semibold: 'PlusJakartaSans_600SemiBold';
-      --font-jakarta-bold: 'PlusJakartaSans_700Bold';
-      --font-jakarta-extrabold: 'PlusJakartaSans_800ExtraBold';
-    
-     /* ── Custom text sizes from your Figma type scale ────────────
+  --font-sans: "Inter_400Regular";
+  --font-inter-regular: "Inter_400Regular";
+  --font-inter-medium: "Inter_500Medium";
+  --font-inter-semibold: "Inter_600SemiBold";
+  --font-inter-bold: "Inter_700Bold";
+  --font-jakarta-semibold: "PlusJakartaSans_600SemiBold";
+  --font-jakarta-bold: "PlusJakartaSans_700Bold";
+  --font-jakarta-extrabold: "PlusJakartaSans_800ExtraBold";
+
+  /* ── Custom text sizes from your Figma type scale ────────────
         Tailwind built-ins (text-sm, text-base etc.) still work,
         but these let you write text-display, text-h1 etc. */
-    
-     /* Display */
-     --text-display:             6rem;           /* 96px */
-     --text-display--line-height: 6.25rem;       /* 100px */
-     --text-display--letter-spacing: -0.225rem; /* -3.6px */
-    
-     /* Headings */
-     --text-h1:             4.5rem;        /* 72px */
-     --text-h1--line-height: 5rem;         /* 80px */
-     --text-h1--letter-spacing: -0.1375rem; /* -2.2px */
-    
-     --text-h2:             4rem;          /* 64px */
-     --text-h2--line-height: 4.5rem;       /* 72px */
-     --text-h2--letter-spacing: -0.10625rem; /* -1.7px */
-    
-     --text-h3:             3rem;          /* 48px */
-     --text-h3--line-height: 3.5rem;       /* 56px */
-     --text-h3--letter-spacing: -0.0625rem; /* -1px */
-    
-     --text-h4:             2.25rem;       /* 36px */
-     --text-h4--line-height: 2.75rem;      /* 44px */
-     --text-h4--letter-spacing: -0.04375rem; /* -0.7px */
-    
-     --text-h5:             1.875rem;      /* 30px */
-     --text-h5--line-height: 2.25rem;      /* 36px */
-     --text-h5--letter-spacing: -0.03125rem; /* -0.5px */
-    
-     --text-h6:             1.5rem;        /* 24px */
-     --text-h6--line-height: 2rem;         /* 32px */
-     --text-h6--letter-spacing: -0.01875rem; /* -0.3px */
-    
-     /* Body */
-     --text-body-l:             1.25rem;   /* 20px */
-     --text-body-l--line-height: 1.75rem;  /* 28px */
-     --text-body-l--letter-spacing: -0.0125rem; /* -0.2px */
-    
-     --text-body-m:             1.125rem;  /* 18px */
-     --text-body-m--line-height: 1.625rem; /* 26px */
-     --text-body-m--letter-spacing: -0.0125rem; /* -0.2px */
-    
-     --text-body-s:             1rem;      /* 16px */
-     --text-body-s--line-height: 1.5rem;   /* 24px */
-     --text-body-s--letter-spacing: -0.01875rem; /* -0.3px */
-    
-     /* Caption */
-     --text-caption-l:             0.875rem; /* 14px */
-     --text-caption-l--line-height: 1.25rem; /* 20px */
-     --text-caption-l--letter-spacing: -0.00625rem; /* -0.1px */
-    
-     --text-caption-m:             0.75rem; /* 12px */
-     --text-caption-m--line-height: 1rem;   /* 16px */
-     --text-caption-m--letter-spacing: 0rem; /* 0px */
-    
-     --text-caption-s:             0.625rem; /* 10px */
-     --text-caption-s--line-height: 0.875rem; /* 14px */
-     --text-caption-s--letter-spacing: 0rem; /* 0px */
-    
-     /* ── Spacing scale (Tailwind default 4px grid is fine,
+
+  /* Display */
+  --text-display: 6rem; /* 96px */
+  --text-display--line-height: 6.25rem; /* 100px */
+  --text-display--letter-spacing: -0.225rem; /* -3.6px */
+
+  /* Headings */
+  --text-h1: 4.5rem; /* 72px */
+  --text-h1--line-height: 5rem; /* 80px */
+  --text-h1--letter-spacing: -0.1375rem; /* -2.2px */
+
+  --text-h2: 4rem; /* 64px */
+  --text-h2--line-height: 4.5rem; /* 72px */
+  --text-h2--letter-spacing: -0.10625rem; /* -1.7px */
+
+  --text-h3: 3rem; /* 48px */
+  --text-h3--line-height: 3.5rem; /* 56px */
+  --text-h3--letter-spacing: -0.0625rem; /* -1px */
+
+  --text-h4: 2.25rem; /* 36px */
+  --text-h4--line-height: 2.75rem; /* 44px */
+  --text-h4--letter-spacing: -0.04375rem; /* -0.7px */
+
+  --text-h5: 1.875rem; /* 30px */
+  --text-h5--line-height: 2.25rem; /* 36px */
+  --text-h5--letter-spacing: -0.03125rem; /* -0.5px */
+
+  --text-h6: 1.5rem; /* 24px */
+  --text-h6--line-height: 2rem; /* 32px */
+  --text-h6--letter-spacing: -0.01875rem; /* -0.3px */
+
+  /* Body */
+  --text-body-l: 1.25rem; /* 20px */
+  --text-body-l--line-height: 1.75rem; /* 28px */
+  --text-body-l--letter-spacing: -0.0125rem; /* -0.2px */
+
+  --text-body-m: 1.125rem; /* 18px */
+  --text-body-m--line-height: 1.625rem; /* 26px */
+  --text-body-m--letter-spacing: -0.0125rem; /* -0.2px */
+
+  --text-body-s: 1rem; /* 16px */
+  --text-body-s--line-height: 1.5rem; /* 24px */
+  --text-body-s--letter-spacing: -0.01875rem; /* -0.3px */
+
+  /* Caption */
+  --text-caption-l: 0.875rem; /* 14px */
+  --text-caption-l--line-height: 1.25rem; /* 20px */
+  --text-caption-l--letter-spacing: -0.00625rem; /* -0.1px */
+
+  --text-caption-m: 0.75rem; /* 12px */
+  --text-caption-m--line-height: 1rem; /* 16px */
+  --text-caption-m--letter-spacing: 0rem; /* 0px */
+
+  --text-caption-s: 0.625rem; /* 10px */
+  --text-caption-s--line-height: 0.875rem; /* 14px */
+  --text-caption-s--letter-spacing: 0rem; /* 0px */
+
+  /* ── Spacing scale (Tailwind default 4px grid is fine,
         override here only if your Figma uses a different grid) ── */
-     /* --spacing-1: 4px; */
-    
-     /* ── Breakpoints ─────────────────────────────────────────── */
-     --breakpoint-sm:  640px;
-     --breakpoint-md:  768px;
-     --breakpoint-lg:  1024px;
-     --breakpoint-xl:  1280px;
-   }
-    
-   /* ─────────────────────────────────────────────────────────────
+  /* --spacing-1: 4px; */
+
+  /* ── Breakpoints ─────────────────────────────────────────── */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+}
+
+/* ─────────────────────────────────────────────────────────────
       2. SEMANTIC COLOR TOKENS (@layer theme)
       These are the only values you reference in className.
       Map your Figma primitive colors to semantic roles here.
     
       LIGHT MODE ONLY — no @variant dark block needed.
       ───────────────────────────────────────────────────────────── */
-   @layer theme {
-     :root {
-    
-       @variant light {
-    
-         /* ── Canvas ────────────────────────────────────────────── */
-         --background:         var(--gray-01);   /* #F7F7F8 — app background */
-         --foreground:         var(--gray-13);   /* #14151A — primary text */
-    
-         /* ── Surfaces (cards, list rows, accordions) ──────────── */
-         --surface:                        #FFFFFF;
-         --surface-foreground:             var(--gray-13);
-    
-         --surface-secondary:              var(--gray-01);  /* #F7F7F8 */
-         --surface-secondary-foreground:   var(--gray-12);
-    
-         --surface-tertiary:               var(--gray-02);  /* #E9EAEC */
-         --surface-tertiary-foreground:    var(--gray-12);
-    
-         /* ── Overlays (modals, popovers, bottom sheets) ───────── */
-         --overlay:            #FFFFFF;
-         --overlay-foreground: var(--gray-13);
-         --backdrop:           oklch(0% 0 0 / 25%);
-    
-         /* ── Text hierarchy ───────────────────────────────────── */
-         --muted:              var(--gray-07);   /* #7E869A — hint / placeholder */
-    
-         /* ── Neutral interactive (default buttons, chips) ─────── */
-         --default:            var(--gray-02);   /* #E9EAEC */
-         --default-foreground: var(--gray-12);   /* #1F2228 */
-    
-         /* ── ★ Brand accent ─────────────────────────────────────
+@layer theme {
+  :root {
+    @variant light {
+      /* ── Canvas ────────────────────────────────────────────── */
+      --background: var(--gray-01); /* #F7F7F8 — app background */
+      --foreground: var(--gray-13); /* #14151A — primary text */
+
+      /* ── Surfaces (cards, list rows, accordions) ──────────── */
+      --surface: #ffffff;
+      --surface-foreground: var(--gray-13);
+
+      --surface-secondary: var(--gray-01); /* #F7F7F8 */
+      --surface-secondary-foreground: var(--gray-12);
+
+      --surface-tertiary: var(--gray-02); /* #E9EAEC */
+      --surface-tertiary-foreground: var(--gray-12);
+
+      /* ── Overlays (modals, popovers, bottom sheets) ───────── */
+      --overlay: #ffffff;
+      --overlay-foreground: var(--gray-13);
+      --backdrop: oklch(0% 0 0 / 25%);
+
+      /* ── Text hierarchy ───────────────────────────────────── */
+      --muted: var(--gray-07); /* #7E869A — hint / placeholder */
+
+      /* ── Neutral interactive (default buttons, chips) ─────── */
+      --default: var(--gray-02); /* #E9EAEC */
+      --default-foreground: var(--gray-12); /* #1F2228 */
+
+      /* ── ★ Brand accent ─────────────────────────────────────
             Primary CTA color. Change this to rebrand the whole app.
             Using Blue-09 from your Figma palette.               */
-         --accent:             var(--blue-09);   /* #1D54E2 */
-         --accent-foreground:  #FFFFFF;
-    
-         /* ── Form inputs ──────────────────────────────────────── */
-         --field-background:   #FFFFFF;
-         --field-foreground:   var(--gray-12);   /* #1F2228 */
-         --field-placeholder:  var(--gray-06);   /* #9EA2AD */
-         --field-border:       var(--gray-03);   /* #DEE0E3 */
-    
-         /* ── Status colors ────────────────────────────────────── */
-         --success:            var(--green-08);  /* #26BD6C */
-         --success-foreground: var(--green-13);  /* #072213 */
-    
-         --warning:            var(--orange-08); /* #F48E2F */
-         --warning-foreground: var(--orange-13); /* #301903 */
-    
-         --danger:             var(--red-08);    /* #E6483D */
-         --danger-foreground:  #FFFFFF;
-    
-         /* ── Segment / Tab indicator ──────────────────────────── */
-         --segment:            #FFFFFF;
-         --segment-foreground: var(--gray-13);
-    
-         /* ── Structural ───────────────────────────────────────── */
-         --border:             var(--gray-03);   /* #DEE0E3 — subtle borders */
-         --separator:          var(--gray-04);   /* #C8CAD0 — dividers */
-         --focus:              var(--blue-09);   /* #1D54E2 — focus ring */
-         --link:               var(--blue-09);   /* #1D54E2 — inline links */
-       }
-    
-       /* NOTE: No @variant dark block intentionally.
+      --accent: var(--blue-09); /* #1D54E2 */
+      --accent-foreground: #ffffff;
+
+      /* ── Form inputs ──────────────────────────────────────── */
+      --field-background: #ffffff;
+      --field-foreground: var(--gray-12); /* #1F2228 */
+      --field-placeholder: var(--gray-06); /* #9EA2AD */
+      --field-border: var(--gray-03); /* #DEE0E3 */
+
+      /* ── Status colors ────────────────────────────────────── */
+      --success: var(--green-08); /* #26BD6C */
+      --success-foreground: var(--green-13); /* #072213 */
+
+      --warning: var(--orange-08); /* #F48E2F */
+      --warning-foreground: var(--orange-13); /* #301903 */
+
+      --danger: var(--red-08); /* #E6483D */
+      --danger-foreground: #ffffff;
+
+      /* ── Segment / Tab indicator ──────────────────────────── */
+      --segment: #ffffff;
+      --segment-foreground: var(--gray-13);
+
+      /* ── Structural ───────────────────────────────────────── */
+      --border: var(--gray-03); /* #DEE0E3 — subtle borders */
+      --separator: var(--gray-04); /* #C8CAD0 — dividers */
+      --focus: var(--blue-09); /* #1D54E2 — focus ring */
+      --link: var(--blue-09); /* #1D54E2 — inline links */
+    }
+
+    /* NOTE: No @variant dark block intentionally.
           If you add dark mode later, paste it here. */
-     }
-   }
-    
-   /* ─────────────────────────────────────────────────────────────
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
       3. CUSTOM COLORS → TAILWIND CLASSES (@theme inline)
       Bridge any extra semantic tokens to Tailwind utility classes.
       HeroUI already does this for its own tokens, so you only
@@ -276,78 +270,76 @@
       Pattern: --color-{name}: var(--{name})
       Usage:   bg-info | text-info | border-info-foreground
       ───────────────────────────────────────────────────────────── */
-   @theme inline {
-    
-     /* Expose your primitive palette as Tailwind colors too.
+@theme inline {
+  /* Expose your primitive palette as Tailwind colors too.
         Useful for one-off styling: bg-blue-09, text-gray-07 etc. */
-     --color-gray-01: var(--gray-01);
-     --color-gray-02: var(--gray-02);
-     --color-gray-03: var(--gray-03);
-     --color-gray-04: var(--gray-04);
-     --color-gray-05: var(--gray-05);
-     --color-gray-06: var(--gray-06);
-     --color-gray-07: var(--gray-07);
-     --color-gray-08: var(--gray-08);
-     --color-gray-09: var(--gray-09);
-     --color-gray-10: var(--gray-10);
-     --color-gray-11: var(--gray-11);
-     --color-gray-12: var(--gray-12);
-     --color-gray-13: var(--gray-13);
-    
-     --color-blue-01: var(--blue-01);
-     --color-blue-02: var(--blue-02);
-     --color-blue-03: var(--blue-03);
-     --color-blue-04: var(--blue-04);
-     --color-blue-05: var(--blue-05);
-     --color-blue-06: var(--blue-06);
-     --color-blue-07: var(--blue-07);
-     --color-blue-08: var(--blue-08);
-     --color-blue-09: var(--blue-09);
-     --color-blue-10: var(--blue-10);
-     --color-blue-11: var(--blue-11);
-     --color-blue-12: var(--blue-12);
-     --color-blue-13: var(--blue-13);
-    
-     --color-green-01: var(--green-01);
-     --color-green-02: var(--green-02);
-     --color-green-03: var(--green-03);
-     --color-green-04: var(--green-04);
-     --color-green-05: var(--green-05);
-     --color-green-06: var(--green-06);
-     --color-green-07: var(--green-07);
-     --color-green-08: var(--green-08);
-     --color-green-09: var(--green-09);
-     --color-green-10: var(--green-10);
-     --color-green-11: var(--green-11);
-     --color-green-12: var(--green-12);
-     --color-green-13: var(--green-13);
-    
-     --color-orange-01: var(--orange-01);
-     --color-orange-02: var(--orange-02);
-     --color-orange-03: var(--orange-03);
-     --color-orange-04: var(--orange-04);
-     --color-orange-05: var(--orange-05);
-     --color-orange-06: var(--orange-06);
-     --color-orange-07: var(--orange-07);
-     --color-orange-08: var(--orange-08);
-     --color-orange-09: var(--orange-09);
-     --color-orange-10: var(--orange-10);
-     --color-orange-11: var(--orange-11);
-     --color-orange-12: var(--orange-12);
-     --color-orange-13: var(--orange-13);
-    
-     --color-red-01: var(--red-01);
-     --color-red-02: var(--red-02);
-     --color-red-03: var(--red-03);
-     --color-red-04: var(--red-04);
-     --color-red-05: var(--red-05);
-     --color-red-06: var(--red-06);
-     --color-red-07: var(--red-07);
-     --color-red-08: var(--red-08);
-     --color-red-09: var(--red-09);
-     --color-red-10: var(--red-10);
-     --color-red-11: var(--red-11);
-     --color-red-12: var(--red-12);
-     --color-red-13: var(--red-13);
-   }
-   
+  --color-gray-01: var(--gray-01);
+  --color-gray-02: var(--gray-02);
+  --color-gray-03: var(--gray-03);
+  --color-gray-04: var(--gray-04);
+  --color-gray-05: var(--gray-05);
+  --color-gray-06: var(--gray-06);
+  --color-gray-07: var(--gray-07);
+  --color-gray-08: var(--gray-08);
+  --color-gray-09: var(--gray-09);
+  --color-gray-10: var(--gray-10);
+  --color-gray-11: var(--gray-11);
+  --color-gray-12: var(--gray-12);
+  --color-gray-13: var(--gray-13);
+
+  --color-blue-01: var(--blue-01);
+  --color-blue-02: var(--blue-02);
+  --color-blue-03: var(--blue-03);
+  --color-blue-04: var(--blue-04);
+  --color-blue-05: var(--blue-05);
+  --color-blue-06: var(--blue-06);
+  --color-blue-07: var(--blue-07);
+  --color-blue-08: var(--blue-08);
+  --color-blue-09: var(--blue-09);
+  --color-blue-10: var(--blue-10);
+  --color-blue-11: var(--blue-11);
+  --color-blue-12: var(--blue-12);
+  --color-blue-13: var(--blue-13);
+
+  --color-green-01: var(--green-01);
+  --color-green-02: var(--green-02);
+  --color-green-03: var(--green-03);
+  --color-green-04: var(--green-04);
+  --color-green-05: var(--green-05);
+  --color-green-06: var(--green-06);
+  --color-green-07: var(--green-07);
+  --color-green-08: var(--green-08);
+  --color-green-09: var(--green-09);
+  --color-green-10: var(--green-10);
+  --color-green-11: var(--green-11);
+  --color-green-12: var(--green-12);
+  --color-green-13: var(--green-13);
+
+  --color-orange-01: var(--orange-01);
+  --color-orange-02: var(--orange-02);
+  --color-orange-03: var(--orange-03);
+  --color-orange-04: var(--orange-04);
+  --color-orange-05: var(--orange-05);
+  --color-orange-06: var(--orange-06);
+  --color-orange-07: var(--orange-07);
+  --color-orange-08: var(--orange-08);
+  --color-orange-09: var(--orange-09);
+  --color-orange-10: var(--orange-10);
+  --color-orange-11: var(--orange-11);
+  --color-orange-12: var(--orange-12);
+  --color-orange-13: var(--orange-13);
+
+  --color-red-01: var(--red-01);
+  --color-red-02: var(--red-02);
+  --color-red-03: var(--red-03);
+  --color-red-04: var(--red-04);
+  --color-red-05: var(--red-05);
+  --color-red-06: var(--red-06);
+  --color-red-07: var(--red-07);
+  --color-red-08: var(--red-08);
+  --color-red-09: var(--red-09);
+  --color-red-10: var(--red-10);
+  --color-red-11: var(--red-11);
+  --color-red-12: var(--red-12);
+  --color-red-13: var(--red-13);
+}

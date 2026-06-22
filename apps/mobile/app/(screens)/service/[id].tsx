@@ -220,6 +220,20 @@ export default function ServiceDetailScreen() {
   const listing = selectedListing
   const hasItemsInCart = (cart?.items?.length || 0) > 0
 
+  const resolveImage = (img: string) => {
+    if (!img) return require("../../../assets/home/roomclieaning.png")
+    if (img.startsWith("http")) return { uri: img }
+    if (img === "floor.png") return require("../../../assets/home/floor.png")
+    if (img === "bathroom.png") return require("../../../assets/home/bathroom.png")
+    if (img === "cupboard-cleaning.png") return require("../../../assets/home/cupboard-cleaning.png")
+    if (img === "utensils.png") return require("../../../assets/home/utensils.png")
+    if (img === "roomclieaning.png") return require("../../../assets/home/roomclieaning.png")
+    if (img === "toiletcleaning.png") return require("../../../assets/home/toiletcleaning.png")
+    if (img === "windowscleaning.png") return require("../../../assets/home/windowscleaning.png")
+    if (img === "Afterpartycleaning.png") return require("../../../assets/home/Afterpartycleaning.png")
+    return require("../../../assets/home/roomclieaning.png")
+  }
+
   return (
     <>
       <Stack.Screen options={{ title: listing.name }} />
@@ -234,7 +248,7 @@ export default function ServiceDetailScreen() {
               {listing.images.map((img, idx) => (
                 <Image
                   key={idx}
-                  source={{ uri: img }}
+                  source={img.startsWith("http") ? { uri: img } : resolveImage(img)}
                   style={styles.headerImage}
                   contentFit="cover"
                 />

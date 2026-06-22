@@ -95,15 +95,6 @@ function CartItemCard({
             >
               <Ionicons name="add" size={18} color={semantic.primary} />
             </TouchableOpacity>
-            <Text variant="bodySmall" weight="600" style={styles.quantityText}>
-              {item.quantity}
-            </Text>
-            <TouchableOpacity
-              style={styles.quantityButton}
-              onPress={onIncrement}
-            >
-              <Ionicons name="add" size={18} color={semantic.primary} />
-            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -147,7 +138,7 @@ function BookingTypeSelector({
             }
           />
           <Text
-            variant="captionLarge"
+            variant="bodyLarge"
             color={selected === type.key ? "primary" : "textMuted"}
             weight={selected === type.key ? "600" : "400"}
           >
@@ -297,11 +288,11 @@ export default function CartScreen() {
   }, [fetchCart])
 
   const handleIncrement = async (item: CartItem) => {
-    await updateItem(item.id, "INCREMENT")
+    await updateItem(item.catalogId, "INCREMENT")
   }
 
   const handleDecrement = async (item: CartItem) => {
-    await updateItem(item.id, "DECREMENT")
+    await updateItem(item.catalogId, "DECREMENT")
   }
 
   const handleRemove = async (item: CartItem) => {
