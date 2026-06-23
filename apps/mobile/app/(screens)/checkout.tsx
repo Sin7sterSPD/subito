@@ -157,8 +157,6 @@ export default function CheckoutScreen() {
 
   useEffect(() => {
     if (selectedAddress) {
-      setSelectedSlot(null)
-      setSelectedDate(null)
       fetchSlots(
         selectedAddress.latitude,
         selectedAddress.longitude,
@@ -166,6 +164,37 @@ export default function CheckoutScreen() {
       )
     }
   }, [selectedAddress, cart?.bookingType, fetchSlots])
+
+  useEffect(() => {
+    if (cart?.timeSlot?.time?.[0]?.start && Object.keys(slots).length > 0 && !selectedSlot) {
+      const savedStart = cart.timeSlot.time[0].start
+      const savedDate = savedStart.split("T")[0]
+      
+      const dateKey = Object.keys(slots).find(k => k === savedDate || k.startsWith(savedDate))
+      if (dateKey) {
+        setSelectedDate(dateKey)
+        const matchingSlot = slots[dateKey]?.find(s => s.startTime === savedStart)
+        if (matchingSlot) {
+          setSelectedSlot(matchingSlot)
+        } else {
+          setSelectedSlot({
+            startTime: savedStart,
+            isFull: false,
+            isExperiencingSurge: parseFloat(cart.surgePrice || "0") > 0,
+            surgePrice: parseFloat(cart.surgePrice || "0"),
+          })
+        }
+      } else {
+        setSelectedDate(savedDate)
+        setSelectedSlot({
+          startTime: savedStart,
+          isFull: false,
+          isExperiencingSurge: parseFloat(cart.surgePrice || "0") > 0,
+          surgePrice: parseFloat(cart.surgePrice || "0"),
+        })
+      }
+    }
+  }, [slots, cart?.timeSlot, selectedSlot])
 
   useEffect(() => {
     if (

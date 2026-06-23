@@ -315,6 +315,30 @@ export async function getAvailableSlots(query: {
   days: number
 }) {
   const now = new Date()
+  
+  // Self-healing: if all slots in the DB are in the past, shift them forward
+  const allSlots = await db.query.bookingSlots.findMany()
+  if (allSlots.length > 0) {
+    const nowTime = now.getTime()
+    const hasFutureSlots = allSlots.some(s => s.date.getTime() >= nowTime)
+    if (!hasFutureSlots) {
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      const minSlotTime = Math.min(...allSlots.map(s => s.date.getTime()))
+      const minSlotDate = new Date(minSlotTime)
+      const diffTime = todayStart.getTime() - new Date(minSlotDate.getFullYear(), minSlotDate.getMonth(), minSlotDate.getDate()).getTime()
+      const daysDiff = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
+
+      for (const slot of allSlots) {
+        const newDate = new Date(slot.date)
+        newDate.setDate(newDate.getDate() + daysDiff)
+        await db
+          .update(bookingSlots)
+          .set({ date: newDate, updatedAt: new Date() })
+          .where(eq(bookingSlots.id, slot.id))
+      }
+    }
+  }
+
   const endDate = new Date()
   endDate.setDate(endDate.getDate() + query.days)
 
