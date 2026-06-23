@@ -9,7 +9,6 @@ import {
 import { Typography } from "heroui-native"
 import { spacing } from "../../theme/spacing"
 import { BookingSlot } from "../../types/api"
-import { Ionicons } from "@expo/vector-icons"
 
 interface SlotPickerProps {
   slots: Record<string, BookingSlot[]>
@@ -20,22 +19,26 @@ interface SlotPickerProps {
   onSlotChange: (slot: BookingSlot) => void
   label?: string
   showDateLabel?: boolean
+  isLoading?: boolean
 }
 
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
 const formatDateChip = (dateStr: string) => {
-  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
   const date = new Date(dateStr)
   const today = new Date()
   const tomorrow = new Date()
   tomorrow.setDate(today.getDate() + 1)
-  
-  const isToday = date.getFullYear() === today.getFullYear() &&
-                  date.getMonth() === today.getMonth() &&
-                  date.getDate() === today.getDate()
-                  
-  const isTomorrow = date.getFullYear() === tomorrow.getFullYear() &&
-                    date.getMonth() === tomorrow.getMonth() &&
-                    date.getDate() === tomorrow.getDate()
+
+  const isToday =
+    date.getFullYear() === today.getFullYear() &&
+    date.getMonth() === today.getMonth() &&
+    date.getDate() === today.getDate()
+
+  const isTomorrow =
+    date.getFullYear() === tomorrow.getFullYear() &&
+    date.getMonth() === tomorrow.getMonth() &&
+    date.getDate() === tomorrow.getDate()
 
   if (isToday) {
     return { dayName: "Today", dateNum: date.getDate().toString() }
@@ -43,22 +46,61 @@ const formatDateChip = (dateStr: string) => {
   if (isTomorrow) {
     return { dayName: "Tomorrow", dateNum: date.getDate().toString() }
   }
-  
-  return { dayName: days[date.getDay()], dateNum: date.getDate().toString() }
+
+  return {
+    dayName: WEEKDAYS[date.getDay()],
+    dateNum: date.getDate().toString(),
+  }
 }
 
 const formatTimeSlot = (startTime: string) => {
+  let hours = 0
+  let minutes = 0
   if (startTime.includes("T")) {
     const date = new Date(startTime)
-    let hours = date.getHours()
-    const minutes = date.getMinutes()
-    const ampm = hours >= 12 ? 'PM' : 'AM'
-    hours = hours % 12
-    hours = hours ? hours : 12
-    const strMinutes = minutes < 10 ? '0' + minutes : minutes
-    return `${hours}:${strMinutes} ${ampm}`
+    hours = date.getHours()
+    minutes = date.getMinutes()
+  } else {
+    const parts = startTime.split(":")
+    hours = parseInt(parts[0], 10)
+    minutes = parts[1] ? parseInt(parts[1], 10) : 0
   }
-  return startTime
+  const ampm = hours >= 12 ? "PM" : "AM"
+  const displayHours = hours % 12 || 12
+  const strMinutes = minutes < 10 ? "0" + minutes : minutes
+  return `${displayHours}:${strMinutes} ${ampm}`
+}
+
+function DateSkeleton() {
+  return (
+    <View className="flex-row justify-between px-1">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <View
+          key={i}
+          className="bg-gray-01 h-[82px] w-[72px] rounded-[16px]"
+          style={{ opacity: 1 - i * 0.12 }}
+        />
+      ))}
+    </View>
+  )
+}
+
+function TimeSkeleton() {
+  return (
+    <View className="gap-3">
+      {[1, 2, 3].map((row) => (
+        <View key={row} className="flex-row gap-2.5">
+          {[1, 2, 3].map((col) => (
+            <View
+              key={col}
+              className="bg-gray-01 h-[48px] flex-1 rounded-[12px]"
+              style={{ opacity: 1 - (row + col) * 0.06 }}
+            />
+          ))}
+        </View>
+      ))}
+    </View>
+  )
 }
 
 export function SlotPicker({
@@ -70,20 +112,31 @@ export function SlotPicker({
   onSlotChange,
   label = "Select Date & Time",
   showDateLabel = true,
+  isLoading = false,
 }: SlotPickerProps) {
-  const activeSlots = selectedDate ? (slots[selectedDate] || []) : []
+  const activeSlots = selectedDate ? slots[selectedDate] || [] : []
+
+  console.log("Available Dates", availableDates)
+  console.log("Selected Date", selectedDate)
+  console.log("Active Slots", activeSlots)
 
   return (
-    <View className="gap-4">
+    <View className="gap-5">
       {showDateLabel && (
         <Typography className="font-jakarta-bold text-body-m text-gray-12">
           {label}
         </Typography>
       )}
 
-      {/* Date Select Horizontal Chips */}
-      {availableDates.length > 0 ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
+      {isLoading ? (
+        <DateSkeleton />
+      ) : availableDates.length > 0 ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          className="flex-row"
+          contentContainerClassName="gap-2.5"
+        >
           {availableDates.map((dateStr) => {
             const isSelected = selectedDate === dateStr
             const { dayName, dateNum } = formatDateChip(dateStr)
@@ -92,22 +145,22 @@ export function SlotPicker({
                 key={dateStr}
                 onPress={() => onDateChange(dateStr)}
                 activeOpacity={0.8}
-                className={`items-center justify-center p-3 px-4 mr-2.5 rounded-2xl border ${
+                className={`items-center justify-center rounded-[16px] border ${
                   isSelected
                     ? "bg-blue-03 border-blue-03"
-                    : "bg-white border-gray-02"
+                    : "border-gray-02 bg-white"
                 }`}
                 style={styles.dateChip}
               >
                 <Typography
-                  className={`font-inter-medium text-caption-m ${
+                  className={`font-inter-medium text-[11px] ${
                     isSelected ? "text-white" : "text-gray-07"
                   }`}
                 >
                   {dayName}
                 </Typography>
                 <Typography
-                  className={`font-jakarta-bold text-body-m mt-0.5 ${
+                  className={`font-jakarta-bold mt-1 text-[18px] ${
                     isSelected ? "text-white" : "text-gray-12"
                   }`}
                 >
@@ -118,23 +171,20 @@ export function SlotPicker({
           })}
         </ScrollView>
       ) : (
-        <Typography className="font-inter-regular text-body-s text-gray-07 text-center py-4">
+        <Typography className="font-inter-regular text-body-s text-gray-07 py-4 text-center">
           No dates available
         </Typography>
       )}
 
-      {/* Time Grid Layout */}
       {selectedDate && (
-        <View className="gap-2.5">
-          <Typography className="font-jakarta-bold text-caption-l text-gray-07">
-            Select Start Time
-          </Typography>
-          {activeSlots.length > 0 ? (
-            <View className="flex-row flex-wrap gap-2">
+        <View className="gap-4">
+          {isLoading ? (
+            <TimeSkeleton />
+          ) : activeSlots.length > 0 ? (
+            <View className="flex-row flex-wrap gap-2.5">
               {activeSlots.map((slot) => {
                 const isSelected = selectedSlot?.startTime === slot.startTime
                 const isFull = slot.isFull
-                const isSurge = slot.isExperiencingSurge
 
                 return (
                   <TouchableOpacity
@@ -142,36 +192,32 @@ export function SlotPicker({
                     disabled={isFull}
                     onPress={() => onSlotChange(slot)}
                     activeOpacity={0.7}
-                    className={`flex-row items-center justify-center py-3 rounded-xl border relative ${
+                    className={`items-center justify-center rounded-xl border ${
                       isSelected
                         ? "bg-blue-03 border-blue-03"
                         : isFull
-                        ? "bg-gray-01 border-gray-02 opacity-40"
-                        : "bg-white border-gray-02"
+                          ? "bg-gray-01 border-gray-02"
+                          : "border-gray-02 bg-white"
                     }`}
                     style={styles.timeChip}
                   >
                     <Typography
-                      className={`font-inter-semibold text-body-s ${
-                        isSelected ? "text-white" : isFull ? "text-gray-05" : "text-gray-12"
+                      className={`font-inter-medium text-body-s ${
+                        isSelected
+                          ? "text-white"
+                          : isFull
+                            ? "text-gray-04"
+                            : "text-gray-08"
                       }`}
                     >
                       {formatTimeSlot(slot.startTime)}
                     </Typography>
-
-                    {isSurge && !isFull && (
-                      <View className="absolute -top-1.5 -right-1 bg-orange-01 border border-orange-03 px-1 rounded">
-                        <Typography className="text-[8px] font-inter-bold text-orange-08">
-                          SURGE
-                        </Typography>
-                      </View>
-                    )}
                   </TouchableOpacity>
                 )
               })}
             </View>
           ) : (
-            <Typography className="font-inter-regular text-body-s text-gray-07 text-center py-4">
+            <Typography className="font-inter-regular text-body-s text-gray-07 py-4 text-center">
               No slots available for this date
             </Typography>
           )}
@@ -183,10 +229,11 @@ export function SlotPicker({
 
 const styles = StyleSheet.create({
   dateChip: {
-    minWidth: 72,
-    alignItems: "center",
+    width: 72,
+    height: 82,
   },
   timeChip: {
-    width: (Dimensions.get("window").width - spacing[4] * 2 - 16) / 3, // 3-column layout
+    width: (Dimensions.get("window").width - spacing[4] * 2 - 20) / 3,
+    height: 48,
   },
 })

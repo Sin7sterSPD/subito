@@ -8,7 +8,7 @@ import {
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Typography, Card, Button, Spinner } from "heroui-native"
-import { colors, semantic } from "../../src/theme/colors"
+import { colors } from "../../src/theme/colors"
 import { spacing } from "../../src/theme/spacing"
 import { useUserStore, useAuthStore } from "../../src/store"
 import { Ionicons } from "@expo/vector-icons"
@@ -53,7 +53,7 @@ export default function ReferralsScreen() {
           <View style={styles.headerIcon}>
             <Ionicons name="gift" size={48} color={colors.white} />
           </View>
-          <Typography type="h4" weight="bold" align="center" style={{ color: semantic.textPrimary }}>
+          <Typography type="h4" weight="bold" align="center" style={{ color: "#14151a" }}>
             Refer & Earn
           </Typography>
           <Typography
@@ -67,120 +67,127 @@ export default function ReferralsScreen() {
           </Typography>
         </View>
 
-        <View style={styles.content}>
-          <Card style={styles.codeCard} variant="default">
+        <View className="p-4">
+          
+          {/* Referral Code Card */}
+          <Card className="items-center mb-4 p-4 rounded-sm border border-gray-03 bg-white" variant="default">
             <Typography type="body" color="muted" align="center">
               Your Referral Code
             </Typography>
-            <View style={styles.codeContainer}>
-              <Typography type="h3" weight="bold" className="text-accent">
+            <View className="flex-row items-center mt-2">
+              <Typography type="h3" weight="bold" className="text-blue-03">
                 {referralCode}
               </Typography>
               <TouchableOpacity
-                style={styles.copyButton}
+                className="ml-3 p-2 bg-blue-01 rounded-sm border border-blue-03/20"
                 onPress={handleCopyCode}
                 disabled={!hasReferralCode}
+                activeOpacity={0.8}
               >
-                <Ionicons name="copy" size={20} color={semantic.primary} />
+                <Ionicons name="copy" size={20} color="#2a9cff" />
               </TouchableOpacity>
             </View>
           </Card>
 
-          <View style={styles.statsGrid}>
-            <Card style={styles.statCard} variant="secondary">
-              <Typography type="h4" weight="bold" className="text-accent">
+          {/* Stats Grid */}
+          <View className="flex-row gap-3 mb-4">
+            <Card className="flex-1 items-center p-4 rounded-sm border border-gray-03 bg-white" variant="secondary">
+              <Typography type="h4" weight="bold" className="text-blue-03">
                 {referralSummary?.totalReferrals || 0}
               </Typography>
-              <Typography type="body-sm" color="muted">
+              <Typography type="body-sm" color="muted" className="mt-1">
                 Total Referrals
               </Typography>
             </Card>
-            <Card style={styles.statCard} variant="secondary">
-              <Typography type="h4" weight="bold" style={{ color: semantic.success }}>
+            <Card className="flex-1 items-center p-4 rounded-sm border border-gray-03 bg-white" variant="secondary">
+              <Typography type="h4" weight="bold" className="text-success">
                 {referralSummary?.successfulReferrals || 0}
               </Typography>
-              <Typography type="body-sm" color="muted">
+              <Typography type="body-sm" color="muted" className="mt-1">
                 Successful
               </Typography>
             </Card>
-            <Card style={styles.statCard} variant="secondary">
-              <Typography type="h4" weight="bold" style={{ color: semantic.warning }}>
+            <Card className="flex-1 items-center p-4 rounded-sm border border-gray-03 bg-white" variant="secondary">
+              <Typography type="h4" weight="bold" className="text-warning">
                 {referralSummary?.pendingReferrals || 0}
               </Typography>
-              <Typography type="body-sm" color="muted">
+              <Typography type="body-sm" color="muted" className="mt-1">
                 Pending
               </Typography>
             </Card>
           </View>
 
+          {/* Earnings Card */}
           {referralSummary?.totalEarnings &&
             parseFloat(referralSummary.totalEarnings) > 0 && (
-              <Card style={styles.earningsCard} variant="default">
-                <View style={styles.earningsContent}>
-                  <View style={styles.earningsIcon}>
-                    <Ionicons name="wallet" size={24} color={colors.white} />
-                  </View>
-                  <View style={styles.earningsText}>
-                    <Typography type="body" color="muted">
-                      Total Earnings
-                    </Typography>
-                    <Typography type="h4" weight="bold" style={{ color: semantic.success }}>
-                      ₹{referralSummary.totalEarnings}
-                    </Typography>
-                  </View>
+              <Card className="mb-6 p-4 rounded-sm border border-gray-03 bg-white flex-row items-center" variant="default">
+                <View className="w-12 h-12 rounded-sm bg-green-01 items-center justify-center mr-4">
+                  <Ionicons name="wallet" size={24} color="#26bd6c" />
+                </View>
+                <View>
+                  <Typography type="body" color="muted">
+                    Total Earnings
+                  </Typography>
+                  <Typography type="h4" weight="bold" className="text-success mt-0.5">
+                    ₹{referralSummary.totalEarnings}
+                  </Typography>
                 </View>
               </Card>
             )}
 
-          <View style={styles.howItWorks}>
+          {/* How It Works Section */}
+          <View className="mt-2">
             <Typography
               type="h6"
               weight="semibold"
-              style={[styles.sectionTitle, { color: semantic.textPrimary }]}
+              className="text-gray-12 mb-4"
             >
               How it works
             </Typography>
-            <View style={styles.step}>
-              <View style={styles.stepNumber}>
-                <Typography type="body-sm" weight="bold" style={{ color: colors.white }}>
+            
+            <View className="flex-row items-start mb-4">
+              <View className="w-7 h-7 rounded-sm bg-blue-03 items-center justify-center mr-3 mt-0.5">
+                <Typography type="body-sm" weight="bold" className="text-white">
                   1
                 </Typography>
               </View>
-              <View style={styles.stepContent}>
-                <Typography type="body" weight="medium" style={{ color: semantic.textPrimary }}>
+              <View className="flex-1">
+                <Typography type="body" weight="semibold" className="text-gray-12">
                   Share your code
                 </Typography>
-                <Typography type="body" color="muted">
+                <Typography type="body-sm" color="muted" className="mt-0.5 leading-relaxed">
                   Send your referral code to friends
                 </Typography>
               </View>
             </View>
-            <View style={styles.step}>
-              <View style={styles.stepNumber}>
-                <Typography type="body-sm" weight="bold" style={{ color: colors.white }}>
+
+            <View className="flex-row items-start mb-4">
+              <View className="w-7 h-7 rounded-sm bg-blue-03 items-center justify-center mr-3 mt-0.5">
+                <Typography type="body-sm" weight="bold" className="text-white">
                   2
                 </Typography>
               </View>
-              <View style={styles.stepContent}>
-                <Typography type="body" weight="medium" style={{ color: semantic.textPrimary }}>
+              <View className="flex-1">
+                <Typography type="body" weight="semibold" className="text-gray-12">
                   Friend signs up
                 </Typography>
-                <Typography type="body" color="muted">
+                <Typography type="body-sm" color="muted" className="mt-0.5 leading-relaxed">
                   They use your code during registration
                 </Typography>
               </View>
             </View>
-            <View style={styles.step}>
-              <View style={styles.stepNumber}>
-                <Typography type="body-sm" weight="bold" style={{ color: colors.white }}>
+
+            <View className="flex-row items-start mb-4">
+              <View className="w-7 h-7 rounded-sm bg-blue-03 items-center justify-center mr-3 mt-0.5">
+                <Typography type="body-sm" weight="bold" className="text-white">
                   3
                 </Typography>
               </View>
-              <View style={styles.stepContent}>
-                <Typography type="body" weight="medium" style={{ color: semantic.textPrimary }}>
+              <View className="flex-1">
+                <Typography type="body" weight="semibold" className="text-gray-12">
                   Both earn rewards
                 </Typography>
-                <Typography type="body" color="muted">
+                <Typography type="body-sm" color="muted" className="mt-0.5 leading-relaxed">
                   Get credits after their first booking
                 </Typography>
               </View>
@@ -189,14 +196,14 @@ export default function ReferralsScreen() {
         </View>
       </ScrollView>
 
-      <View style={styles.footer}>
+      {/* Footer Share Button */}
+      <View className="p-4 border-t border-gray-03 bg-white">
         <Button
-          variant="primary"
           onPress={handleShare}
           isDisabled={!hasReferralCode}
-          className="w-full"
+          className="w-full bg-blue-03 rounded-sm py-3.5 transition-transform active:scale-[0.96]"
         >
-          <Button.Label>Share with Friends</Button.Label>
+          <Button.Label className="text-white font-inter-bold text-body-s">Share with Friends</Button.Label>
         </Button>
       </View>
     </SafeAreaView>
@@ -213,7 +220,7 @@ const styles = StyleSheet.create({
   headerIcon: {
     width: 80,
     height: 80,
-    borderRadius: 40,
+    borderRadius: 4,
     backgroundColor: colors.orange[8],
     alignItems: "center",
     justifyContent: "center",
@@ -222,79 +229,5 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     marginTop: spacing[2],
     paddingHorizontal: spacing[4],
-  },
-  content: {
-    padding: spacing[4],
-  },
-  codeCard: {
-    alignItems: "center",
-    marginBottom: spacing[4],
-  },
-  codeContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: spacing[2],
-  },
-  copyButton: {
-    marginLeft: spacing[3],
-    padding: spacing[2],
-    backgroundColor: colors.blue[1],
-    borderRadius: 8,
-  },
-  statsGrid: {
-    flexDirection: "row",
-    gap: spacing[3],
-    marginBottom: spacing[4],
-  },
-  statCard: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: spacing[4],
-  },
-  earningsCard: {
-    marginBottom: spacing[6],
-  },
-  earningsContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  earningsIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: semantic.success,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  earningsText: {
-    marginLeft: spacing[4],
-  },
-  howItWorks: {
-    marginTop: spacing[2],
-  },
-  sectionTitle: {
-    marginBottom: spacing[4],
-  },
-  step: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: spacing[4],
-  },
-  stepNumber: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: semantic.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  stepContent: {
-    flex: 1,
-    marginLeft: spacing[3],
-  },
-  footer: {
-    padding: spacing[4],
-    borderTopWidth: 1,
-    borderTopColor: semantic.border,
   },
 })

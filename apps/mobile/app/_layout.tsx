@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from "react"
 import { Stack } from "expo-router"
 import "../global.css"
 
@@ -20,6 +21,9 @@ import {
   PlusJakartaSans_800ExtraBold,
 } from "@expo-google-fonts/plus-jakarta-sans"
 
+import { useAuthStore } from "@/src/store"
+import { registerApiAuthHandlers } from "@/src/services/api-client"
+
 export default function RootLayout() {
   const [loaded] = useFonts({
     Inter_400Regular,
@@ -32,9 +36,35 @@ export default function RootLayout() {
     PlusJakartaSans_800ExtraBold,
   })
 
-  if (!loaded) {
+  const [isSessionLoaded, setIsSessionLoaded] = useState(false)
+  const syncSessionFromSecureStorage = useAuthStore((state) => state.syncSessionFromSecureStorage)
+  const refreshAccessToken = useAuthStore((state) => state.refreshAccessToken)
+  const logout = useAuthStore((state) => state.logout)
+
+  useEffect(() => {
+    registerApiAuthHandlers({
+      refresh: async () => {
+        try {
+          return await refreshAccessToken()
+        } catch (e) {
+          console.error("Token refresh failed in auth handlers:", e)
+          return false
+        }
+      },
+      onSessionInvalid: () => {
+        logout()
+      },
+    })
+
+    syncSessionFromSecureStorage().finally(() => {
+      setIsSessionLoaded(true)
+    })
+  }, [syncSessionFromSecureStorage, refreshAccessToken, logout])
+
+  if (!loaded || !isSessionLoaded) {
     return null
   }
+
   return (
     <QueryClientProvider client={queryClient}>
       <GestureHandlerRootView style={{ flex: 1 }}>
