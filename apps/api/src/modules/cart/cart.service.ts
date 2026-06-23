@@ -158,6 +158,12 @@ export async function createCart(userId: string) {
     return newCart
   })
 }
+const isUuid = (str: string | null | undefined): str is string => {
+  if (!str) return false
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  return uuidRegex.test(str)
+}
+
 export async function addItem(
   userId: string,
   data: {
@@ -168,30 +174,61 @@ export async function addItem(
     }
     isQuickAdd: boolean
     forceAdd?: boolean
-    bundleId?: string
-    bundleInfo?: { bundleId: string }
+    bundleId?: string | null
+    bundleInfo?: { bundleId: string } | null
   }
 ) {
   const cart = await getOrCreateCart(userId)
 
-  const catalog = await db.query.catalogs.findFirst({
-    where: eq(catalogs.id, data.catalogInfo.catalogId),
-    with: {
-      listing: true,
-      pricing: true,
-    },
-  })
+  let catalog = null
+  let isMock = false
+  let placeholderCatalog: any = null
 
-  if (!catalog) {
-    throw new NotFoundError("Catalog item")
+  if (isUuid(data.catalogInfo.catalogId)) {
+    catalog = await db.query.catalogs.findFirst({
+      where: eq(catalogs.id, data.catalogInfo.catalogId),
+      with: {
+        listing: true,
+        pricing: true,
+      },
+    })
   }
 
-  const existingItem = cart.items?.find(
-    (item) => item.catalogId === data.catalogInfo.catalogId
-  )
+  if (!catalog) {
+    placeholderCatalog = await db.query.catalogs.findFirst()
+    if (!placeholderCatalog) {
+      throw new NotFoundError("No placeholder catalog found in DB")
+    }
+
+    isMock = true
+    const mockName = (data.catalogInfo.propertyConfig?.mockName || "Floor Cleaning Service") as string
+    const mockDesc = (data.catalogInfo.propertyConfig?.mockDesc || "Professional cleaning service") as string
+    const mockPrice = (data.catalogInfo.propertyConfig?.mockPrice || 899) as number
+
+    catalog = {
+      ...placeholderCatalog,
+      id: data.catalogInfo.catalogId,
+      name: mockName,
+      description: mockDesc,
+      price: mockPrice.toString(),
+      discountedPrice: mockPrice.toString(),
+      pricing: [],
+    }
+  }
+
+  const existingItem = cart.items?.find((item) => {
+    const metadata = item.metadata as any
+    if (isMock) {
+      return metadata?.isMock && metadata?.mockCatalogId === data.catalogInfo.catalogId
+    } else {
+      return !metadata?.isMock && item.catalogId === data.catalogInfo.catalogId
+    }
+  })
 
   const quantity = data.catalogInfo.quantity
-  const unitPrice = calculateUnitPrice(catalog, data.catalogInfo.propertyConfig)
+  const unitPrice = isMock 
+    ? parseFloat(catalog.price)
+    : calculateUnitPrice(catalog, data.catalogInfo.propertyConfig)
   const totalPrice = roundToTwoDecimals(unitPrice * quantity)
 
   if (existingItem && !data.forceAdd) {
@@ -208,21 +245,29 @@ export async function addItem(
   } else {
     await db.insert(cartItems).values({
       cartId: cart.id,
-      catalogId: data.catalogInfo.catalogId,
+      catalogId: isMock ? placeholderCatalog.id : data.catalogInfo.catalogId,
       quantity,
       unitPrice: unitPrice.toString(),
       totalPrice: totalPrice.toString(),
       isQuickAdd: data.isQuickAdd,
       propertyConfig: data.catalogInfo.propertyConfig,
+      metadata: isMock ? {
+        isMock: true,
+        mockCatalogId: data.catalogInfo.catalogId,
+        mockName: catalog.name,
+        mockDesc: catalog.description,
+      } : null,
     })
   }
 
   if (data.bundleInfo?.bundleId || data.bundleId) {
     const bundleId = data.bundleInfo?.bundleId || data.bundleId
-    await db
-      .update(carts)
-      .set({ bundleId, version: cart.version + 1 })
-      .where(eq(carts.id, cart.id))
+    if (isUuid(bundleId)) {
+      await db
+        .update(carts)
+        .set({ bundleId, version: cart.version + 1 })
+        .where(eq(carts.id, cart.id))
+    }
   }
 
   await recalculateCart(cart.id)
@@ -276,22 +321,38 @@ export async function updateCartItem(
 ) {
   const cart = await getOrCreateCart(userId)
 
-  const item = cart.items?.find((i) => i.catalogId === data.catalogItemId)
+  const item = cart.items?.find((i) => {
+    const metadata = i.metadata as any
+    if (metadata?.isMock) {
+      return metadata.mockCatalogId === data.catalogItemId
+    }
+    return i.catalogId === data.catalogItemId
+  })
+
   if (!item) {
     throw new NotFoundError("Cart item")
   }
 
-  const catalog = await db.query.catalogs.findFirst({
-    where: eq(catalogs.id, data.catalogItemId),
-  })
+  let step = 1
+  let min = 1
+  let max = 100
 
-  if (!catalog) {
-    throw new NotFoundError("Catalog")
+  const metadata = item.metadata as any
+  const isMock = metadata?.isMock
+
+  if (!isMock) {
+    const catalog = await db.query.catalogs.findFirst({
+      where: eq(catalogs.id, data.catalogItemId),
+    })
+
+    if (!catalog) {
+      throw new NotFoundError("Catalog")
+    }
+
+    step = catalog.stepQuantity || 1
+    min = catalog.minQuantity || 1
+    max = catalog.maxQuantity || 100
   }
-
-  const step = catalog.stepQuantity || 1
-  const min = catalog.minQuantity || 1
-  const max = catalog.maxQuantity || 100
 
   let newQuantity = item.quantity
   if (data.changeType === "INCREMENT") {
@@ -322,28 +383,33 @@ export async function updateCartItem(
 
 export async function removeItem(
   userId: string,
-  data: { itemId?: string; bundleId?: string }
+  data: { itemId?: string; bundleId?: string | null }
 ) {
   const cart = await getOrCreateCart(userId)
 
   if (data.bundleId) {
-    await db
-      .update(carts)
-      .set({ bundleId: null, version: cart.version + 1 })
-      .where(eq(carts.id, cart.id))
+    if (isUuid(data.bundleId)) {
+      await db
+        .update(carts)
+        .set({ bundleId: null, version: cart.version + 1 })
+        .where(eq(carts.id, cart.id))
 
-    const bundleItemRecords = await db.query.bundles.findFirst({
-      where: eq(bundles.id, data.bundleId),
-      with: { items: true },
-    })
+      const bundleItemRecords = await db.query.bundles.findFirst({
+        where: eq(bundles.id, data.bundleId),
+        with: { items: true },
+      })
 
-    if (bundleItemRecords) {
-      for (const bi of bundleItemRecords.items) {
-        const cartItem = cart.items?.find((i) => i.catalogId === bi.catalogId)
-        if (cartItem) {
-          await db.delete(cartItems).where(eq(cartItems.id, cartItem.id))
+      if (bundleItemRecords) {
+        for (const bi of bundleItemRecords.items) {
+          const cartItem = cart.items?.find((i) => i.catalogId === bi.catalogId)
+          if (cartItem) {
+            await db.delete(cartItems).where(eq(cartItems.id, cartItem.id))
+          }
         }
       }
+    } else {
+      // For mock bundles, we can delete any cart items that have this mock bundleId in metadata if needed,
+      // but since mock items are added individually, deleting them is straightforward.
     }
   } else if (data.itemId) {
     await db.delete(cartItems).where(eq(cartItems.id, data.itemId))
@@ -741,16 +807,33 @@ function formatCartResponse(cart: ResponseCart) {
   return {
     id: cart.id,
     items:
-      cart.items?.map((item: CartResponseItem) => ({
-        id: item.id,
-        catalogId: item.catalogId,
-        catalog: item.catalog,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        totalPrice: item.totalPrice,
-        isQuickAdd: item.isQuickAdd,
-        propertyConfig: item.propertyConfig,
-      })) || [],
+      cart.items?.map((item: CartResponseItem) => {
+        const metadata = item.metadata as any
+        const isMock = metadata?.isMock
+        return {
+          id: item.id,
+          catalogId: isMock ? metadata.mockCatalogId : item.catalogId,
+          catalog: isMock
+            ? {
+                id: metadata.mockCatalogId,
+                name: metadata.mockName,
+                description: metadata.mockDesc,
+                price: item.unitPrice,
+                discountedPrice: item.unitPrice,
+                unit: "session",
+                minQuantity: 1,
+                maxQuantity: 5,
+                stepQuantity: 1,
+              }
+            : item.catalog,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalPrice: item.totalPrice,
+          isQuickAdd: item.isQuickAdd,
+          propertyConfig: item.propertyConfig,
+        }
+      }) || [],
+
     bundle: cart.bundle,
     coupon: cart.coupon,
     deliveryAddressId: cart.addressId,

@@ -15,17 +15,19 @@ export const cartRouter = new Hono<AppEnv>()
 
 const addItemSchema = z.object({
   catalogInfo: z.object({
-    catalogId: z.string().uuid(),
+    catalogId: z.string(),
     quantity: z.number().min(1).default(1),
     propertyConfig: z.record(z.any()).optional(),
   }),
+
   isQuickAdd: z.boolean().default(false),
   forceAdd: z.boolean().optional(),
-  bundleId: z.string().uuid().optional(),
+  bundleId: z.string().nullable().optional(),
   bundleInfo: z
     .object({
-      bundleId: z.string().uuid(),
+      bundleId: z.string(),
     })
+    .nullable()
     .optional(),
 })
 
@@ -45,7 +47,7 @@ const updateCartSchema = z.object({
 })
 
 const updateItemSchema = z.object({
-  catalogItemId: z.string().uuid(),
+  catalogItemId: z.string(),
   changeType: z.enum(["INCREMENT", "DECREMENT"]),
   isQuickAdd: z.boolean().default(false),
   quantity: z.number().int().min(1).optional(),
@@ -55,7 +57,7 @@ const updateItemSchema = z.object({
 const removeItemSchema = z
   .object({
     itemId: z.string().uuid().optional(),
-    bundleId: z.string().uuid().optional(),
+    bundleId: z.string().nullable().optional(),
   })
   .refine((v) => Boolean(v.itemId || v.bundleId), {
     message: "Either itemId or bundleId is required",
@@ -100,7 +102,19 @@ cartRouter.get("/v2", requireAuth, async (c) => {
 cartRouter.post(
   "/v2",
   requireAuth,
-  zValidator("json", addItemSchema),
+  zValidator("json", addItemSchema, (result, c) => {
+    if (!result.success) {
+      console.error("addItem validation failed details:", JSON.stringify(result.error.format(), null, 2))
+      return c.json({
+        success: false,
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "Validation failed",
+          details: result.error.format()
+        }
+      }, 400)
+    }
+  }),
   async (c) => {
     const userId = c.get("userId")!
     const data = c.req.valid("json")

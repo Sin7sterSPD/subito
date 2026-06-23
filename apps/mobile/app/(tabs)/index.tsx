@@ -108,7 +108,7 @@ function AddressSelector() {
       onPress={() => router.push("/(screens)/addresses")}
       activeOpacity={0.7}
     >
-      <View className="w-9 h-9 rounded-full bg-blue-01 items-center justify-center">
+      <View className="bg-blue-01 h-9 w-9 items-center justify-center rounded-full">
         <Ionicons name="location" size={18} color="#2a9cff" />
       </View>
       <View className="ml-2.5">
@@ -142,7 +142,11 @@ function SectionHeader({
   return (
     <View
       className="flex-row items-center justify-between"
-      style={{ paddingHorizontal: SECTION_PADDING, marginBottom: 14, marginTop: 28 }}
+      style={{
+        paddingHorizontal: SECTION_PADDING,
+        marginBottom: 14,
+        marginTop: 28,
+      }}
     >
       <Text className="font-jakarta-bold text-gray-12" style={{ fontSize: 20 }}>
         {title}
@@ -180,8 +184,14 @@ function MarketingBanner({ onBookPress }: { onBookPress: () => void }) {
           <View className="absolute -bottom-10 left-20 h-32 w-32 rounded-full bg-white/5" />
 
           {/* Text Content */}
-          <View className="z-20 flex-1 justify-center pl-6" style={{ paddingRight: 140 }}>
-            <Text className="font-jakarta-bold text-white" style={{ fontSize: 22, lineHeight: 28 }}>
+          <View
+            className="z-20 flex-1 justify-center pl-6"
+            style={{ paddingRight: 140 }}
+          >
+            <Text
+              className="font-jakarta-bold text-white"
+              style={{ fontSize: 22, lineHeight: 28 }}
+            >
               Get Your Home{"\n"}Sparkling Clean
             </Text>
             <Text className="font-inter-regular text-caption-l mt-1.5 text-white/90">
@@ -235,8 +245,8 @@ function CategoryChip({
       activeOpacity={0.7}
       className={
         selected
-          ? "flex-row items-center bg-blue-03 rounded-full"
-          : "flex-row items-center bg-white rounded-full border border-gray-02"
+          ? "bg-blue-03 flex-row items-center rounded-full"
+          : "border-gray-02 flex-row items-center rounded-full border bg-white"
       }
       style={[
         styles.categoryChip,
@@ -280,9 +290,7 @@ function ServiceCard({
 
   return (
     <TouchableOpacity activeOpacity={0.9} onPress={onPress}>
-      <View
-        style={[styles.serviceCard, { width: SERVICE_CARD_WIDTH }]}
-      >
+      <View style={[styles.serviceCard, { width: SERVICE_CARD_WIDTH }]}>
         {/* Image — top corners only rounded */}
         <View style={styles.serviceImageWrap}>
           <Image
@@ -307,7 +315,8 @@ function ServiceCard({
             style={styles.serviceCardDesc}
             numberOfLines={2}
           >
-            {listing.shortDescription || "Professional service at your convenience"}
+            {listing.shortDescription ||
+              "Professional service at your convenience"}
           </Text>
 
           <View style={styles.serviceCardBottom}>
@@ -352,9 +361,7 @@ function BundleCard({
 
   return (
     <TouchableOpacity activeOpacity={0.9} onPress={onPress}>
-      <View
-        style={styles.bundleCard}
-      >
+      <View style={styles.bundleCard}>
         {/* Collage image — 35% */}
         <View style={styles.bundleImageWrap}>
           <Image
@@ -367,7 +374,10 @@ function BundleCard({
               className="absolute top-2 left-2 rounded px-1.5 py-0.5"
               style={{ backgroundColor: accentColor }}
             >
-              <Text className="font-inter-bold text-white" style={{ fontSize: 9 }}>
+              <Text
+                className="font-inter-bold text-white"
+                style={{ fontSize: 9 }}
+              >
                 {discount}% OFF
               </Text>
             </View>
@@ -399,7 +409,10 @@ function BundleCard({
 
             <View style={styles.bundleMetaRow}>
               <Ionicons name="layers-outline" size={13} color="#7E869A" />
-              <Text className="font-inter-medium text-gray-07" style={styles.bundleMetaText}>
+              <Text
+                className="font-inter-medium text-gray-07"
+                style={styles.bundleMetaText}
+              >
                 {servicesCount} Services
               </Text>
             </View>
@@ -553,7 +566,14 @@ export default function HomeScreen() {
     for (const cat of categories) {
       if (!names.includes(cat.name)) names.push(cat.name)
     }
-    for (const extra of ["Cleaning", "Plumbing", "Electrical", "Painting", "Cooking", "AC Service"]) {
+    for (const extra of [
+      "Cleaning",
+      "Plumbing",
+      "Electrical",
+      "Painting",
+      "Cooking",
+      "AC Service",
+    ]) {
       if (!names.find((n) => n.toLowerCase() === extra.toLowerCase())) {
         names.push(extra)
       }
@@ -564,7 +584,8 @@ export default function HomeScreen() {
   // Bundles to display
   const displayBundles = useMemo(() => {
     const homeClean = bundles.find(
-      (b) => b.id === "bundle-home-cleaning" || b.slug === "home-cleaning-bundle"
+      (b) =>
+        b.id === "bundle-home-cleaning" || b.slug === "home-cleaning-bundle"
     )
     const cooking = bundles.find(
       (b) => b.id === "bundle-cooking" || b.slug === "cooking-bundle"
@@ -581,15 +602,22 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: "#F7F7F8" }}
+      style={{ flex: 1, backgroundColor: "#FFFFFF" }}
       edges={["top"]}
     >
       {/* ── Header ─────────────────────────────────────────── */}
-      <View className="bg-white flex-row items-center justify-between" style={{ paddingHorizontal: SECTION_PADDING, paddingTop: 12, paddingBottom: 8 }}>
+      <View
+        className="flex-row items-center justify-between bg-white"
+        style={{
+          paddingHorizontal: SECTION_PADDING,
+          paddingTop: 12,
+          paddingBottom: 8,
+        }}
+      >
         <AddressSelector />
         <View className="flex-row items-center gap-3">
           <TouchableOpacity
-            className="w-10 h-10 rounded-full bg-white items-center justify-center"
+            className="h-10 w-10 items-center justify-center rounded-full bg-white"
             style={styles.headerIconBtn}
             onPress={() => router.push("/(screens)/notifications")}
             activeOpacity={0.7}
@@ -600,7 +628,7 @@ export default function HomeScreen() {
             onPress={() => router.push("/(tabs)/profile")}
             activeOpacity={0.8}
           >
-            <Avatar size="md" className="rounded-full border border-gray-02">
+            <Avatar size="md" className="border-gray-02 rounded-full border">
               {user?.profileImage ? (
                 <Avatar.Image source={{ uri: user.profileImage }} />
               ) : null}
@@ -613,11 +641,18 @@ export default function HomeScreen() {
       </View>
 
       {/* ── Search Bar ────────────────────────────────────── */}
-      <View className="bg-white" style={{ paddingHorizontal: SECTION_PADDING, paddingBottom: 14, paddingTop: 6 }}>
+      <View
+        className="bg-white"
+        style={{
+          paddingHorizontal: SECTION_PADDING,
+          paddingBottom: 14,
+          paddingTop: 6,
+        }}
+      >
         <TouchableOpacity
           activeOpacity={0.9}
           onPress={() => router.push("/(screens)/search")}
-          className="h-11 rounded-xl flex-row items-center bg-gray-01 border border-gray-02"
+          className="bg-gray-01 border-gray-02 h-11 flex-row items-center rounded-xl border"
           style={{ paddingHorizontal: 14 }}
         >
           <Ionicons name="search" size={18} color="#9EA2AD" />
@@ -647,7 +682,10 @@ export default function HomeScreen() {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: SECTION_PADDING, gap: 10 }}
+            contentContainerStyle={{
+              paddingHorizontal: SECTION_PADDING,
+              gap: 10,
+            }}
           >
             {categoryNames.map((name) => (
               <CategoryChip
@@ -684,7 +722,9 @@ export default function HomeScreen() {
             ))}
           </ScrollView>
         ) : (
-          <View style={[styles.emptyState, { marginHorizontal: SECTION_PADDING }]}>
+          <View
+            style={[styles.emptyState, { marginHorizontal: SECTION_PADDING }]}
+          >
             <Ionicons name="sparkles-outline" size={36} color="#9ea2ad" />
             <Text className="font-inter-medium text-caption-l text-gray-07 mt-3">
               No services available
