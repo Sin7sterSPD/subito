@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
 import { Typography, Button, TextField, Input, Label, FieldError, Avatar, Spinner } from "heroui-native"
-import { colors, semantic } from "../../src/theme/colors"
+import { colors } from "../../src/theme/colors"
 import { spacing } from "../../src/theme/spacing"
 import { useAuthStore, useUserStore } from "../../src/store"
 import { uploadApi } from "../../src/services/api"
@@ -117,10 +117,11 @@ export default function EditProfileScreen() {
           <TouchableOpacity
             style={styles.avatarContainer}
             onPress={handlePickImage}
+            activeOpacity={0.9}
           >
-            <Avatar className="w-[100px] h-[100px] rounded-full">
+            <Avatar className="w-[100px] h-[100px] rounded-sm">
               {profileImage ? (
-                <Avatar.Image source={{ uri: profileImage }} className="w-full h-full rounded-full" />
+                <Avatar.Image source={{ uri: profileImage }} className="w-full h-full rounded-sm" />
               ) : null}
               <Avatar.Fallback />
             </Avatar>
@@ -131,7 +132,7 @@ export default function EditProfileScreen() {
 
           <View style={styles.form}>
             <TextField isRequired isInvalid={!!errors.firstName}>
-              <Label>First Name</Label>
+              <Label className="mb-1.5 font-inter-medium text-body-s text-gray-12">First Name</Label>
               <Input
                 placeholder="Enter your first name"
                 value={firstName}
@@ -141,25 +142,27 @@ export default function EditProfileScreen() {
                     setErrors({ ...errors, firstName: undefined })
                 }}
                 autoCapitalize="words"
+                className="h-12 rounded-sm border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
               />
-              {errors.firstName ? <FieldError>{errors.firstName}</FieldError> : null}
+              {errors.firstName ? <FieldError className="mt-1.5">{errors.firstName}</FieldError> : null}
             </TextField>
 
             <View style={styles.inputSpacing}>
               <TextField>
-                <Label>Last Name</Label>
+                <Label className="mb-1.5 font-inter-medium text-body-s text-gray-12">Last Name</Label>
                 <Input
                   placeholder="Enter your last name"
                   value={lastName}
                   onChangeText={setLastName}
                   autoCapitalize="words"
+                  className="h-12 rounded-sm border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
                 />
               </TextField>
             </View>
 
             <View style={styles.inputSpacing}>
               <TextField isInvalid={!!errors.email}>
-                <Label>Email</Label>
+                <Label className="mb-1.5 font-inter-medium text-body-s text-gray-12">Email</Label>
                 <Input
                   placeholder="Enter your email"
                   value={email}
@@ -169,23 +172,27 @@ export default function EditProfileScreen() {
                   }}
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  className="h-12 rounded-sm border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
                 />
-                {errors.email ? <FieldError>{errors.email}</FieldError> : null}
+                {errors.email ? <FieldError className="mt-1.5">{errors.email}</FieldError> : null}
               </TextField>
             </View>
 
             <View style={styles.inputSpacing}>
               <TextField isDisabled>
-                <Label>Phone</Label>
+                <Label className="mb-1.5 font-inter-medium text-body-s text-gray-07">Phone</Label>
                 <Input
                   value={`+91 ${user?.phone || ""}`}
                   editable={false}
+                  className="h-12 rounded-sm border border-gray-02 bg-gray-01 px-3 text-body-s text-gray-07"
                 />
               </TextField>
               <TouchableOpacity
                 onPress={() => router.push("/(screens)/change-phone")}
+                className="mt-2"
+                activeOpacity={0.8}
               >
-                <Typography type="body-sm" className="text-accent" style={styles.hint}>
+                <Typography type="body-sm" className="text-blue-03 font-inter-semibold">
                   Change phone number
                 </Typography>
               </TouchableOpacity>
@@ -195,12 +202,15 @@ export default function EditProfileScreen() {
 
         <View style={styles.footer}>
           <Button
-            variant="primary"
             onPress={handleSave}
             isDisabled={isLoading || !firstName.trim()}
-            className="w-full"
+            className="w-full bg-blue-03 rounded-sm py-3.5 transition-transform active:scale-[0.96]"
           >
-            {isLoading ? <Spinner size="sm" /> : <Button.Label>Save Changes</Button.Label>}
+            {isLoading ? (
+              <Spinner size="sm" color="white" />
+            ) : (
+              <Button.Label className="text-white font-inter-bold text-body-s">Save Changes</Button.Label>
+            )}
           </Button>
         </View>
       </KeyboardAvoidingView>
@@ -224,8 +234,8 @@ const styles = StyleSheet.create({
     right: 0,
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: semantic.primary,
+    borderRadius: 4,
+    backgroundColor: "#2a9cff",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
@@ -237,13 +247,10 @@ const styles = StyleSheet.create({
   inputSpacing: {
     marginTop: spacing[4],
   },
-  hint: {
-    marginTop: spacing[1],
-    marginLeft: spacing[1],
-  },
   footer: {
     padding: spacing[4],
     borderTopWidth: 1,
-    borderTopColor: semantic.border,
+    borderTopColor: "#dee0e3",
+    backgroundColor: colors.white,
   },
 })
