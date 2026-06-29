@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useMemo, useEffect } from "react"
 import {
   View,
-  StyleSheet,
   TextInput,
   FlatList,
   TouchableOpacity,
@@ -10,12 +9,51 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
 import { Image } from "expo-image"
 import { Typography, Spinner } from "heroui-native"
-import { colors, semantic } from "../../src/theme/colors"
-import { spacing, borderRadius } from "../../src/theme/spacing"
 import { useListingsStore } from "../../src/store"
 import { Listing } from "../../src/types/api"
 import { Ionicons } from "@expo/vector-icons"
 import debounce from "lodash.debounce"
+
+const resolveImage = (img: string | undefined) => {
+  if (!img) return require("../../assets/home/main/vaccum-floor.jpg")
+
+  const serviceImages: Record<string, number> = {
+    "floor.png": require("../../assets/home/main/floor-cleaning.jpg"),
+    "bathroom.png": require("../../assets/home/main/vaccum-floor.jpg"),
+    "cupboard-cleaning.png": require("../../assets/home/preview/cupboard-cleaning.png"),
+    "utensils.png": require("../../assets/home/main/cook-preview.jpg"),
+    "roomclieaning.png": require("../../assets/home/main/vaccum-floor.jpg"),
+    "plumbing.jpg": require("../../assets/home/main/plumbing.jpg"),
+    "toilet-clean.jpg": require("../../assets/home/main/vaccum-floor.jpg"),
+    "ac-repair.jpg": require("../../assets/home/main/ac-repair.jpg"),
+    "painting.jpg": require("../../assets/home/main/painting.jpg"),
+    "bundle-clean.png": require("../../assets/home/main/bundle-clean.png"),
+    "bundle-cook.png": require("../../assets/home/main/bundle-cook.png"),
+  }
+
+  const filename = img.substring(img.lastIndexOf("/") + 1)
+  if (serviceImages[filename]) return serviceImages[filename]
+  if (serviceImages[img]) return serviceImages[img]
+  if (img.startsWith("http")) return { uri: img }
+
+  const lowercaseImg = img.toLowerCase()
+  if (lowercaseImg.includes("floor"))
+    return require("../../assets/home/main/floor-cleaning.jpg")
+  if (lowercaseImg.includes("bathroom") || lowercaseImg.includes("toilet"))
+    return require("../../assets/home/main/vaccum-floor.jpg")
+  if (lowercaseImg.includes("cupboard"))
+    return require("../../assets/home/preview/cupboard-cleaning.png")
+  if (lowercaseImg.includes("utensils") || lowercaseImg.includes("cook"))
+    return require("../../assets/home/main/cook-preview.jpg")
+  if (lowercaseImg.includes("plumbing"))
+    return require("../../assets/home/main/plumbing.jpg")
+  if (lowercaseImg.includes("ac") || lowercaseImg.includes("repair"))
+    return require("../../assets/home/main/ac-repair.jpg")
+  if (lowercaseImg.includes("paint"))
+    return require("../../assets/home/main/painting.jpg")
+
+  return require("../../assets/home/main/vaccum-floor.jpg")
+}
 
 export default function SearchScreen() {
   const { categories } = useListingsStore()
@@ -83,20 +121,21 @@ export default function SearchScreen() {
   const popularServices = allListings.slice(0, 6)
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.white }} edges={["top"]}>
-      <View style={styles.header}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#ffffff" }} edges={["top"]}>
+      {/* Header */}
+      <View className="flex-row items-center px-4 py-3 border-b border-gray-02 bg-white">
         <TouchableOpacity
           onPress={() => router.back()}
-          style={styles.backButton}
+          className="mr-3"
         >
-          <Ionicons name="arrow-back" size={24} color={semantic.textPrimary} />
+          <Ionicons name="arrow-back" size={24} color="#2a9cff" />
         </TouchableOpacity>
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color={semantic.textMuted} />
+        <View className="flex-1 flex-row items-center bg-gray-01 px-3 py-2 rounded-xl">
+          <Ionicons name="search" size={20} color="#2a9cff" />
           <TextInput
-            style={styles.searchInput}
+            className="flex-1 ml-2 text-base text-gray-13"
             placeholder="Search for services..."
-            placeholderTextColor={semantic.textMuted}
+            placeholderTextColor="#9ea2ad"
             value={query}
             onChangeText={handleQueryChange}
             autoFocus
@@ -107,35 +146,35 @@ export default function SearchScreen() {
               <Ionicons
                 name="close-circle"
                 size={20}
-                color={semantic.textMuted}
+                color="#9ea2ad"
               />
             </TouchableOpacity>
           )}
         </View>
       </View>
 
-      {isSearching && <Spinner size="lg" style={{ padding: spacing[4] }} />}
+      {isSearching && <Spinner size="lg" style={{ padding: 16 }} />}
 
       {query.length === 0 ? (
-        <View style={styles.content}>
+        <View className="p-4">
           <Typography
             type="h6"
             weight="semibold"
-            style={[styles.sectionTitle, { color: semantic.textPrimary }]}
+            className="mb-4 text-gray-13"
           >
             Popular Services
           </Typography>
-          <View style={styles.popularGrid}>
+          <View className="flex-row flex-wrap gap-3">
             {popularServices.map((listing) => (
               <TouchableOpacity
                 key={listing.id}
-                style={styles.popularItem}
+                className="w-[30%] items-center"
                 onPress={() => handleServicePress(listing)}
               >
                 {listing.image && (
                   <Image
-                    source={{ uri: listing.image }}
-                    style={styles.popularImage}
+                    source={resolveImage(listing.image)}
+                    style={{ width: 64, height: 64, borderRadius: 12, marginBottom: 8 }}
                     contentFit="cover"
                   />
                 )}
@@ -143,7 +182,7 @@ export default function SearchScreen() {
                   type="body-sm"
                   numberOfLines={2}
                   align="center"
-                  style={{ color: semantic.textPrimary }}
+                  className="text-gray-13"
                 >
                   {listing.name}
                 </Typography>
@@ -152,9 +191,9 @@ export default function SearchScreen() {
           </View>
         </View>
       ) : results.length === 0 && !isSearching ? (
-        <View style={styles.emptyState}>
-          <Ionicons name="search" size={48} color={semantic.textMuted} />
-          <Typography type="h6" weight="semibold" style={[styles.emptyTitle, { color: semantic.textSecondary }]}>
+        <View className="flex-1 items-center justify-center p-6">
+          <Ionicons name="search" size={48} color="#2a9cff" />
+          <Typography type="h6" weight="semibold" className="mt-4 mb-2 text-gray-08">
             No results found
           </Typography>
           <Typography type="body-sm" color="muted" align="center">
@@ -167,30 +206,30 @@ export default function SearchScreen() {
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <TouchableOpacity
-              style={styles.resultItem}
+              className="flex-row items-center py-3 border-b border-gray-02"
               onPress={() => handleServicePress(item)}
             >
               {item.image ? (
                 <Image
-                  source={{ uri: item.image }}
-                  style={styles.resultImage}
+                  source={resolveImage(item.image)}
+                  style={{ width: 56, height: 56, borderRadius: 8 }}
                   contentFit="cover"
                 />
               ) : (
-                <View style={styles.resultImagePlaceholder}>
+                <View className="w-14 h-14 rounded-lg bg-gray-01 items-center justify-center">
                   <Ionicons
                     name="sparkles"
                     size={24}
-                    color={semantic.textMuted}
+                    color="#2a9cff"
                   />
                 </View>
               )}
-              <View style={styles.resultContent}>
+              <View className="flex-1 ml-3">
                 <Typography
                   type="body"
                   weight="medium"
                   numberOfLines={1}
-                  style={{ color: semantic.textPrimary }}
+                  className="text-gray-13"
                 >
                   {item.name}
                 </Typography>
@@ -204,7 +243,7 @@ export default function SearchScreen() {
                   </Typography>
                 )}
                 {item.basePrice && (
-                  <Typography type="body-sm" className="text-accent" weight="semibold">
+                  <Typography type="body-sm" className="text-blue-03" weight="semibold">
                     From ₹{item.basePrice}
                   </Typography>
                 )}
@@ -212,101 +251,14 @@ export default function SearchScreen() {
               <Ionicons
                 name="chevron-forward"
                 size={20}
-                color={semantic.textMuted}
+                color="#9ea2ad"
               />
             </TouchableOpacity>
           )}
-          contentContainerStyle={styles.resultsList}
+          contentContainerClassName="p-4"
           showsVerticalScrollIndicator={false}
         />
       )}
     </SafeAreaView>
   )
 }
-
-const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: spacing[4],
-    paddingVertical: spacing[3],
-    borderBottomWidth: 1,
-    borderBottomColor: semantic.borderLight,
-  },
-  backButton: {
-    marginRight: spacing[3],
-  },
-  searchBar: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: semantic.backgroundSecondary,
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[2],
-    borderRadius: borderRadius.lg,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: spacing[2],
-    fontSize: 16,
-    color: semantic.textPrimary,
-  },
-  content: {
-    padding: spacing[4],
-  },
-  sectionTitle: {
-    marginBottom: spacing[4],
-  },
-  popularGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing[3],
-  },
-  popularItem: {
-    width: "30%",
-    alignItems: "center",
-  },
-  popularImage: {
-    width: 64,
-    height: 64,
-    borderRadius: borderRadius.lg,
-    marginBottom: spacing[2],
-  },
-  resultsList: {
-    padding: spacing[4],
-  },
-  resultItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: spacing[3],
-    borderBottomWidth: 1,
-    borderBottomColor: semantic.borderLight,
-  },
-  resultImage: {
-    width: 56,
-    height: 56,
-    borderRadius: borderRadius.md,
-  },
-  resultImagePlaceholder: {
-    width: 56,
-    height: 56,
-    borderRadius: borderRadius.md,
-    backgroundColor: semantic.backgroundSecondary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  resultContent: {
-    flex: 1,
-    marginLeft: spacing[3],
-  },
-  emptyState: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: spacing[6],
-  },
-  emptyTitle: {
-    marginTop: spacing[4],
-    marginBottom: spacing[2],
-  },
-})

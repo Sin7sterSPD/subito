@@ -17,6 +17,8 @@ import {
   bookingStatusEnum,
   bookingTypeEnum,
   recurringTypeEnum,
+  hubs,
+  microHubs,
 } from "@subito/db"
 
 import { eq, and, inArray, desc, gte, lte, sql } from "@subito/db"
@@ -315,13 +317,82 @@ export async function getAvailableSlots(query: {
   days: number
 }) {
   const now = new Date()
-  const endDate = new Date()
-  endDate.setDate(endDate.getDate() + query.days)
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  
+  const daysToGenerate = Math.max(query.days || 7, 7)
+  const endDate = new Date(todayStart)
+  endDate.setDate(endDate.getDate() + daysToGenerate)
 
+  // Fetch all existing slots in this range
+  const existingSlots = await db.query.bookingSlots.findMany({
+    where: and(
+      gte(bookingSlots.date, todayStart),
+      lte(bookingSlots.date, endDate)
+    )
+  })
+
+  // We want to ensure that for each day from today (0) to daysToGenerate,
+  // we have slots for each of our target times.
+  const targetTimes = [
+    { start: "10:00", end: "11:00" },
+    { start: "11:00", end: "12:00" },
+    { start: "12:00", end: "13:00" },
+    { start: "13:00", end: "14:00" },
+    { start: "14:00", end: "15:00" },
+    { start: "15:00", end: "16:00" },
+    { start: "16:00", end: "17:00" },
+    { start: "17:00", end: "18:00" },
+    { start: "18:00", end: "19:00" }
+  ]
+
+  // Find a hub/microhub to assign
+  let hubId: string | null = null
+  let microHubId: string | null = null
+  
+  const defaultHub = await db.query.hubs.findFirst()
+  const defaultMicroHub = await db.query.microHubs.findFirst()
+  if (defaultHub) hubId = defaultHub.id
+  if (defaultMicroHub) microHubId = defaultMicroHub.id
+
+  const slotsToInsert: typeof bookingSlots.$inferInsert[] = []
+
+  for (let d = 0; d <= daysToGenerate; d++) {
+    const targetDate = new Date(todayStart)
+    targetDate.setDate(targetDate.getDate() + d)
+    const targetDateStr = targetDate.toISOString().slice(0, 10)
+
+    for (const time of targetTimes) {
+      // Check if this slot already exists (using date string and startTime)
+      const exists = existingSlots.some(s => {
+        const sDateStr = s.date.toISOString().slice(0, 10)
+        return sDateStr === targetDateStr && s.startTime === time.start
+      })
+
+      if (!exists) {
+        slotsToInsert.push({
+          hubId,
+          microHubId,
+          date: targetDate,
+          startTime: time.start,
+          endTime: time.end,
+          maxCapacity: 10,
+          currentBookings: 0,
+          isAvailable: true,
+          surgeMultiplier: 1.0
+        })
+      }
+    }
+  }
+
+  if (slotsToInsert.length > 0) {
+    await db.insert(bookingSlots).values(slotsToInsert)
+  }
+
+  // Fetch all available slots from database
   const slots = await db.query.bookingSlots.findMany({
     where: and(
       eq(bookingSlots.isAvailable, true),
-      gte(bookingSlots.date, now),
+      gte(bookingSlots.date, todayStart),
       lte(bookingSlots.date, endDate),
       sql`COALESCE(${bookingSlots.currentBookings}, 0) < ${bookingSlots.maxCapacity}`
     ),
@@ -330,16 +401,30 @@ export async function getAvailableSlots(query: {
 
   const groupedSlots: Record<string, typeof slots> = {}
   for (const slot of slots) {
-    const dateKey = slot.date.toISOString().slice(0, 10)
-    if (!groupedSlots[dateKey]) {
-      groupedSlots[dateKey] = []
+    const slotDateStr = slot.date.toISOString().slice(0, 10)
+    const todayStr = now.toISOString().slice(0, 10)
+    
+    // For today, only include slots starting in the future
+    if (slotDateStr === todayStr) {
+      const [startHour, startMin] = slot.startTime.split(":").map(Number)
+      const slotTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHour, startMin)
+      // Allow booking slots starting at least 15 mins in the future
+      if (slotTime.getTime() <= now.getTime() + 15 * 60 * 1000) {
+        continue
+      }
     }
-    groupedSlots[dateKey].push(slot)
+
+    if (!groupedSlots[slotDateStr]) {
+      groupedSlots[slotDateStr] = []
+    }
+    groupedSlots[slotDateStr].push(slot)
   }
+
+  const availableDates = Object.keys(groupedSlots).sort()
 
   return {
     slots: groupedSlots,
-    availableDates: Object.keys(groupedSlots),
+    availableDates,
   }
 }
 

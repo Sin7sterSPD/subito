@@ -149,6 +149,21 @@ export const useBookingsStore = create<BookingsState>((set, get) => ({
         bookingType,
         days,
       })
+      
+
+      
+      console.log("=== SLOT RESPONSE ===")
+      console.log(JSON.stringify(response.data, null, 2))
+      console.log("=== AVAILABLE DATES ===")
+      console.log(response.data?.availableDates)
+
+
+
+
+
+
+
+
       if (response.success && response.data) {
         set({
           slots: response.data.slots,

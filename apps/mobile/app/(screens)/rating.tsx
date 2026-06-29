@@ -95,9 +95,9 @@ export default function RatingScreen() {
 
           {selectedBooking?.partner && (
             <View style={styles.partnerSection}>
-              <Avatar className="w-16 h-16 rounded-full mb-2">
+              <Avatar className="w-16 h-16 rounded-sm mb-2">
                 {selectedBooking.partner.profileImage ? (
-                  <Avatar.Image source={{ uri: selectedBooking.partner.profileImage }} className="w-full h-full rounded-full" />
+                  <Avatar.Image source={{ uri: selectedBooking.partner.profileImage }} className="w-full h-full rounded-sm" />
                 ) : null}
                 <Avatar.Fallback />
               </Avatar>
@@ -118,6 +118,7 @@ export default function RatingScreen() {
                   key={star}
                   onPress={() => handleStarPress(star)}
                   style={styles.starButton}
+                  activeOpacity={0.8}
                 >
                   <Ionicons
                     name={star <= rating ? "star" : "star-outline"}
@@ -131,43 +132,46 @@ export default function RatingScreen() {
               <Typography
                 type="body"
                 weight="semibold"
-                style={[styles.ratingLabel, { color: semantic.primary }]}
+                style={[styles.ratingLabel, { color: "#2a9cff" }]}
               >
                 {ratingLabels[rating]}
               </Typography>
             )}
           </View>
 
-          <View style={styles.commentSection}>
+          <View className="mb-4">
             <TextField>
-              <Label>Additional comments (optional)</Label>
+              <Label className="mb-1.5 font-inter-medium text-body-s text-gray-12">Additional comments (optional)</Label>
               <Input
                 placeholder="Tell us more about your experience..."
                 value={comment}
                 onChangeText={setComment}
                 multiline
                 numberOfLines={4}
+                className="rounded-sm border border-gray-03 focus:border-blue-03 bg-white p-3 min-h-[100px] leading-relaxed text-body-s text-gray-12"
               />
             </TextField>
           </View>
 
-          <View style={styles.quickFeedback}>
+          <View className="mb-5">
             <Typography
               type="body-sm"
               color="muted"
-              style={styles.quickTitle}
+              className="mb-2 ml-1"
+              weight="semibold"
             >
               Quick feedback
             </Typography>
-            <View style={styles.quickOptions}>
+            <View className="flex-row flex-wrap gap-2">
               {["On time", "Professional", "Good quality", "Friendly"].map(
                 (tag) => (
                   <TouchableOpacity
                     key={tag}
-                    style={[
-                      styles.quickOption,
-                      comment.includes(tag) && styles.quickOptionActive,
-                    ]}
+                    className={`px-4 py-2 rounded-sm border ${
+                      comment.includes(tag)
+                        ? "bg-blue-01 border-blue-03"
+                        : "bg-white border-gray-03"
+                    }`}
                     onPress={() => {
                       if (comment.includes(tag)) {
                         setComment(comment.replace(tag, "").trim())
@@ -175,12 +179,15 @@ export default function RatingScreen() {
                         setComment((comment ? comment + ", " : "") + tag)
                       }
                     }}
+                    activeOpacity={0.8}
                   >
                     <Typography
-                      type="body"
-                      style={{
-                        color: comment.includes(tag) ? semantic.primary : semantic.textSecondary
-                      }}
+                      type="body-sm"
+                      className={
+                        comment.includes(tag)
+                          ? "text-blue-03 font-inter-semibold"
+                          : "text-gray-07 font-inter-regular"
+                      }
                     >
                       {tag}
                     </Typography>
@@ -191,17 +198,20 @@ export default function RatingScreen() {
           </View>
         </ScrollView>
 
-        <View style={styles.footer}>
+        <View className="p-4 border-t border-gray-03 bg-white">
           <Button
-            variant="primary"
             onPress={handleSubmit}
             isDisabled={isSubmitting || rating === 0}
-            className="w-full"
+            className="w-full bg-blue-03 rounded-sm py-3.5 transition-transform active:scale-[0.96]"
           >
-            {isSubmitting ? <Spinner size="sm" /> : <Button.Label>Submit Rating</Button.Label>}
+            {isSubmitting ? (
+              <Spinner size="sm" color="white" />
+            ) : (
+              <Button.Label className="text-white font-inter-bold text-body-s">Submit Rating</Button.Label>
+            )}
           </Button>
-          <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
-            <Typography type="body-sm" color="muted">
+          <TouchableOpacity onPress={handleSkip} style={styles.skipButton} activeOpacity={0.8}>
+            <Typography type="body-sm" className="text-gray-07" weight="semibold">
               Skip for now
             </Typography>
           </TouchableOpacity>
@@ -223,7 +233,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 80,
     height: 80,
-    borderRadius: 40,
+    borderRadius: 4,
     backgroundColor: colors.orange[1],
     alignItems: "center",
     justifyContent: "center",
@@ -252,34 +262,6 @@ const styles = StyleSheet.create({
   },
   ratingLabel: {
     marginTop: spacing[3],
-  },
-  commentSection: {
-    marginBottom: spacing[4],
-  },
-  quickFeedback: {
-    marginBottom: spacing[4],
-  },
-  quickTitle: {
-    marginBottom: spacing[2],
-  },
-  quickOptions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing[2],
-  },
-  quickOption: {
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[2],
-    borderRadius: 100,
-    backgroundColor: semantic.backgroundSecondary,
-  },
-  quickOptionActive: {
-    backgroundColor: colors.blue[1],
-  },
-  footer: {
-    padding: spacing[4],
-    borderTopWidth: 1,
-    borderTopColor: semantic.border,
   },
   skipButton: {
     alignItems: "center",

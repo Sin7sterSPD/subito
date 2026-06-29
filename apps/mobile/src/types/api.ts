@@ -270,6 +270,8 @@ export interface BookingSlot {
   isFull: boolean
   isExperiencingSurge: boolean
   surgePrice: number
+  currentBookings?: number
+  maxCapacity?: number
 }
 
 // Partner types
