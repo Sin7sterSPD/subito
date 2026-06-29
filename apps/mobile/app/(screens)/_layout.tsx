@@ -44,10 +44,10 @@ export default function ScreensLayout() {
       <Stack.Screen name="about" options={{ title: "About" }} />
       <Stack.Screen name="search" options={{ title: "", headerShown: false }} />
       <Stack.Screen name="bundles" options={{ title: "All Bundles" }} />
-      <Stack.Screen
+      {/* <Stack.Screen
         name="select-slot"
         options={{ title: "Select Time Slot" }}
-      />
+      /> */}
       <Stack.Screen
         name="partner-tracking"
         options={{ title: "Track Partner", headerShown: false }}
