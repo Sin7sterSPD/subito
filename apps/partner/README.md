@@ -1,50 +1,81 @@
-# Welcome to your Expo app 👋
+# Subito Partner App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Expo (SDK 54) app for Subito service partners. Partners sign in with their
+registered phone number, go online to receive job assignments, and work jobs
+through their lifecycle (on the way → arrived → start work → complete).
 
-## Get started
+Built on the same stack as the customer app (`apps/mobile`): expo-router,
+HeroUI Native + uniwind (Tailwind v4 CSS-first via `global.css`), zustand
+stores, and the shared single-flight-refresh API client pattern.
 
-1. Install dependencies
+## Features
 
-   ```bash
-   npm install
-   ```
+- **Phone OTP login** (Firebase phone auth + backend challenge; `appType:
+  "partner"` — customer accounts are rejected). Tokens live in
+  expo-secure-store; the API binds sessions to the device (`X-Device-ID`).
+- **Availability toggle** — go online/offline from the Jobs screen
+  (`PUT /v1/partners/me/availability`). "Busy" is system-controlled while a
+  job is in progress.
+- **Jobs list** — assigned bookings with status chips, customer-cancel
+  action-needed badges, pull-to-refresh + refetch on focus.
+- **Job detail** — status timeline, service address with directions,
+  scheduled slot, customer notes, item list, contextual next actions
+  (En route / Arrived / Start work / Complete), and cancellation
+  acknowledge-release. While a job is active, the screen pings GPS to the
+  API every 25s (foreground) so customers can track the partner.
+- **Profile** — rating, completed/total jobs, account status, sign out.
 
-2. Start the app
+## Setup
 
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Prerequisites: Node 18+, pnpm, and the monorepo services (`apps/api` on port
+4000, Postgres + Redis via docker, `apps/worker` for job auto-assignment).
 
 ```bash
-npm run reset-project
+# from the monorepo root (subito/subito)
+pnpm install
+
+# configure the API base URL for your device
+# - Android emulator: http://10.0.2.2:4000/v1
+# - Physical device:  http://<your-lan-ip>:4000/v1
+# edit apps/partner/.env
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Firebase (required for OTP login)
 
-## Learn more
+The app uses `@react-native-firebase` phone auth, which does **not** work in
+Expo Go — build a dev client:
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+cd apps/partner
+pnpm android   # expo run:android
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+`google-services.json` must contain an Android client for package
+**`com.subito.partner`** (Firebase project `subito-dev-e250f`). If the build
+fails with a package-name mismatch, add the `com.subito.partner` Android app
+in the Firebase console and re-download the config file.
 
-## Join the community
+### Test accounts
 
-Join our community of developers creating universal apps.
+Seeded partner logins (`packages/db/src/seed.ts`):
+`+91 9000000006` / `+91 9000000007` / `+91 9000000008`.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Manual test plan
+
+1. Start api + worker + redis/postgres (see monorepo README).
+2. Sign in with a seeded partner phone; verify OTP flow lands on Jobs.
+3. Toggle Online on the Jobs screen; confirm `GET /v1/partners/me` reflects
+   `availabilityStatus: online`.
+4. Place a booking from the customer app with an instant service → the
+   worker auto-assigns it → pull-to-refresh on Jobs shows the new job.
+5. Open the job, walk through: I'm on my way → I've arrived → Start work →
+   Complete job. Availability should return to online after completion.
+6. From the customer app, cancel an assigned booking → the partner app shows
+   the "action needed" badge → acknowledge the release from job detail.
+
+## Notes
+
+- Job assignment is automatic (worker match by rating/completed/distance).
+  There is no accept/decline flow yet.
+- No push notifications yet — new jobs are discovered via focus refetch /
+  pull-to-refresh.
