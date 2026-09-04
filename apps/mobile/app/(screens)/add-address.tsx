@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react"
 import {
   View,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   Alert,
@@ -11,8 +10,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router, useLocalSearchParams } from "expo-router"
 import { Typography, Button, TextField, Input, Label, FieldError, Card, Spinner, InputGroup } from "heroui-native"
-import { colors, semantic } from "../../src/theme/colors"
-import { spacing, borderRadius } from "../../src/theme/spacing"
+import { colors } from "../../src/theme/colors"
+import { spacing } from "../../src/theme/spacing"
 import { useUserStore, useLocationStore } from "../../src/store"
 import { AddressType, Address, AutocompleteResult } from "../../src/types/api"
 import { locationApi } from "../../src/services/api"
@@ -39,7 +38,6 @@ export default function AddAddressScreen() {
   const {
     getCurrentLocation,
     reverseGeocode,
-    currentLocation,
     isLoading: locationLoading,
   } = useLocationStore()
   const isEditMode = typeof addressId === "string" && addressId.length > 0
@@ -247,27 +245,30 @@ export default function AddAddressScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["bottom"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#ffffff" }} edges={["bottom"]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardView}
+        style={{ flex: 1 }}
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}
         >
-          <View style={styles.section}>
+          
+          {/* Location Autocomplete & Geolocation Section */}
+          <View style={{ padding: spacing[4], borderBottomWidth: 1, borderBottomColor: "#dee0e3" }}>
             <TextField>
-              <Label>Search Location</Label>
-              <InputGroup>
-                <InputGroup.Prefix isDecorative className="flex-row items-center">
-                  <Ionicons name="search" size={20} color={semantic.textMuted} />
+              <Label className="mb-1.5 font-inter-medium text-body-s text-gray-12">Search Location</Label>
+              <InputGroup className="border border-gray-03 rounded-sm bg-white overflow-hidden h-12 flex-row items-center">
+                <InputGroup.Prefix isDecorative className="pl-3 justify-center items-center">
+                  <Ionicons name="search" size={20} color="#7E869A" />
                 </InputGroup.Prefix>
                 <InputGroup.Input
                   placeholder="Search for area, street, locality..."
                   value={searchQuery}
                   onChangeText={handleSearch}
+                  className="flex-1 h-full px-2 text-body-s text-gray-12"
                 />
               </InputGroup>
             </TextField>
@@ -275,22 +276,22 @@ export default function AddAddressScreen() {
             {isSearching && <Spinner size="sm" style={{ marginVertical: spacing[2] }} />}
             
             {searchResults.length > 0 && (
-              <Card style={styles.searchResults} variant="default">
+              <Card className="mt-2 max-h-52 p-0 overflow-hidden border border-gray-03 rounded-sm bg-white" variant="default">
                 {searchResults.map((result) => (
                   <TouchableOpacity
                     key={result.id}
-                    style={styles.searchResult}
+                    className="flex-row items-center p-3 border-b border-gray-02"
                     onPress={() => handleSelectPlace(result)}
                   >
                     <Ionicons
                       name="location-outline"
                       size={18}
-                      color={semantic.textMuted}
+                      color="#7E869A"
                     />
                     <Typography
                       type="body-sm"
                       numberOfLines={1}
-                      style={styles.searchResultText}
+                      className="ml-2 flex-1 text-gray-12 font-inter-regular"
                     >
                       {result.description}
                     </Typography>
@@ -300,53 +301,53 @@ export default function AddAddressScreen() {
             )}
 
             <TouchableOpacity
-              style={styles.currentLocation}
+              className="flex-row items-center mt-4"
               onPress={handleUseCurrentLocation}
+              activeOpacity={0.8}
             >
-              <View style={styles.currentLocationIcon}>
-                <Ionicons name="navigate" size={18} color={semantic.primary} />
+              <View className="w-9 h-9 rounded-sm bg-blue-01 items-center justify-center mr-2">
+                <Ionicons name="navigate" size={18} color="#2a9cff" />
               </View>
-              <Typography type="body-sm" className="text-accent" weight="semibold">
+              <Typography type="body-sm" className="text-blue-03" weight="semibold">
                 Use current location
               </Typography>
               {locationLoading && <Spinner size="sm" style={{ marginLeft: spacing[2] }} />}
             </TouchableOpacity>
           </View>
 
-          <View style={styles.section}>
+          {/* Address Type Section */}
+          <View style={{ padding: spacing[4], borderBottomWidth: 1, borderBottomColor: "#dee0e3" }}>
             <Typography
               type="body"
               weight="semibold"
-              style={[styles.sectionTitle, { color: semantic.textPrimary }]}
+              className="text-gray-12 mb-3"
             >
               Save as
             </Typography>
-            <View style={styles.typeSelector}>
+            <View className="flex-row gap-2">
               {ADDRESS_TYPES.map((type) => (
                 <TouchableOpacity
                   key={type.key}
-                  style={[
-                    styles.typeButton,
-                    formData.type === type.key && styles.typeButtonActive,
-                  ]}
+                  className={`flex-1 flex-row items-center justify-center gap-2 py-3 rounded-sm border ${
+                    formData.type === type.key
+                      ? "bg-blue-03 border-blue-03"
+                      : "bg-white border-gray-03"
+                  }`}
                   onPress={() =>
                     setFormData((prev) => ({ ...prev, type: type.key }))
                   }
+                  activeOpacity={0.8}
                 >
                   <Ionicons
                     name={type.icon}
                     size={18}
-                    color={
-                      formData.type === type.key
-                        ? colors.white
-                        : semantic.primary
-                    }
+                    color={formData.type === type.key ? "#ffffff" : "#2a9cff"}
                   />
                   <Typography
-                    type="body"
-                    weight="medium"
+                    type="body-sm"
+                    weight="semibold"
                     style={{
-                      color: formData.type === type.key ? colors.white : semantic.primary
+                      color: formData.type === type.key ? "#ffffff" : "#2a9cff",
                     }}
                   >
                     {type.label}
@@ -356,9 +357,10 @@ export default function AddAddressScreen() {
             </View>
           </View>
 
-          <View style={styles.section}>
+          {/* Address Input Form Fields */}
+          <View style={{ padding: spacing[4] }}>
             <TextField isRequired isInvalid={!!errors.name}>
-              <Label>Name</Label>
+              <Label className="mb-1.5 font-inter-medium text-body-s text-gray-12">Address Label Name</Label>
               <Input
                 placeholder="E.g., My Home"
                 value={formData.name}
@@ -366,13 +368,14 @@ export default function AddAddressScreen() {
                   setFormData((prev) => ({ ...prev, name: text }))
                   if (errors.name) setErrors({ ...errors, name: "" })
                 }}
+                className="h-12 rounded-sm border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
               />
-              {errors.name ? <FieldError>{errors.name}</FieldError> : null}
+              {errors.name ? <FieldError className="mt-1.5">{errors.name}</FieldError> : null}
             </TextField>
 
-            <View style={styles.inputSpacing}>
+            <View className="mt-4">
               <TextField isRequired isInvalid={!!errors.addressLine1}>
-                <Label>Complete Address</Label>
+                <Label className="mb-1.5 font-inter-medium text-body-s text-gray-12">Complete Address</Label>
                 <Input
                   placeholder="House no, Building, Street"
                   value={formData.addressLine1}
@@ -382,40 +385,43 @@ export default function AddAddressScreen() {
                       setErrors({ ...errors, addressLine1: "" })
                   }}
                   multiline
+                  className="rounded-sm border border-gray-03 focus:border-blue-03 bg-white p-3 min-h-[80px] leading-relaxed text-body-s text-gray-12"
                 />
-                {errors.addressLine1 ? <FieldError>{errors.addressLine1}</FieldError> : null}
+                {errors.addressLine1 ? <FieldError className="mt-1.5">{errors.addressLine1}</FieldError> : null}
               </TextField>
             </View>
 
-            <View style={styles.inputSpacing}>
+            <View className="mt-4">
               <TextField>
-                <Label>Flat / House No</Label>
+                <Label className="mb-1.5 font-inter-medium text-body-s text-gray-12">Flat / House No</Label>
                 <Input
                   placeholder="Optional"
                   value={formData.houseNo}
                   onChangeText={(text) =>
                     setFormData((prev) => ({ ...prev, houseNo: text }))
                   }
+                  className="h-12 rounded-sm border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
                 />
               </TextField>
             </View>
 
-            <View style={styles.inputSpacing}>
+            <View className="mt-4">
               <TextField>
-                <Label>Building / Society Name</Label>
+                <Label className="mb-1.5 font-inter-medium text-body-s text-gray-12">Building / Society Name</Label>
                 <Input
                   placeholder="Optional"
                   value={formData.buildingName}
                   onChangeText={(text) =>
                     setFormData((prev) => ({ ...prev, buildingName: text }))
                   }
+                  className="h-12 rounded-sm border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
                 />
               </TextField>
             </View>
 
-            <View style={styles.inputSpacing}>
+            <View className="mt-4">
               <TextField isInvalid={!!errors.floor}>
-                <Label>Floor</Label>
+                <Label className="mb-1.5 font-inter-medium text-body-s text-gray-12">Floor</Label>
                 <Input
                   placeholder="Optional"
                   value={formData.floor}
@@ -424,28 +430,30 @@ export default function AddAddressScreen() {
                     if (errors.floor) setErrors({ ...errors, floor: "" })
                   }}
                   keyboardType="number-pad"
+                  className="h-12 rounded-sm border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
                 />
-                {errors.floor ? <FieldError>{errors.floor}</FieldError> : null}
+                {errors.floor ? <FieldError className="mt-1.5">{errors.floor}</FieldError> : null}
               </TextField>
             </View>
 
-            <View style={styles.inputSpacing}>
+            <View className="mt-4">
               <TextField>
-                <Label>Landmark</Label>
+                <Label className="mb-1.5 font-inter-medium text-body-s text-gray-12">Landmark</Label>
                 <Input
                   placeholder="Near school, temple, etc."
                   value={formData.landmark}
                   onChangeText={(text) =>
                     setFormData((prev) => ({ ...prev, landmark: text }))
                   }
+                  className="h-12 rounded-sm border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
                 />
               </TextField>
             </View>
 
-            <View style={styles.row}>
-              <View style={[styles.halfInput, styles.inputSpacing]}>
+            <View className="flex-row gap-3 mt-4">
+              <View className="flex-1">
                 <TextField isRequired isInvalid={!!errors.city}>
-                  <Label>City</Label>
+                  <Label className="mb-1.5 font-inter-medium text-body-s text-gray-12">City</Label>
                   <Input
                     placeholder="City"
                     value={formData.city}
@@ -453,13 +461,15 @@ export default function AddAddressScreen() {
                       setFormData((prev) => ({ ...prev, city: text }))
                       if (errors.city) setErrors({ ...errors, city: "" })
                     }}
+                    className="h-12 rounded-sm border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
                   />
-                  {errors.city ? <FieldError>{errors.city}</FieldError> : null}
+                  {errors.city ? <FieldError className="mt-1.5">{errors.city}</FieldError> : null}
                 </TextField>
               </View>
-              <View style={[styles.halfInput, styles.inputSpacing]}>
+              
+              <View className="flex-1">
                 <TextField isRequired isInvalid={!!errors.state}>
-                  <Label>State</Label>
+                  <Label className="mb-1.5 font-inter-medium text-body-s text-gray-12">State</Label>
                   <Input
                     placeholder="State"
                     value={formData.state}
@@ -467,15 +477,16 @@ export default function AddAddressScreen() {
                       setFormData((prev) => ({ ...prev, state: text }))
                       if (errors.state) setErrors({ ...errors, state: "" })
                     }}
+                    className="h-12 rounded-sm border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
                   />
-                  {errors.state ? <FieldError>{errors.state}</FieldError> : null}
+                  {errors.state ? <FieldError className="mt-1.5">{errors.state}</FieldError> : null}
                 </TextField>
               </View>
             </View>
 
-            <View style={styles.inputSpacing}>
+            <View className="mt-4">
               <TextField isRequired isInvalid={!!errors.pincode}>
-                <Label>Pincode</Label>
+                <Label className="mb-1.5 font-inter-medium text-body-s text-gray-12">Pincode</Label>
                 <Input
                   placeholder="Pincode"
                   value={formData.pincode}
@@ -485,24 +496,27 @@ export default function AddAddressScreen() {
                   }}
                   keyboardType="number-pad"
                   maxLength={6}
+                  className="h-12 rounded-sm border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
                 />
-                {errors.pincode ? <FieldError>{errors.pincode}</FieldError> : null}
+                {errors.pincode ? <FieldError className="mt-1.5">{errors.pincode}</FieldError> : null}
               </TextField>
             </View>
           </View>
         </ScrollView>
 
-        <View style={styles.footer}>
+        {/* Footer Button Bar */}
+        <View className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-03 bg-white">
           <Button
-            variant="primary"
             onPress={handleSave}
             isDisabled={isSaving}
-            className="w-full"
+            className="w-full bg-blue-03 rounded-sm py-3.5 transition-transform active:scale-[0.96]"
           >
             {isSaving ? (
-              <Spinner size="sm" />
+              <Spinner size="sm" color="white" />
             ) : (
-              <Button.Label>{isEditMode ? "Update Address" : "Save Address"}</Button.Label>
+              <Button.Label className="text-white font-inter-bold text-body-s">
+                {isEditMode ? "Update Address" : "Save Address"}
+              </Button.Label>
             )}
           </Button>
         </View>
@@ -510,87 +524,3 @@ export default function AddAddressScreen() {
     </SafeAreaView>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  section: {
-    padding: spacing[4],
-    borderBottomWidth: 1,
-    borderBottomColor: semantic.borderLight,
-  },
-  sectionTitle: {
-    marginBottom: spacing[3],
-  },
-  searchResults: {
-    marginTop: spacing[2],
-    maxHeight: 200,
-    padding: 0,
-    overflow: "hidden",
-  },
-  searchResult: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: spacing[3],
-    borderBottomWidth: 1,
-    borderBottomColor: semantic.borderLight,
-  },
-  searchResultText: {
-    marginLeft: spacing[2],
-    flex: 1,
-  },
-  currentLocation: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: spacing[3],
-  },
-  currentLocationIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.blue[1],
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: spacing[2],
-  },
-  typeSelector: {
-    flexDirection: "row",
-    gap: spacing[2],
-  },
-  typeButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing[2],
-    paddingVertical: spacing[3],
-    borderRadius: 12,
-    backgroundColor: colors.blue[1],
-  },
-  typeButtonActive: {
-    backgroundColor: semantic.primary,
-  },
-  inputSpacing: {
-    marginTop: spacing[4],
-  },
-  row: {
-    flexDirection: "row",
-    gap: spacing[3],
-  },
-  halfInput: {
-    flex: 1,
-  },
-  footer: {
-    padding: spacing[4],
-    borderTopWidth: 1,
-    borderTopColor: semantic.border,
-  },
-})

@@ -1,6 +1,6 @@
 import { db } from "@subito/db"
 
-import { eq, and, inArray } from "@subito/db"
+import { eq, and, inArray, sql } from "@subito/db"
 import {
   carts,
   cartItems,
@@ -11,6 +11,8 @@ import {
   bookingItems,
   orders,
   idempotencyKeys,
+  bookingSlots,
+  recurringBookings,
 } from "@subito/db"
 
 import { createHash } from "crypto"
@@ -533,6 +535,12 @@ export async function checkout(
   return result
 }
 
+const RECURRING_INSTANCE_COUNT = {
+  WEEKLY: 12,
+  BIWEEKLY: 8,
+  MONTHLY: 6,
+} as const
+
 export async function checkoutV2(
   userId: string,
   data: { cartVersion: number },
@@ -590,6 +598,52 @@ export async function checkoutV2(
       : []
 
   const result = await db.transaction(async (tx) => {
+    // Extract scheduled slot details if present in cart.timeSlot
+    const timeSlot = cart.timeSlot as { time?: Array<{ start: string }> } | null
+    const firstSlotTime = timeSlot?.time?.[0]?.start
+
+    let scheduledDate: Date | null = null
+    let scheduledStartTime: string | null = null
+    let scheduledEndTime: string | null = null
+    let slotId: string | null = null
+    let hubId: string | null = null
+    let microHubId: string | null = null
+
+    if (firstSlotTime) {
+      scheduledDate = new Date(firstSlotTime)
+      const hours = scheduledDate.getHours()
+      const minutes = scheduledDate.getMinutes()
+      scheduledStartTime = `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`
+
+      const end = new Date(scheduledDate)
+      end.setHours(end.getHours() + 1)
+      scheduledEndTime = `${end.getHours().toString().padStart(2, "0")}:${end.getMinutes().toString().padStart(2, "0")}`
+
+      // Try to find the matching slot in the DB and increment its currentBookings
+      const dateOnly = new Date(scheduledDate.getFullYear(), scheduledDate.getMonth(), scheduledDate.getDate())
+      const slot = await tx.query.bookingSlots.findFirst({
+        where: and(
+          eq(bookingSlots.date, dateOnly),
+          eq(bookingSlots.startTime, scheduledStartTime)
+        ),
+      })
+
+      if (slot) {
+        slotId = slot.id
+        hubId = slot.hubId || hubId
+        microHubId = slot.microHubId || microHubId
+
+        // Increment capacity reservation
+        await tx
+          .update(bookingSlots)
+          .set({
+            currentBookings: sql`COALESCE(${bookingSlots.currentBookings}, 0) + 1`,
+            updatedAt: new Date(),
+          })
+          .where(eq(bookingSlots.id, slot.id))
+      }
+    }
+
     const createdBookings = await tx
       .insert(bookings)
       .values({
@@ -597,22 +651,40 @@ export async function checkoutV2(
         idempotencyKey,
         userId,
         addressId,
+        hubId,
+        microHubId,
         bundleId: cart.bundleId,
         couponId: cart.couponId,
         status: "PENDING_PAYMENT",
         bookingType: cart.bookingType,
         recurringType: cart.recurringType,
+        scheduledDate,
+        scheduledStartTime,
+        scheduledEndTime,
         totalPrice: cart.totalPrice,
         discountAmount: cart.discountAmount,
         gstAmount: cart.gstAmount,
         surgeAmount: cart.surgePrice,
         finalAmount: cart.finalAmount,
+        metadata: slotId ? { reservedBookingSlotId: slotId } : null,
       })
       .returning()
     const booking = createdBookings[0]
 
     if (!booking) {
       throw new BadRequestError("Failed to create booking")
+    }
+
+    if (cart.bookingType === "RECURRING" && cart.recurringType) {
+      const startDate = scheduledDate ?? new Date()
+      await tx.insert(recurringBookings).values({
+        bookingId: booking.id,
+        recurringType: cart.recurringType,
+        startDate,
+        totalInstances: RECURRING_INSTANCE_COUNT[cart.recurringType],
+        completedInstances: 0,
+        cancelledInstances: 0,
+      })
     }
 
     if (cart.items && cart.items.length > 0) {

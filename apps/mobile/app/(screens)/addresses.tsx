@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react"
 import {
   View,
-  StyleSheet,
   FlatList,
   TouchableOpacity,
   Alert,
@@ -10,7 +9,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
 import { Typography, Card, Button, Spinner, Chip } from "heroui-native"
-import { colors, semantic } from "../../src/theme/colors"
+import { colors } from "../../src/theme/colors"
 import { spacing } from "../../src/theme/spacing"
 import { useUserStore, useLocationStore } from "../../src/store"
 import { Address } from "../../src/types/api"
@@ -43,24 +42,30 @@ function AddressCard({
   return (
     <TouchableOpacity onPress={onSelect} activeOpacity={0.9}>
       <Card
-        style={[styles.addressCard, isSelected && styles.addressCardSelected]}
+        className={`mb-3 p-4 rounded-sm border ${
+          isSelected ? "border-blue-03 border-2 bg-blue-01/10" : "border-gray-03 bg-white"
+        }`}
         variant="default"
       >
-        <View style={styles.cardHeader}>
-          <View style={[styles.typeIcon, isSelected && styles.typeIconSelected]}>
+        <View className="flex-row items-center mb-3">
+          <View className={`w-9 h-9 items-center justify-center rounded-sm ${
+            isSelected ? "bg-blue-03" : "bg-blue-01"
+          }`}>
             <Ionicons
               name={getTypeIcon()}
               size={18}
-              color={isSelected ? colors.white : semantic.primary}
+              color={isSelected ? "#ffffff" : "#2a9cff"}
             />
           </View>
-          <View style={styles.cardTitle}>
-            <Typography type="body" weight="semibold" style={{ color: semantic.textPrimary }}>
+          <View className="flex-1 flex-row items-center gap-2 ml-3">
+            <Typography type="body" weight="semibold" className="text-gray-12">
               {address.name}
             </Typography>
             {address.isDefault && (
-              <Chip size="sm" variant="soft" color="accent">
-                Default
+              <Chip size="sm" variant="soft" className="bg-blue-01 border border-blue-03/20">
+                <Typography className="text-blue-03 font-inter-semibold text-caption-s">
+                  Default
+                </Typography>
               </Chip>
             )}
           </View>
@@ -68,57 +73,56 @@ function AddressCard({
             <Ionicons
               name="checkmark-circle"
               size={24}
-              color={semantic.primary}
+              color="#2a9cff"
             />
           )}
         </View>
 
         <Typography
           type="body-sm"
-          color="muted"
-          style={styles.addressLine}
+          className="text-gray-08 mb-1 leading-relaxed"
         >
           {address.addressLine1}
           {address.addressLine2 ? `, ${address.addressLine2}` : ""}
         </Typography>
-        <Typography type="body" color="muted">
+        <Typography type="body-sm" className="text-gray-07 leading-relaxed">
           {address.area ? `${address.area}, ` : ""}
           {address.city}, {address.state} - {address.pincode}
         </Typography>
 
         {(address.houseNo ||
-          address.floor !== undefined && address.floor !== null ||
+          (address.floor !== undefined && address.floor !== null) ||
           address.landmark) && (
-          <View style={styles.additionalInfo}>
+          <View className="flex-row flex-wrap gap-3 mt-2 pt-2 border-t border-gray-02">
             {address.houseNo && (
-              <Typography type="body-sm" color="muted">
+              <Typography type="body-sm" className="text-gray-08">
                 House: {address.houseNo}
               </Typography>
             )}
             {address.floor !== undefined && address.floor !== null && (
-              <Typography type="body-sm" color="muted">
+              <Typography type="body-sm" className="text-gray-08">
                 Floor: {address.floor}
               </Typography>
             )}
             {address.landmark && (
-              <Typography type="body-sm" color="muted">
+              <Typography type="body-sm" className="text-gray-08">
                 Landmark: {address.landmark}
               </Typography>
             )}
           </View>
         )}
 
-        <View style={styles.cardActions}>
-          <TouchableOpacity style={styles.actionButton} onPress={onEdit}>
-            <Ionicons name="create-outline" size={18} color={semantic.primary} />
-            <Typography type="body" className="text-accent" weight="medium">
+        <View className="flex-row gap-4 mt-3 pt-3 border-t border-gray-02">
+          <TouchableOpacity className="flex-row items-center gap-1.5" onPress={onEdit} activeOpacity={0.7}>
+            <Ionicons name="create-outline" size={18} color="#2a9cff" />
+            <Typography type="body-sm" className="text-blue-03" weight="semibold">
               Edit
             </Typography>
           </TouchableOpacity>
           {address.canDelete && (
-            <TouchableOpacity style={styles.actionButton} onPress={onDelete}>
-              <Ionicons name="trash-outline" size={18} color={semantic.error} />
-              <Typography type="body" className="text-danger" weight="medium">
+            <TouchableOpacity className="flex-row items-center gap-1.5" onPress={onDelete} activeOpacity={0.7}>
+              <Ionicons name="trash-outline" size={18} color="#e6483d" className="text-danger" />
+              <Typography type="body-sm" className="text-danger" weight="semibold">
                 Delete
               </Typography>
             </TouchableOpacity>
@@ -131,18 +135,18 @@ function AddressCard({
 
 function EmptyState() {
   return (
-    <View style={styles.emptyState}>
-      <View style={styles.emptyIcon}>
+    <View className="flex-1 items-center justify-center py-10">
+      <View className="w-20 h-20 rounded-full bg-gray-02 items-center justify-center mb-4">
         <Ionicons
           name="location-outline"
-          size={48}
-          color={semantic.textMuted}
+          size={40}
+          color="#7E869A"
         />
       </View>
-      <Typography type="h6" weight="semibold" style={[styles.emptyTitle, { color: semantic.textSecondary }]}>
+      <Typography type="h6" weight="semibold" className="text-gray-12 mb-2 text-center">
         No saved addresses
       </Typography>
-      <Typography type="body-sm" color="muted" align="center">
+      <Typography type="body-sm" className="text-gray-07 text-center">
         Add your first address to get started
       </Typography>
     </View>
@@ -212,7 +216,7 @@ export default function AddressesScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: semantic.backgroundSecondary }} edges={["bottom"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#f7f7f8" }} edges={["bottom"]}>
       <FlatList
         data={addresses}
         keyExtractor={(item) => item.id}
@@ -225,117 +229,27 @@ export default function AddressesScreen() {
             onDelete={() => handleDelete(item)}
           />
         )}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={{ padding: spacing[4], paddingBottom: 100, flexGrow: 1 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[semantic.primary]}
+            colors={["#2a9cff"]}
           />
         }
         ListEmptyComponent={<EmptyState />}
       />
 
-      <View style={styles.footer}>
+      <View className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-03">
         <Button
-          variant="primary"
           onPress={handleAddNew}
-          className="w-full"
+          className="w-full bg-blue-03 rounded-sm py-3.5 transition-transform active:scale-[0.96]"
         >
-          <Button.Label>Add New Address</Button.Label>
+          <Button.Label className="text-white font-inter-bold text-body-s">
+            Add New Address
+          </Button.Label>
         </Button>
       </View>
     </SafeAreaView>
   )
 }
-
-const styles = StyleSheet.create({
-  list: {
-    padding: spacing[4],
-    paddingBottom: spacing[24],
-    flexGrow: 1,
-  },
-  addressCard: {
-    marginBottom: spacing[3],
-  },
-  addressCardSelected: {
-    borderColor: semantic.primary,
-    borderWidth: 2,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing[2],
-  },
-  typeIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.blue[1],
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  typeIconSelected: {
-    backgroundColor: semantic.primary,
-  },
-  cardTitle: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing[2],
-    marginLeft: spacing[3],
-  },
-  addressLine: {
-    marginBottom: spacing[1],
-  },
-  additionalInfo: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing[3],
-    marginTop: spacing[2],
-    paddingTop: spacing[2],
-    borderTopWidth: 1,
-    borderTopColor: semantic.borderLight,
-  },
-  cardActions: {
-    flexDirection: "row",
-    gap: spacing[4],
-    marginTop: spacing[3],
-    paddingTop: spacing[3],
-    borderTopWidth: 1,
-    borderTopColor: semantic.borderLight,
-  },
-  actionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing[1],
-  },
-  emptyState: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing[10],
-  },
-  emptyIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: semantic.backgroundTertiary,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing[4],
-  },
-  emptyTitle: {
-    marginBottom: spacing[2],
-  },
-  footer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: spacing[4],
-    backgroundColor: colors.white,
-    borderTopWidth: 1,
-    borderTopColor: semantic.border,
-  },
-})

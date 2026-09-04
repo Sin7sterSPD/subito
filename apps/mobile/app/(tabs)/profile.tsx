@@ -1,7 +1,6 @@
 import React from "react"
 import {
   View,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   Alert,
@@ -9,9 +8,8 @@ import {
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
-import { Text, Card, Avatar, Divider } from "../../src/components/ui"
-import { colors, semantic } from "../../src/theme/colors"
-import { spacing, borderRadius } from "../../src/theme/spacing"
+import { Typography, Card, Avatar, Separator } from "heroui-native"
+import { colors } from "../../src/theme/colors"
 import { useAuthStore, useUserStore, useAppStore } from "../../src/store"
 import { Ionicons } from "@expo/vector-icons"
 
@@ -25,29 +23,35 @@ interface MenuItemProps {
 
 function MenuItem({ icon, label, onPress, badge, danger }: MenuItemProps) {
   return (
-    <TouchableOpacity style={styles.menuItem} onPress={onPress}>
-      <View style={[styles.menuIcon, danger && styles.menuIconDanger]}>
+    <TouchableOpacity
+      className="flex-row items-center px-4 py-3.5 bg-white active:bg-gray-01"
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View className={`w-9 h-9 items-center justify-center rounded-sm ${
+        danger ? "bg-red-01" : "bg-blue-01"
+      }`}>
         <Ionicons
           name={icon}
-          size={20}
-          color={danger ? semantic.error : semantic.primary}
+          size={18}
+          color={danger ? "#e6483d" : "#2a9cff"}
         />
       </View>
-      <Text
-        variant="bodyMedium"
-        color={danger ? "error" : "textPrimary"}
-        style={styles.menuLabel}
+      <Typography
+        type="body"
+        className={`flex-1 ml-3 ${danger ? "text-danger" : "text-gray-12"}`}
+        weight="medium"
       >
         {label}
-      </Text>
+      </Typography>
       {badge && (
-        <View style={styles.menuBadge}>
-          <Text variant="bodyMedium" color={colors.white} weight="600">
+        <View className="bg-blue-03 px-2 py-0.5 rounded-sm mr-2">
+          <Typography type="body-sm" className="text-white font-inter-semibold">
             {badge}
-          </Text>
+          </Typography>
         </View>
       )}
-      <Ionicons name="chevron-forward" size={20} color={semantic.textMuted} />
+      <Ionicons name="chevron-forward" size={18} color="#7E869A" />
     </TouchableOpacity>
   )
 }
@@ -60,17 +64,17 @@ function MenuSection({
   title?: string
 }) {
   return (
-    <View style={styles.menuSection}>
+    <View className="mb-5 px-4">
       {title && (
-        <Text
-          variant="bodyLarge"
-          color="textMuted"
-          style={styles.menuSectionTitle}
+        <Typography
+          type="body-sm"
+          className="text-gray-07 mb-2 ml-1"
+          weight="semibold"
         >
           {title}
-        </Text>
+        </Typography>
       )}
-      <Card variant="outlined" padding={0}>
+      <Card className="rounded-sm border border-gray-03 bg-white overflow-hidden p-0" variant="default">
         {children}
       </Card>
     </View>
@@ -134,86 +138,95 @@ export default function ProfileScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#f7f7f8" }} edges={["top"]}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+        
+        {/* Profile Info Header */}
+        <View className="bg-white p-4 border-b border-gray-03 mb-4">
           <TouchableOpacity
-            style={styles.profileCard}
+            className="flex-row items-center"
             onPress={handleEditProfile}
+            activeOpacity={0.9}
           >
-            <Avatar
-              source={user?.profileImage}
-              name={user?.firstName || "User"}
-              size="lg"
-            />
-            <View style={styles.profileInfo}>
-              <Text variant="h5" color="textPrimary" weight="700">
+            <Avatar className="w-[60px] h-[60px] rounded-sm">
+              {user?.profileImage ? (
+                <Avatar.Image source={{ uri: user.profileImage }} className="w-full h-full rounded-sm" />
+              ) : null}
+              <Avatar.Fallback />
+            </Avatar>
+            <View className="flex-1 ml-4">
+              <Typography type="h5" className="text-gray-12" weight="bold">
                 {user?.firstName || "User"} {user?.lastName || ""}
-              </Text>
-              <Text variant="bodySmall" color="textSecondary">
+              </Typography>
+              <Typography type="body-sm" className="text-gray-07 mt-0.5">
                 +91 {user?.phone}
-              </Text>
+              </Typography>
               {user?.email && (
-                <Text variant="bodyMedium" color="textMuted">
+                <Typography type="body-sm" className="text-gray-08 mt-0.5">
                   {user.email}
-                </Text>
+                </Typography>
               )}
             </View>
-            <View style={styles.editButton}>
+            <View className="w-9 h-9 rounded-sm bg-blue-01 border border-gray-03 items-center justify-center">
               <Ionicons
                 name="create-outline"
-                size={20}
-                color={semantic.primary}
+                size={18}
+                color="#2a9cff"
               />
             </View>
           </TouchableOpacity>
         </View>
 
+        {/* Refer & Earn Banner */}
         {referralSummary && (
-          <Card style={styles.referralCard} variant="filled">
-            <View style={styles.referralContent}>
-              <View style={styles.referralIcon}>
-                <Ionicons name="gift" size={24} color={colors.white} />
+          <View className="px-4 mb-4">
+            <Card className="rounded-sm border border-gray-03 bg-orange-01 p-4" variant="secondary">
+              <View className="flex-row items-center">
+                <View className="w-10 h-10 rounded-sm bg-orange-08 items-center justify-center">
+                  <Ionicons name="gift" size={20} color={colors.white} />
+                </View>
+                <View className="flex-1 ml-3">
+                  <Typography type="body-sm" className="text-gray-12" weight="bold">
+                    Refer & Earn
+                  </Typography>
+                  <Typography type="body-sm" className="text-gray-07 mt-0.5">
+                    Share your code: {referralSummary.referralCode}
+                  </Typography>
+                </View>
+                <TouchableOpacity
+                  className="bg-blue-03 px-4 py-2 rounded-sm active:scale-[0.96]"
+                  onPress={handleReferrals}
+                  activeOpacity={0.8}
+                >
+                  <Typography type="body-sm" className="text-white font-inter-semibold">
+                    Invite
+                  </Typography>
+                </TouchableOpacity>
               </View>
-              <View style={styles.referralText}>
-                <Text variant="bodySmall" color="textPrimary" weight="600">
-                  Refer & Earn
-                </Text>
-                <Text variant="bodyMedium" color="textMuted">
-                  Share your code: {referralSummary.referralCode}
-                </Text>
-              </View>
-              <TouchableOpacity
-                style={styles.referralButton}
-                onPress={handleReferrals}
-              >
-                <Text variant="bodyLarge" color="primary" weight="600">
-                  Invite
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </Card>
+            </Card>
+          </View>
         )}
 
+        {/* Account Menu Section */}
         <MenuSection title="Account">
           <MenuItem
             icon="person-outline"
             label="Edit Profile"
             onPress={handleEditProfile}
           />
-          <Divider marginVertical={0} />
+          <Separator className="bg-gray-02" />
           <MenuItem
             icon="location-outline"
             label="Saved Addresses"
             onPress={handleAddresses}
           />
-          <Divider marginVertical={0} />
+          <Separator className="bg-gray-02" />
           <MenuItem
             icon="card-outline"
             label="Payment History"
             onPress={handlePaymentHistory}
           />
-          <Divider marginVertical={0} />
+          <Separator className="bg-gray-02" />
           <MenuItem
             icon="notifications-outline"
             label="Notifications"
@@ -221,6 +234,7 @@ export default function ProfileScreen() {
           />
         </MenuSection>
 
+        {/* Rewards Menu Section */}
         <MenuSection title="Rewards">
           <MenuItem
             icon="gift-outline"
@@ -230,13 +244,14 @@ export default function ProfileScreen() {
           />
         </MenuSection>
 
+        {/* Support Menu Section */}
         <MenuSection title="Support">
           <MenuItem
             icon="help-circle-outline"
             label="Help & Support"
             onPress={handleHelp}
           />
-          <Divider marginVertical={0} />
+          <Separator className="bg-gray-02" />
           <MenuItem
             icon="information-circle-outline"
             label="About"
@@ -244,6 +259,7 @@ export default function ProfileScreen() {
           />
         </MenuSection>
 
+        {/* Logout Menu Section */}
         <MenuSection>
           <MenuItem
             icon="log-out-outline"
@@ -253,107 +269,12 @@ export default function ProfileScreen() {
           />
         </MenuSection>
 
-        <View style={styles.footer}>
-          <Text variant="bodyMedium" color="textMuted" align="center">
+        <View className="py-6 px-4">
+          <Typography type="body-sm" className="text-gray-07 text-center">
             App Version {appVersion || "1.0.0"}
-          </Text>
+          </Typography>
         </View>
       </ScrollView>
     </SafeAreaView>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: semantic.backgroundSecondary,
-  },
-  header: {
-    backgroundColor: colors.white,
-    padding: spacing[4],
-    marginBottom: spacing[2],
-  },
-  profileCard: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  profileInfo: {
-    flex: 1,
-    marginLeft: spacing[4],
-  },
-  editButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.blue[1],
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  referralCard: {
-    marginHorizontal: spacing[4],
-    marginBottom: spacing[4],
-    backgroundColor: colors.orange[1],
-  },
-  referralContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  referralIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.orange[8],
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  referralText: {
-    flex: 1,
-    marginLeft: spacing[3],
-  },
-  referralButton: {
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[2],
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.white,
-  },
-  menuSection: {
-    marginBottom: spacing[4],
-    paddingHorizontal: spacing[4],
-  },
-  menuSectionTitle: {
-    marginBottom: spacing[2],
-    marginLeft: spacing[2],
-  },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: spacing[4],
-    paddingVertical: spacing[3],
-  },
-  menuIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.blue[1],
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  menuIconDanger: {
-    backgroundColor: colors.red[1],
-  },
-  menuLabel: {
-    flex: 1,
-    marginLeft: spacing[3],
-  },
-  menuBadge: {
-    backgroundColor: semantic.primary,
-    paddingHorizontal: spacing[2],
-    paddingVertical: 2,
-    borderRadius: borderRadius.full,
-    marginRight: spacing[2],
-  },
-  footer: {
-    padding: spacing[6],
-    paddingBottom: spacing[10],
-  },
-})

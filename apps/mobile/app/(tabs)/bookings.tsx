@@ -1,16 +1,10 @@
 import React, { useEffect, useState, useCallback, useRef } from "react"
-import {
-  View,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  RefreshControl,
-} from "react-native"
+import { View, FlatList, TouchableOpacity, RefreshControl } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
-import { Text, Card, Badge, Spinner, Button } from "../../src/components/ui"
-import { colors, semantic } from "../../src/theme/colors"
-import { spacing, borderRadius } from "../../src/theme/spacing"
+import { Typography, Card, Chip, Spinner, Button, Tabs } from "heroui-native"
+import { colors } from "../../src/theme/colors"
+import { spacing } from "../../src/theme/spacing"
 import { useBookingsStore } from "../../src/store"
 import { Booking, BookingStatus } from "../../src/types/api"
 import { Ionicons } from "@expo/vector-icons"
@@ -33,23 +27,22 @@ const CANCELLED_STATUSES: BookingStatus[] = ["CANCELLED", "REFUNDED"]
 
 function getStatusColor(
   status: BookingStatus
-): "primary" | "success" | "warning" | "error" | "neutral" {
+): "accent" | "success" | "warning" | "danger" | "default" {
   switch (status) {
     case "PENDING_PAYMENT":
     case "PENDING_MATCH":
       return "warning"
     case "MATCHED":
     case "ARRIVING":
-      return "primary"
     case "STARTED":
-      return "primary"
+      return "accent"
     case "COMPLETED":
       return "success"
     case "CANCELLED":
     case "REFUNDED":
-      return "error"
+      return "danger"
     default:
-      return "neutral"
+      return "default"
   }
 }
 
@@ -117,97 +110,90 @@ function BookingCard({
   const date = booking.scheduledDate || booking.createdAt
 
   return (
-    <Card
-      style={styles.bookingCard}
-      onPress={onPress}
-      variant="elevated"
-      shadow="sm"
-    >
-      <View style={styles.cardHeader}>
-        <View style={styles.bookingNumber}>
-          <Text variant="bodyMedium" color="textMuted">
-            #{booking.bookingNumber}
-          </Text>
-        </View>
-        <Badge variant={getStatusColor(booking.status)} size="sm">
-          {getStatusLabel(booking.status)}
-        </Badge>
-      </View>
-
-      <View style={styles.cardBody}>
-        <Text
-          variant="bodyMedium"
-          color="textPrimary"
-          weight="600"
-          numberOfLines={2}
-        >
-          {serviceNames}
-        </Text>
-
-        <View style={styles.details}>
-          <View style={styles.detailRow}>
-            <Ionicons
-              name="calendar-outline"
-              size={16}
-              color={semantic.textMuted}
-            />
-            <Text
-              variant="bodyLarge"
-              color="textSecondary"
-              style={styles.detailText}
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+      <Card
+        className="border-gray-03 mb-3 rounded-sm border bg-white p-4"
+        variant="default"
+      >
+        <View className="mb-3 flex-row items-center justify-between">
+          <View className="bg-blue-01 border-blue-03/20 rounded-sm border px-2 py-0.5">
+            <Typography
+              type="body-sm"
+              className="text-blue-03 font-inter-semibold"
             >
-              {formatDate(date)}
-            </Text>
+              #{booking.bookingNumber}
+            </Typography>
           </View>
-          {booking.scheduledStartTime && (
-            <View style={styles.detailRow}>
-              <Ionicons
-                name="time-outline"
-                size={16}
-                color={semantic.textMuted}
-              />
-              <Text
-                variant="bodyLarge"
-                color="textSecondary"
-                style={styles.detailText}
+          <Chip
+            variant="soft"
+            color={getStatusColor(booking.status)}
+            size="sm"
+            className="rounded-sm"
+          >
+            <Typography className="font-inter-semibold text-caption-s">
+              {getStatusLabel(booking.status)}
+            </Typography>
+          </Chip>
+        </View>
+
+        <View className="mb-3">
+          <Typography
+            type="body"
+            className="text-gray-12 leading-relaxed"
+            weight="semibold"
+            numberOfLines={2}
+          >
+            {serviceNames}
+          </Typography>
+
+          <View className="mt-2 flex-row flex-wrap gap-4">
+            <View className="flex-row items-center">
+              <Ionicons name="calendar-outline" size={16} color="#7E869A" />
+              <Typography type="body-sm" className="text-gray-07 ml-1">
+                {formatDate(date)}
+              </Typography>
+            </View>
+            {booking.scheduledStartTime && (
+              <View className="flex-row items-center">
+                <Ionicons name="time-outline" size={16} color="#7E869A" />
+                <Typography type="body-sm" className="text-gray-07 ml-1">
+                  {formatTime(booking.scheduledStartTime)}
+                </Typography>
+              </View>
+            )}
+          </View>
+
+          {booking.address && (
+            <View className="mt-2 flex-row items-center">
+              <Ionicons name="location-outline" size={16} color="#7E869A" />
+              <Typography
+                type="body-sm"
+                className="text-gray-08 ml-1 flex-1"
+                numberOfLines={1}
               >
-                {formatTime(booking.scheduledStartTime)}
-              </Text>
+                {booking.address.name} • {booking.address.addressLine1}
+              </Typography>
             </View>
           )}
         </View>
 
-        {booking.address && (
-          <View style={styles.addressRow}>
-            <Ionicons
-              name="location-outline"
-              size={16}
-              color={semantic.textMuted}
-            />
-            <Text
-              variant="bodyMedium"
-              color="textMuted"
-              numberOfLines={1}
-              style={styles.detailText}
+        <View className="border-gray-02 flex-row items-center justify-between border-t pt-3">
+          <Typography type="body" className="text-blue-03" weight="bold">
+            ₹{booking.finalAmount ?? booking.totalAmount ?? "0"}
+          </Typography>
+          <View className="flex-row items-center">
+            <Typography
+              type="body-sm"
+              className="text-blue-03 mr-1"
+              weight="semibold"
             >
-              {booking.address.name} • {booking.address.addressLine1}
-            </Text>
+              View Details
+            </Typography>
+            <Ionicons name="chevron-forward" size={16} color="#2a9cff" />
           </View>
-        )}
-      </View>
-
-      <View style={styles.cardFooter}>
-        <Text variant="bodyMedium" color="primary" weight="700">
-          ₹{booking.finalAmount ?? booking.totalAmount ?? "0"}
-        </Text>
-        <View style={styles.viewDetails}>
-          <Text variant="bodyLarge" color="primary" weight="500">
-            View Details
-          </Text>
-          <Ionicons name="chevron-forward" size={16} color={semantic.primary} />
         </View>
-      </View>
-    </Card>
+      </Card>
+    </TouchableOpacity>
   )
 }
 
@@ -233,24 +219,31 @@ function EmptyState({ type }: { type: "active" | "completed" | "cancelled" }) {
   const { title, subtitle, icon } = messages[type]
 
   return (
-    <View style={styles.emptyState}>
-      <View style={styles.emptyIcon}>
-        <Ionicons name={icon} size={48} color={semantic.textMuted} />
+    <View className="flex-1 items-center justify-center px-6 py-10">
+      <View className="bg-gray-02 mb-4 h-20 w-20 items-center justify-center rounded-full">
+        <Ionicons name={icon} size={40} color="#7E869A" />
       </View>
-      <Text variant="h6" color="textSecondary" style={styles.emptyTitle}>
+      <Typography
+        type="h6"
+        weight="semibold"
+        className="text-gray-12 mb-2 text-center"
+      >
         {title}
-      </Text>
-      <Text variant="bodySmall" color="textMuted" align="center">
+      </Typography>
+      <Typography
+        type="body-sm"
+        className="text-gray-07 text-center leading-relaxed"
+      >
         {subtitle}
-      </Text>
+      </Typography>
       {type === "active" && (
         <Button
-          variant="primary"
-          size="md"
-          style={styles.browseButton}
           onPress={() => router.push("/(tabs)")}
+          className="bg-blue-03 mt-6 rounded-sm px-8 py-3 transition-transform active:scale-[0.96]"
         >
-          Browse Services
+          <Button.Label className="font-inter-bold text-body-s text-white">
+            Browse Services
+          </Button.Label>
         </Button>
       )}
     </View>
@@ -291,11 +284,6 @@ export default function BookingsScreen() {
     }
   }, [activeTab, fetchBookings])
 
-  // const loadMore = useCallback(() => {
-  //   if (!isLoading && hasMore) {
-  //     fetchBookings(getStatusForTab())
-  //   }
-  // }, [isLoading, hasMore, activeTab, fetchBookings])
   const loadMore = useCallback(async () => {
     if (isPaginatingRef.current || isLoading || !hasMore) return
     isPaginatingRef.current = true
@@ -318,30 +306,43 @@ export default function BookingsScreen() {
   )
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.header}>
-        <Text variant="h4" color="textPrimary" weight="700">
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: "#f7f7f8" }}
+      edges={["top"]}
+    >
+      {/* Header */}
+      <View className="border-gray-03 border-b bg-white p-4">
+        <Typography type="h4" className="text-gray-12" weight="bold">
           My Bookings
-        </Text>
+        </Typography>
       </View>
 
-      <View style={styles.tabs}>
-        {TABS.map((tab) => (
-          <TouchableOpacity
-            key={tab.key}
-            style={[styles.tab, activeTab === tab.key && styles.activeTab]}
-            onPress={() => setActiveTab(tab.key)}
-          >
-            <Text
-              variant="bodySmall"
-              color={activeTab === tab.key ? "primary" : "textMuted"}
-              weight={activeTab === tab.key ? "600" : "400"}
-            >
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      {/* HeroUI Tabs */}
+      <Tabs
+        value={activeTab}
+        onValueChange={(val) => setActiveTab(val as any)}
+        variant="primary"
+      >
+        <Tabs.List className="border-gray-03 flex-row border-b bg-white p-1">
+          <Tabs.Indicator
+            className="bg-blue-03 rounded-sm"
+            style={{ height: 2, bottom: 4 }}
+          />
+          {TABS.map((tab) => (
+            <Tabs.Trigger key={tab.key} value={tab.key} className="flex-1 py-3">
+              {({ isSelected }) => (
+                <Tabs.Label
+                  className={`font-inter-semibold text-body-sm text-center ${
+                    isSelected ? "font-inter-bold text-white" : "text-gray-07"
+                  }`}
+                >
+                  {tab.label}
+                </Tabs.Label>
+              )}
+            </Tabs.Trigger>
+          ))}
+        </Tabs.List>
+      </Tabs>
 
       <FlatList
         data={filteredBookings}
@@ -352,28 +353,34 @@ export default function BookingsScreen() {
             onPress={() => handleBookingPress(item)}
           />
         )}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={{
+          padding: spacing[4],
+          paddingBottom: 40,
+          flexGrow: 1,
+        }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[semantic.primary]}
+            colors={["#2a9cff"]}
           />
         }
         onEndReached={loadMore}
         onEndReachedThreshold={0.3}
         ListEmptyComponent={
           isLoading ? (
-            <Spinner message="Loading bookings..." />
+            <View className="items-center justify-center py-10">
+              <Spinner />
+            </View>
           ) : (
             <EmptyState type={activeTab} />
           )
         }
         ListFooterComponent={
           isLoading && filteredBookings.length > 0 ? (
-            <View style={styles.loadingMore}>
-              <Spinner size="small" />
+            <View className="items-center justify-center py-4">
+              <Spinner />
             </View>
           ) : null
         }
@@ -381,110 +388,3 @@ export default function BookingsScreen() {
     </SafeAreaView>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: semantic.background,
-  },
-  header: {
-    paddingHorizontal: spacing[4],
-    paddingVertical: spacing[4],
-    borderBottomWidth: 1,
-    borderBottomColor: semantic.borderLight,
-  },
-  tabs: {
-    flexDirection: "row",
-    paddingHorizontal: spacing[4],
-    paddingVertical: spacing[2],
-    gap: spacing[2],
-    borderBottomWidth: 1,
-    borderBottomColor: semantic.borderLight,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: spacing[2],
-    alignItems: "center",
-    borderRadius: borderRadius.md,
-  },
-  activeTab: {
-    backgroundColor: colors.blue[1],
-  },
-  list: {
-    padding: spacing[4],
-    paddingBottom: spacing[8],
-    flexGrow: 1,
-  },
-  bookingCard: {
-    marginBottom: spacing[3],
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: spacing[3],
-  },
-  bookingNumber: {
-    backgroundColor: semantic.backgroundSecondary,
-    paddingHorizontal: spacing[2],
-    paddingVertical: spacing[1],
-    borderRadius: borderRadius.sm,
-  },
-  cardBody: {
-    marginBottom: spacing[3],
-  },
-  details: {
-    flexDirection: "row",
-    marginTop: spacing[2],
-    gap: spacing[4],
-  },
-  detailRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  detailText: {
-    marginLeft: spacing[1],
-  },
-  addressRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: spacing[2],
-  },
-  cardFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingTop: spacing[3],
-    borderTopWidth: 1,
-    borderTopColor: semantic.borderLight,
-  },
-  viewDetails: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  emptyState: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: spacing[6],
-    paddingVertical: spacing[10],
-  },
-  emptyIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: semantic.backgroundSecondary,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing[4],
-  },
-  emptyTitle: {
-    marginBottom: spacing[2],
-  },
-  browseButton: {
-    marginTop: spacing[6],
-  },
-  loadingMore: {
-    paddingVertical: spacing[4],
-  },
-})

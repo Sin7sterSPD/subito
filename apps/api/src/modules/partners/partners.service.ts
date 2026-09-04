@@ -442,6 +442,38 @@ export async function updatePartnerStatus(
   return { updated: true, status: data.status }
 }
 
+export async function updatePartnerAvailability(
+  userId: string,
+  availability: "online" | "offline"
+) {
+  const partner = await db.query.partners.findFirst({
+    where: eq(partners.userId, userId),
+  })
+
+  if (!partner) {
+    throw new NotFoundError("Partner")
+  }
+
+  if (partner.status !== "approved") {
+    throw new ForbiddenError(
+      `Partner account is ${partner.status}. Contact support.`
+    )
+  }
+
+  if (partner.availabilityStatus === "busy") {
+    throw new BadRequestError(
+      "Finish your active job before changing availability"
+    )
+  }
+
+  await db
+    .update(partners)
+    .set({ availabilityStatus: availability, updatedAt: new Date() })
+    .where(eq(partners.id, partner.id))
+
+  return { updated: true, availabilityStatus: availability }
+}
+
 export async function updatePartnerLocation(
   partnerId: string,
   data: {

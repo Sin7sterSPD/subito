@@ -126,6 +126,29 @@ partnersRouter.patch(
   }
 )
 
+const updateAvailabilitySchema = z.object({
+  availability: z.enum(["online", "offline"]),
+})
+
+partnersRouter.put(
+  "/me/availability",
+  requirePartner,
+  zValidator("json", updateAvailabilitySchema),
+  async (c) => {
+    const userId = c.get("userId")!
+    const { availability } = c.req.valid("json")
+    const result = await partnersService.updatePartnerAvailability(
+      userId,
+      availability
+    )
+
+    return c.json({
+      success: true,
+      data: result,
+    })
+  }
+)
+
 const acknowledgeReleaseSchema = z.object({
   bookingId: z.string().uuid(),
 })

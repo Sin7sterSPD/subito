@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react"
+import React, { useState } from "react"
 import {
   View,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   Alert,
@@ -13,127 +12,70 @@ import {
   Card,
   Button,
   Spinner,
-  Chip,
   TextField,
   Input,
   Label,
   Separator,
 } from "heroui-native"
-import { colors, semantic } from "../../src/theme/colors"
-import { spacing, borderRadius } from "../../src/theme/spacing"
+import { colors } from "../../src/theme/colors"
 import {
   useCartStore,
   useUserStore,
-  useBookingsStore,
 } from "../../src/store"
-import { BookingSlot } from "../../src/types/api"
 import { Ionicons } from "@expo/vector-icons"
 
-function SlotSelector({
-  slots,
-  availableDates,
-  selectedDate,
-  selectedSlot,
-  onDateChange,
-  onSlotChange,
-}: {
-  slots: Record<string, BookingSlot[]>
-  availableDates: string[]
-  selectedDate: string | null
-  selectedSlot: BookingSlot | null
-  onDateChange: (date: string) => void
-  onSlotChange: (slot: BookingSlot) => void
-}) {
-  const formatDateLabel = (dateStr: string) => {
-    const date = new Date(dateStr)
-    const today = new Date()
-    const tomorrow = new Date()
-    tomorrow.setDate(today.getDate() + 1)
+const formatSelectedSlot = (startTime: string | undefined) => {
+  if (!startTime) return ""
+  const date = new Date(startTime)
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ]
 
-    if (date.toDateString() === today.toDateString()) return "Today"
-    if (date.toDateString() === tomorrow.toDateString()) return "Tomorrow"
-    return date.toLocaleDateString("en-IN", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-    })
-  }
+  const dayName = days[date.getDay()]
+  const dayNum = date.getDate()
+  const monthName = months[date.getMonth()]
 
-  const formatTime = (timeStr: string) => {
-    return new Date(timeStr).toLocaleTimeString("en-IN", {
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-  }
+  let hours = date.getHours()
+  const minutes = date.getMinutes()
+  const ampm = hours >= 12 ? "PM" : "AM"
+  hours = hours % 12
+  hours = hours ? hours : 12
+  const strMinutes = minutes < 10 ? "0" + minutes : minutes
 
-  const dateSlots = selectedDate ? slots[selectedDate] || [] : []
+  return `${dayName}, ${dayNum} ${monthName} • ${hours}:${strMinutes} ${ampm}`
+}
 
-  return (
-    <View>
-      <Typography
-        type="body"
-        weight="semibold"
-        style={[styles.slotTitle, { color: semantic.textPrimary }]}
-      >
-        Select Date
-      </Typography>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.dateScroll}
-      >
-        {availableDates.map((date) => (
-          <Chip
-            key={date}
-            onPress={() => onDateChange(date)}
-            variant="soft"
-            color={selectedDate === date ? "accent" : "default"}
-            style={{ marginRight: spacing[2] }}
-          >
-            {formatDateLabel(date)}
-          </Chip>
-        ))}
-      </ScrollView>
+const formatRecurringSchedule = (cart: any) => {
+  if (!cart?.timeSlot?.time?.[0]?.start) return ""
+  const typeLabel =
+    cart.recurringType === "WEEKLY"
+      ? "Week"
+      : cart.recurringType === "BIWEEKLY"
+        ? "2 Weeks"
+        : "Month"
 
-      {selectedDate && dateSlots.length > 0 && (
-        <>
-          <Typography
-            type="body"
-            weight="semibold"
-            style={[styles.slotTitle, { color: semantic.textPrimary }]}
-          >
-            Select Time
-          </Typography>
-          <View style={styles.slotsGrid}>
-            {dateSlots.map((slot, idx) => (
-              <View key={idx} style={{ position: "relative" }}>
-                <Chip
-                  onPress={() => !slot.isFull && onSlotChange(slot)}
-                  disabled={slot.isFull}
-                  variant="soft"
-                  color={selectedSlot?.startTime === slot.startTime ? "accent" : "default"}
-                  style={[
-                    slot.isFull && { opacity: 0.45 },
-                  ]}
-                >
-                  {formatTime(slot.startTime)}
-                </Chip>
-                {slot.isExperiencingSurge && (
-                  <View style={styles.surgeBadge}>
-                    <Ionicons
-                      name="trending-up"
-                      size={10}
-                      color={colors.orange[9]}
-                    />
-                  </View>
-                )}
-              </View>
-            ))}
-          </View>
-        </>
-      )}
-    </View>
-  )
+  const date = new Date(cart.timeSlot.time[0].start)
+  let hours = date.getHours()
+  const minutes = date.getMinutes()
+  const ampm = hours >= 12 ? "PM" : "AM"
+  hours = hours % 12
+  hours = hours ? hours : 12
+  const strMinutes = minutes < 10 ? "0" + minutes : minutes
+  const timeLabel = `${hours}:${strMinutes} ${ampm}`
+
+  return `Every ${typeLabel} • ${timeLabel}`
 }
 
 export default function CheckoutScreen() {
@@ -144,49 +86,8 @@ export default function CheckoutScreen() {
     isLoading: cartLoading,
   } = useCartStore()
   const { selectedAddress } = useUserStore()
-  const {
-    slots,
-    availableDates,
-    fetchSlots,
-    isLoading: slotsLoading,
-  } = useBookingsStore()
-  const [selectedDate, setSelectedDate] = useState<string | null>(null)
-  const [selectedSlot, setSelectedSlot] = useState<BookingSlot | null>(null)
   const [notes, setNotes] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
-
-  useEffect(() => {
-    if (selectedAddress) {
-      setSelectedSlot(null)
-      setSelectedDate(null)
-      fetchSlots(
-        selectedAddress.latitude,
-        selectedAddress.longitude,
-        cart?.bookingType
-      )
-    }
-  }, [selectedAddress, cart?.bookingType, fetchSlots])
-
-  useEffect(() => {
-    if (
-      availableDates.length > 0 &&
-      (!selectedDate || !availableDates.includes(selectedDate))
-    ) {
-      setSelectedDate(availableDates[0])
-    }
-  }, [availableDates, selectedDate])
-
-  const handleDateChange = (date: string) => {
-    setSelectedDate(date)
-    setSelectedSlot(null)
-  }
-
-  const handleSlotChange = async (slot: BookingSlot) => {
-    setSelectedSlot(slot)
-    await updateCart({
-      timeSlot: { time: [{ start: slot.startTime }] },
-    })
-  }
 
   const handleCheckout = async () => {
     if (!selectedAddress) {
@@ -195,7 +96,7 @@ export default function CheckoutScreen() {
       return
     }
 
-    if (cart?.bookingType !== "INSTANT" && !selectedSlot) {
+    if (cart?.bookingType !== "INSTANT" && !cart?.timeSlot?.time?.[0]?.start) {
       Alert.alert("Error", "Please select a time slot")
       return
     }
@@ -203,7 +104,9 @@ export default function CheckoutScreen() {
     setIsProcessing(true)
 
     try {
-      await updateCart({ deliveryAddressId: selectedAddress.id })
+      await updateCart({ 
+        deliveryAddressId: selectedAddress.id,
+      })
 
       const result = await checkoutV2()
 
@@ -236,55 +139,59 @@ export default function CheckoutScreen() {
   const isInstant = cart.bookingType === "INSTANT"
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: semantic.background }} edges={["bottom"]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.section}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#f7f7f8" }} edges={["bottom"]}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+        
+        {/* Delivery Address Section */}
+        <View className="p-4">
           <Typography
             type="body"
             weight="semibold"
-            style={[styles.sectionTitle, { color: semantic.textPrimary }]}
+            className="text-gray-12 mb-3"
           >
             Delivery Address
           </Typography>
+          
           <TouchableOpacity
-            style={styles.addressCard}
+            className="flex-row items-center bg-white p-4 rounded-sm border border-gray-03"
             onPress={() => router.push("/(screens)/addresses")}
+            activeOpacity={0.8}
           >
             {selectedAddress ? (
               <>
-                <View style={styles.addressIcon}>
+                <View className="bg-blue-01 h-10 w-10 items-center justify-center rounded-sm mr-3">
                   <Ionicons
                     name="location"
                     size={20}
-                    color={semantic.primary}
+                    color="#2a9cff"
+                    className="text-blue-03"
                   />
                 </View>
-                <View style={styles.addressContent}>
-                  <Typography type="body-sm" weight="semibold" style={{ color: semantic.textPrimary }}>
+                <View className="flex-1">
+                  <Typography type="body-sm" weight="semibold" className="text-gray-12">
                     {selectedAddress.name}
                   </Typography>
                   <Typography
                     type="body-sm"
                     numberOfLines={2}
-                    style={{ color: semantic.textMuted }}
+                    className="text-gray-07 mt-0.5 leading-relaxed"
                   >
                     {selectedAddress.addressLine1}, {selectedAddress.city}
                   </Typography>
                 </View>
-                <Typography type="body" weight="medium" className="text-accent">
+                <Typography type="body-sm" weight="semibold" className="text-blue-03">
                   Change
                 </Typography>
               </>
             ) : (
               <>
-                <View style={styles.addressIcon}>
-                  <Ionicons name="add" size={20} color={semantic.primary} />
+                <View className="bg-blue-01 h-10 w-10 items-center justify-center rounded-sm mr-3">
+                  <Ionicons name="add" size={20} color="#2a9cff" className="text-blue-03" />
                 </View>
                 <Typography
                   type="body-sm"
                   weight="semibold"
-                  className="text-accent"
-                  style={styles.addressContent}
+                  className="text-blue-03 flex-1"
                 >
                   Add Delivery Address
                 </Typography>
@@ -293,257 +200,196 @@ export default function CheckoutScreen() {
           </TouchableOpacity>
         </View>
 
+        <Separator className="bg-gray-03 mx-4" />
+
+        {/* Selected Booking Slot Section */}
         {!isInstant && (
-          <View style={styles.section}>
-            {slotsLoading ? (
-              <Spinner style={{ paddingVertical: spacing[4] }} />
-            ) : (
-              <SlotSelector
-                slots={slots}
-                availableDates={availableDates}
-                selectedDate={selectedDate}
-                selectedSlot={selectedSlot}
-                onDateChange={handleDateChange}
-                onSlotChange={handleSlotChange}
-              />
-            )}
-            {selectedSlot?.isExperiencingSurge && (
-              <Card style={styles.surgeWarning} variant="secondary">
-                <View style={styles.surgeContent}>
+          <>
+            <View className="p-4">
+              <Typography
+                type="body"
+                weight="semibold"
+                className="text-gray-12 mb-3"
+              >
+                Booking Details
+              </Typography>
+              
+              <Card
+                className="flex-row items-center justify-between bg-white p-4 rounded-sm border border-gray-03"
+                variant="default"
+              >
+                <View className="flex-row items-center gap-3 flex-1">
+                  <View className="bg-blue-01 h-10 w-10 items-center justify-center rounded-sm">
+                    <Ionicons
+                      name={cart.bookingType === "RECURRING" ? "repeat" : "time"}
+                      size={20}
+                      color="#2a9cff"
+                      className="text-blue-03"
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <Typography type="body-sm" weight="semibold" className="text-gray-12">
+                      {cart.bookingType === "RECURRING" ? "Active Schedule" : "Selected Slot"}
+                    </Typography>
+                    <Typography type="body-sm" weight="medium" className="text-blue-03 mt-0.5 leading-relaxed">
+                      {cart.bookingType === "RECURRING"
+                        ? formatRecurringSchedule(cart)
+                        : formatSelectedSlot(cart?.timeSlot?.time?.[0]?.start)}
+                    </Typography>
+                  </View>
+                </View>
+              </Card>
+
+              {/* Surge Pricing Alert */}
+              {parseFloat(cart.surgePrice || "0") > 0 && (
+                <Card className="mt-3 bg-orange-01 border border-orange-03 p-3 rounded-sm flex-row items-center gap-2" variant="secondary">
                   <Ionicons
                     name="trending-up"
                     size={20}
                     color={colors.orange[9]}
                   />
                   <Typography
-                    type="body"
-                    style={[styles.surgeText, { color: colors.orange[11] }]}
+                    type="body-sm"
+                    className="text-orange-11 flex-1 font-inter-medium leading-relaxed"
                   >
-                    High demand! Surge pricing of ₹{selectedSlot.surgePrice} applies
+                    High demand! Surge pricing of ₹{cart.surgePrice} applies
                   </Typography>
-                </View>
-              </Card>
-            )}
-          </View>
+                </Card>
+              )}
+            </View>
+            <Separator className="bg-gray-03 mx-4" />
+          </>
         )}
 
-        <View style={styles.section}>
+        {/* Order Summary Section */}
+        <View className="p-4">
           <Typography
             type="body"
             weight="semibold"
-            style={[styles.sectionTitle, { color: semantic.textPrimary }]}
+            className="text-gray-12 mb-3"
           >
             Order Summary
           </Typography>
-          <Card variant="default">
+          <Card className="bg-white p-4 rounded-sm border border-gray-03" variant="default">
             {cart.items.map((item, idx) => (
               <React.Fragment key={item.id}>
-                <View style={styles.orderItem}>
-                  <View style={styles.orderItemInfo}>
-                    <Typography type="body-sm" style={{ color: semantic.textPrimary }}>
+                <View className="flex-row justify-between items-center py-1">
+                  <View className="flex-1">
+                    <Typography type="body-sm" className="text-gray-12 font-inter-medium">
                       {item.catalog?.name || "Service"}
                     </Typography>
-                    <Typography type="body-sm" style={{ color: semantic.textMuted }}>
+                    <Typography type="body-sm" className="text-gray-07 mt-0.5">
                       Qty: {item.quantity}
                     </Typography>
                   </View>
-                  <Typography type="body-sm" weight="medium" style={{ color: semantic.textPrimary }}>
+                  <Typography type="body-sm" weight="semibold" className="text-gray-12 tabular-nums">
                     ₹{item.totalPrice}
                   </Typography>
                 </View>
                 {idx < cart.items.length - 1 && (
-                  <Separator style={{ marginVertical: spacing[2] }} />
+                  <Separator className="bg-gray-02 my-2.5" />
                 )}
               </React.Fragment>
             ))}
           </Card>
         </View>
 
-        <View style={styles.section}>
+        <Separator className="bg-gray-03 mx-4" />
+
+        {/* Notes for Partner Section */}
+        <View className="p-4">
           <TextField>
-            <Label>Notes for partner (optional)</Label>
+            <Label className="mb-1.5 font-inter-medium text-body-s text-gray-12">Notes for partner (optional)</Label>
             <Input
               placeholder="Any special instructions..."
               value={notes}
               onChangeText={setNotes}
               multiline
               numberOfLines={3}
-              style={{ minHeight: 80, textAlignVertical: "top" }}
+              className="rounded-sm border border-gray-03 focus:border-blue-03 bg-white p-3 min-h-[80px] leading-relaxed text-body-s"
             />
           </TextField>
         </View>
 
-        <View style={styles.section}>
-          <Card variant="secondary">
-            <View style={styles.priceRow}>
-              <Typography type="body-sm" style={{ color: semantic.textSecondary }}>
+        <Separator className="bg-gray-03 mx-4" />
+
+        {/* Payment Summary Section */}
+        <View className="p-4">
+          <Card className="bg-white p-4 rounded-sm border border-gray-03" variant="secondary">
+            <View className="flex-row justify-between items-center mb-2.5">
+              <Typography type="body-sm" className="text-gray-08">
                 Subtotal
               </Typography>
-              <Typography type="body-sm" style={{ color: semantic.textPrimary }}>
+              <Typography type="body-sm" className="text-gray-12 tabular-nums">
                 ₹{cart.totalPrice}
               </Typography>
             </View>
-            {parseFloat(cart.discountAmount) > 0 && (
-              <View style={styles.priceRow}>
-                <Typography type="body-sm" className="text-success">
+            
+            {parseFloat(cart.discountAmount || "0") > 0 && (
+              <View className="flex-row justify-between items-center mb-2.5">
+                <Typography type="body-sm" className="text-green-08 font-inter-semibold">
                   Discount
                 </Typography>
-                <Typography type="body-sm" className="text-success">
+                <Typography type="body-sm" className="text-green-08 font-inter-semibold tabular-nums">
                   -₹{cart.discountAmount}
                 </Typography>
               </View>
             )}
-            {parseFloat(cart.surgePrice) > 0 && (
-              <View style={styles.priceRow}>
-                <Typography type="body-sm" className="text-warning">
+            
+            {parseFloat(cart.surgePrice || "0") > 0 && (
+              <View className="flex-row justify-between items-center mb-2.5">
+                <Typography type="body-sm" className="text-orange-08 font-inter-semibold">
                   Surge
                 </Typography>
-                <Typography type="body-sm" className="text-warning">
+                <Typography type="body-sm" className="text-orange-08 font-inter-semibold tabular-nums">
                   +₹{cart.surgePrice}
                 </Typography>
               </View>
             )}
-            <View style={styles.priceRow}>
-              <Typography type="body-sm" style={{ color: semantic.textSecondary }}>
+            
+            <View className="flex-row justify-between items-center mb-2.5">
+              <Typography type="body-sm" className="text-gray-08">
                 GST
               </Typography>
-              <Typography type="body-sm" style={{ color: semantic.textPrimary }}>
+              <Typography type="body-sm" className="text-gray-12 tabular-nums">
                 ₹{cart.gst}
               </Typography>
             </View>
-            <View style={[styles.priceRow, styles.totalRow]}>
-              <Typography type="body" weight="bold" style={{ color: semantic.textPrimary }}>
-                Total
+            
+            <Separator className="bg-gray-02 my-3" />
+            
+            <View className="flex-row justify-between items-center">
+              <Typography type="body" weight="bold" className="text-gray-12">
+                Total Amount
               </Typography>
-              <Typography type="body" weight="bold" className="text-accent">
+              <Typography type="body" weight="bold" className="text-blue-03 tabular-nums text-[20px]">
                 ₹{cart.finalTotalAmount}
               </Typography>
             </View>
           </Card>
         </View>
-
-        <View style={styles.bottomPadding} />
       </ScrollView>
 
-      <View style={styles.footer}>
-        <View style={styles.footerPrice}>
-          <Typography type="body-sm" style={{ color: semantic.textMuted }}>
+      {/* Footer Payment Bar */}
+      <View className="absolute bottom-0 left-0 right-0 flex-row items-center p-4 border-t border-gray-03 bg-white">
+        <View className="mr-4">
+          <Typography type="body-sm" className="text-gray-07">
             Total
           </Typography>
-          <Typography type="h5" weight="bold" className="text-accent">
+          <Typography type="h5" weight="bold" className="text-blue-03 tabular-nums">
             ₹{cart.finalTotalAmount}
           </Typography>
         </View>
         <Button
-          variant="primary"
           onPress={handleCheckout}
-          isDisabled={!selectedAddress || (!isInstant && !selectedSlot) || isProcessing || cartLoading}
-          style={styles.checkoutButton}
+          isDisabled={!selectedAddress || (!isInstant && !cart?.timeSlot?.time?.[0]?.start) || isProcessing || cartLoading}
+          className="bg-blue-03 rounded-sm py-3.5 flex-1 transition-transform active:scale-[0.96]"
         >
-          {isProcessing ? "Processing..." : "Proceed to Pay"}
+          <Button.Label className="text-white font-inter-bold text-body-s">
+            {isProcessing ? "Processing..." : "Proceed to Pay"}
+          </Button.Label>
         </Button>
       </View>
     </SafeAreaView>
   )
 }
-
-const styles = StyleSheet.create({
-  section: {
-    padding: spacing[4],
-    borderBottomWidth: 1,
-    borderBottomColor: semantic.border,
-  },
-  sectionTitle: {
-    marginBottom: spacing[3],
-  },
-  addressCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: semantic.backgroundSecondary,
-    padding: spacing[3],
-    borderRadius: borderRadius.lg,
-  },
-  addressIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.blue[1],
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  addressContent: {
-    flex: 1,
-    marginLeft: spacing[3],
-  },
-  slotTitle: {
-    marginBottom: spacing[3],
-  },
-  dateScroll: {
-    marginBottom: spacing[4],
-  },
-  slotsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing[2],
-  },
-  surgeBadge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    backgroundColor: colors.orange[1],
-    borderRadius: 8,
-    padding: 2,
-    zIndex: 10,
-  },
-  surgeWarning: {
-    marginTop: spacing[3],
-    backgroundColor: colors.orange[1],
-    borderColor: colors.orange[3],
-    borderWidth: 1,
-  },
-  surgeContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  surgeText: {
-    marginLeft: spacing[2],
-    flex: 1,
-  },
-  orderItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  orderItemInfo: {
-    flex: 1,
-  },
-  priceRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: spacing[2],
-  },
-  totalRow: {
-    marginTop: spacing[2],
-    paddingTop: spacing[3],
-    borderTopWidth: 1,
-    borderTopColor: semantic.border,
-    marginBottom: 0,
-  },
-  footer: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: spacing[4],
-    borderTopWidth: 1,
-    borderTopColor: semantic.border,
-    backgroundColor: semantic.background,
-  },
-  footerPrice: {
-    marginRight: spacing[4],
-  },
-  checkoutButton: {
-    flex: 1,
-  },
-  bottomPadding: {
-    height: spacing[4],
-  },
-})

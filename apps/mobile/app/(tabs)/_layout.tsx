@@ -1,7 +1,6 @@
 import { Tabs } from "expo-router"
 import { Ionicons } from "@expo/vector-icons"
-import { View, StyleSheet } from "react-native"
-import { colors, semantic } from "../../src/theme/colors"
+import { View } from "react-native"
 import { useCartStore } from "../../src/store"
 import { Text } from "../../src/components/ui"
 import { AuthGate } from "@/src/components/auth-gate"
@@ -17,7 +16,7 @@ function TabBarIcon({
     <Ionicons
       name={name}
       size={24}
-      color={focused ? semantic.primary : semantic.textMuted}
+      color={focused ? "#2a9cff" : "#9ea2ad"}
     />
   )
 }
@@ -29,8 +28,8 @@ function CartBadge() {
   if (itemCount === 0) return null
 
   return (
-    <View style={styles.badge}>
-      <Text variant="tiny" color={colors.white} weight="700">
+    <View className="absolute -top-1 -right-2 bg-red-08 rounded-full min-w-[18px] h-[18px] items-center justify-center px-1">
+      <Text variant="tiny" color="#ffffff" weight="700">
         {itemCount > 9 ? "9+" : itemCount}
       </Text>
     </View>
@@ -43,10 +42,20 @@ export default function TabsLayout() {
       <Tabs
         screenOptions={{
           headerShown: false,
-          tabBarActiveTintColor: semantic.primary,
-          tabBarInactiveTintColor: semantic.textMuted,
-          tabBarStyle: styles.tabBar,
-          tabBarLabelStyle: styles.tabBarLabel,
+          tabBarActiveTintColor: "#2a9cff",
+          tabBarInactiveTintColor: "#9ea2ad",
+          tabBarStyle: {
+            backgroundColor: "#ffffff",
+            borderTopWidth: 1,
+            borderTopColor: "#e9eaec",
+            paddingTop: 8,
+            height: 85,
+          },
+          tabBarLabelStyle: {
+            fontSize: 11,
+            fontWeight: "500",
+            marginBottom: 8,
+          },
         }}
       >
         <Tabs.Screen
@@ -104,30 +113,3 @@ export default function TabsLayout() {
     </AuthGate>
   )
 }
-
-const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: colors.white,
-    borderTopWidth: 1,
-    borderTopColor: colors.gray[2],
-    paddingTop: 8,
-    height: 85,
-  },
-  tabBarLabel: {
-    fontSize: 11,
-    fontWeight: "500",
-    marginBottom: 8,
-  },
-  badge: {
-    position: "absolute",
-    top: -4,
-    right: -8,
-    backgroundColor: semantic.error,
-    borderRadius: 10,
-    minWidth: 18,
-    height: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 4,
-  },
-})
