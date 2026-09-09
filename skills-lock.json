@@ -37,12 +37,6 @@
       "skillPath": "plugins/expo/skills/expo-api-routes/SKILL.md",
       "computedHash": "267bd3bfa27718103a74458df1e875ff6f6db31cba2ebe1d8a527cf25da39761"
     },
-    "expo-ui": {
-      "source": "expo/skills",
-      "sourceType": "github",
-      "skillPath": "plugins/expo/skills/expo-ui/SKILL.md",
-      "computedHash": "132d7bea7b1f1d026d66efa3e2c252ba86b8fa9a468c97ed1bf3ca5415caec97"
-    },
     "grill-me": {
       "source": "mattpocock/skills",
       "sourceType": "github",
