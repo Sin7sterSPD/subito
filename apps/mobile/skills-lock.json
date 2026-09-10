@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "expo-ui": {
+      "source": "expo/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/expo/skills/expo-ui/SKILL.md",
+      "computedHash": "132d7bea7b1f1d026d66efa3e2c252ba86b8fa9a468c97ed1bf3ca5415caec97"
+    },
     "make-interfaces-feel-better": {
       "source": "jakubkrehel/make-interfaces-feel-better",
       "sourceType": "github",

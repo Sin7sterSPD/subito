@@ -13,6 +13,7 @@
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",
     "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
+    "@expo/ui": "~0.2.0-beta.9",
     "@expo/vector-icons": "^15.0.3",
     "@gorhom/bottom-sheet": "^5.2.9",
     "@maplibre/maplibre-react-native": "^11.3.4",
