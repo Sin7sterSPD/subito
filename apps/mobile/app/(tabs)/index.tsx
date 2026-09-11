@@ -1,4 +1,5 @@
-// main Index file — Premium Marketplace Home
+// Home — compact 2-col grid, single page background, brand-blue chips.
+// Data + navigation logic preserved. UI-only rework.
 
 import React, { useEffect, useState, useCallback, useMemo } from "react"
 import {
@@ -7,14 +8,20 @@ import {
   RefreshControl,
   TouchableOpacity,
   Text,
-  Dimensions,
   StyleSheet,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
 import { Image } from "expo-image"
 import { LinearGradient } from "expo-linear-gradient"
-import { Spinner, Avatar } from "heroui-native"
+import {
+  Spinner,
+  Avatar,
+  Card,
+  Chip,
+  Typography,
+  PressableFeedback,
+} from "heroui-native"
 import {
   useAuthStore,
   useUserStore,
@@ -25,10 +32,18 @@ import {
 import { Ionicons } from "@expo/vector-icons"
 import { Listing, Bundle } from "../../src/types/api"
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window")
-const SECTION_PADDING = 24
+// ─── Layout tokens ────────────────────────────────────────────────
+// One page background everywhere (gray-01). Cards stay white on top.
+// Compact dense grid: edge 16, gap 8, image 100, banner 192.
 
-// ─── Image Lookups ──────────────────────────────────────────────
+const SECTION_PADDING = 16
+const GRID_GAP = 8
+const PAGE_BG = "#F7F7F8"
+const BRAND_BLUE = "#2a9cff"
+const CARD_IMAGE_HEIGHT = 100
+const BANNER_HEIGHT = 192
+
+// ─── Image Lookups (unchanged) ────────────────────────────────────
 
 const serviceImages: Record<string, number> = {
   "floor.png": require("../../assets/home/main/floor-cleaning.jpg"),
@@ -86,18 +101,7 @@ function getBundleImage(name: string, image?: string) {
   return require("../../assets/home/main/bundle-clean.png")
 }
 
-// Category chip images
-const categoryChipImages: Record<string, number> = {
-  cleaning: require("../../assets/home/main/floor-cleaning.jpg"),
-  plumbing: require("../../assets/home/main/plumbing.jpg"),
-  electrical: require("../../assets/home/main/ac-repair.jpg"),
-  painting: require("../../assets/home/main/painting.jpg"),
-  cooking: require("../../assets/home/main/cook-preview.jpg"),
-  "ac service": require("../../assets/home/main/ac-repair.jpg"),
-  "appliance repair": require("../../assets/home/main/ac-repair.jpg"),
-}
-
-// ─── Address Selector ───────────────────────────────────────────
+// ─── Address Selector ─────────────────────────────────────────────
 
 function AddressSelector() {
   const { selectedAddress } = useUserStore()
@@ -107,9 +111,13 @@ function AddressSelector() {
       className="flex-row items-center"
       onPress={() => router.push("/(screens)/addresses")}
       activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={`Deliver to ${selectedAddress?.name || "Home"}. Change address`}
+      hitSlop={8}
+      style={{ minHeight: 44 }}
     >
       <View className="bg-blue-01 h-9 w-9 items-center justify-center rounded-full">
-        <Ionicons name="location" size={18} color="#2a9cff" />
+        <Ionicons name="location" size={18} color={BRAND_BLUE} />
       </View>
       <View className="ml-2.5">
         <Text className="text-caption-s font-inter-regular text-gray-07">
@@ -126,107 +134,106 @@ function AddressSelector() {
   )
 }
 
-// ─── Section Header ─────────────────────────────────────────────
+// ─── Section Header ───────────────────────────────────────────────
 
 function SectionHeader({
   title,
   showSeeAll = false,
   seeAllText = "See all",
   onSeeAllPress,
+  accessibilityLabel,
 }: {
   title: string
   showSeeAll?: boolean
   seeAllText?: string
   onSeeAllPress?: () => void
+  accessibilityLabel?: string
 }) {
   return (
     <View
       className="flex-row items-center justify-between"
       style={{
         paddingHorizontal: SECTION_PADDING,
-        marginBottom: 14,
-        marginTop: 28,
+        marginBottom: 10,
+        marginTop: 20,
       }}
     >
-      <Text className="font-jakarta-bold text-gray-12" style={{ fontSize: 20 }}>
+      <Typography
+        type="body"
+        weight="bold"
+        className="text-gray-12 font-jakarta-bold text-[16px] leading-[22px]"
+      >
         {title}
-      </Text>
+      </Typography>
       {showSeeAll && (
-        <TouchableOpacity onPress={onSeeAllPress} activeOpacity={0.7}>
+        <TouchableOpacity
+          onPress={onSeeAllPress}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={accessibilityLabel || `${seeAllText} — ${title}`}
+          hitSlop={8}
+          style={{ minHeight: 32, justifyContent: "center" }}
+          className="flex-row items-center gap-1"
+        >
           <Text className="font-inter-semibold text-caption-l text-blue-03">
             {seeAllText}
           </Text>
+          <Ionicons name="arrow-forward" size={14} color={BRAND_BLUE} />
         </TouchableOpacity>
       )}
     </View>
   )
 }
 
-// ─── Marketing Banner ───────────────────────────────────────────
+// ─── Marketing Banner ─────────────────────────────────────────────
+// Taller hero (192) + clear gap below. Single press target; inner CTA
+// is a visual View only.
 
 function MarketingBanner({ onBookPress }: { onBookPress: () => void }) {
   return (
-    <TouchableOpacity activeOpacity={0.95} onPress={onBookPress}>
-      <View style={{ marginHorizontal: SECTION_PADDING, marginTop: 16 }}>
-        <LinearGradient
-          colors={["#2a9cff", "#70bdff"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={{
-            height: 180,
-            borderRadius: 20,
-            overflow: "hidden",
-          }}
-        >
-          {/* Background Circles */}
-          <View className="absolute -top-20 -left-20 h-56 w-56 rounded-full bg-white/10" />
-          <View className="absolute top-0 right-0 h-40 w-40 rounded-full bg-white/5" />
-          <View className="absolute -bottom-10 left-20 h-32 w-32 rounded-full bg-white/5" />
+    <PressableFeedback
+      onPress={onBookPress}
+      accessibilityRole="button"
+      accessibilityLabel="Get your home sparkling clean. Book a service"
+      accessibilityHint="Opens search"
+      style={{ marginHorizontal: SECTION_PADDING, marginTop: 16 }}
+    >
+      <LinearGradient
+        colors={[BRAND_BLUE, "#70bdff"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.bannerGradient}
+      >
+        <View className="absolute -top-20 -left-20 h-56 w-56 rounded-full bg-white/10" />
 
-          {/* Text Content */}
-          <View
-            className="z-20 flex-1 justify-center pl-6"
-            style={{ paddingRight: 140 }}
-          >
-            <Text
-              className="font-jakarta-bold text-white"
-              style={{ fontSize: 22, lineHeight: 28 }}
-            >
-              Get Your Home{"\n"}Sparkling Clean
+        <View style={styles.bannerContent}>
+          <Typography className="font-jakarta-bold text-white text-[22px] leading-[28px]">
+            Get Your Home{"\n"}Sparkling Clean
+          </Typography>
+          <Typography className="font-inter-regular text-white/90 text-[13px] mt-1.5 leading-[18px]">
+            Trusted professionals at your doorstep.
+          </Typography>
+          <View style={styles.bannerCta} accessibilityElementsHidden>
+            <Text className="font-inter-semibold text-blue-03 text-caption-l">
+              Book Service
             </Text>
-            <Text className="font-inter-regular text-caption-l mt-1.5 text-white/90">
-              Trusted professionals at your doorstep.
-            </Text>
-            <TouchableOpacity
-              onPress={onBookPress}
-              activeOpacity={0.8}
-              className="mt-4 self-start rounded-2xl bg-white px-5 py-2.5"
-              style={styles.bannerBtn}
-            >
-              <Text className="font-inter-semibold text-blue-03 text-caption-l">
-                Book Service
-              </Text>
-            </TouchableOpacity>
+            <Ionicons name="arrow-forward" size={14} color={BRAND_BLUE} />
           </View>
-          <Image
-            source={require("../../assets/home/girl-clean.png")}
-            contentFit="contain"
-            style={{
-              position: "absolute",
-              bottom: -10,
-              right: -10,
-              width: 140,
-              height: 195,
-              zIndex: 30,
-            }}
-          />
-        </LinearGradient>
-      </View>
-    </TouchableOpacity>
+        </View>
+        <Image
+          source={require("../../assets/home/girl-clean.png")}
+          contentFit="contain"
+          accessibilityLabel="Cleaning professional illustration"
+          style={styles.bannerImage}
+        />
+      </LinearGradient>
+    </PressableFeedback>
   )
 }
 
-// ─── Category Chip ──────────────────────────────────────────────
+// ─── Category Pill — HeroUI Chip in brand blue ────────────────────
+// Selected: solid app blue (#2a9cff / blue-03), white label.
+// Unselected: white pill, dark label — floats on page gray, no border.
 
 function CategoryChip({
   name,
@@ -237,31 +244,20 @@ function CategoryChip({
   selected: boolean
   onPress: () => void
 }) {
-  const chipImage = categoryChipImages[name.toLowerCase()]
-
   return (
-    <TouchableOpacity
+    <Chip
+      size="md"
       onPress={onPress}
-      activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      accessibilityLabel={`Filter by ${name}${selected ? ", selected" : ""}`}
       className={
         selected
-          ? "bg-blue-03 flex-row items-center rounded-full"
-          : "border-gray-02 flex-row items-center rounded-full border bg-white"
+          ? "bg-blue-03 h-10 rounded-full border-0 px-4"
+          : "h-10 rounded-full border-0 bg-white px-4"
       }
-      style={[
-        styles.categoryChip,
-        !chipImage && styles.categoryChipNoImage,
-        !selected && styles.categoryChipShadow,
-      ]}
     >
-      {chipImage && (
-        <Image
-          source={chipImage}
-          style={styles.categoryChipImage}
-          contentFit="cover"
-        />
-      )}
-      <Text
+      <Chip.Label
         className={
           selected
             ? "font-inter-semibold text-caption-l text-white"
@@ -269,14 +265,14 @@ function CategoryChip({
         }
       >
         {name}
-      </Text>
-    </TouchableOpacity>
+      </Chip.Label>
+    </Chip>
   )
 }
 
-// ─── Service Card (Image-first, 220px wide) ─────────────────────
-
-const SERVICE_CARD_WIDTH = 160
+// ─── Service Card — compact, equal height ─────────────────────────
+// Fixed 100px image + 1-line title + 2-line desc (reserved height) +
+// footer pinned bottom via Body flex-1. White, no border, no shadow.
 
 function ServiceCard({
   listing,
@@ -289,61 +285,63 @@ function ServiceCard({
   const startingPrice = listing.catalogs?.[0]?.price || listing.basePrice
 
   return (
-    <TouchableOpacity activeOpacity={0.9} onPress={onPress}>
-      <View style={[styles.serviceCard, { width: SERVICE_CARD_WIDTH }]}>
-        {/* Image — top corners only rounded */}
-        <View style={styles.serviceImageWrap}>
-          <Image
-            source={imageSource}
-            style={StyleSheet.absoluteFillObject}
-            contentFit="cover"
-          />
-        </View>
-
-        {/* Content */}
-        <View style={styles.serviceCardBody}>
-          <Text
-            className="font-jakarta-semibold text-gray-12"
-            style={styles.serviceCardTitle}
+    <PressableFeedback
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${listing.name}, starts at rupees ${startingPrice}`}
+      accessibilityHint="Opens service details"
+      animation={{ scale: { value: 0.97 } }}
+      style={{ flex: 1 }}
+    >
+      <Card
+        variant="default"
+        className="overflow-hidden rounded-2xl border-0 bg-white"
+        style={styles.serviceCard}
+      >
+        <Image
+          source={imageSource}
+          style={styles.serviceImage}
+          contentFit="cover"
+          accessibilityLabel={`${listing.name} image`}
+        />
+        <Card.Body className="px-2.5 pt-2.5 pb-0">
+          <Card.Title
+            className="font-jakarta-bold text-gray-12 text-[13px] leading-[18px]"
             numberOfLines={1}
           >
             {listing.name}
-          </Text>
-
-          <Text
-            className="font-inter-regular text-gray-07"
-            style={styles.serviceCardDesc}
+          </Card.Title>
+          <Card.Description
+            className="font-inter-regular text-gray-07 text-[11px] leading-[15px] mt-1"
             numberOfLines={2}
+            style={styles.serviceDesc}
           >
             {listing.shortDescription ||
               "Professional service at your convenience"}
-          </Text>
-
-          <View style={styles.serviceCardBottom}>
-            <View style={styles.priceContainer}>
-              <Text style={styles.priceLabel}>Starts at</Text>
-              <Text
-                className="font-jakarta-bold text-gray-12"
-                style={styles.priceValue}
-              >
-                ₹{startingPrice}
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={onPress}
-              activeOpacity={0.7}
-              style={styles.bookBtn}
-            >
-              <Text style={styles.bookBtnText}>Book</Text>
-            </TouchableOpacity>
+          </Card.Description>
+        </Card.Body>
+        <Card.Footer className="flex-row items-center justify-between px-2.5 pt-2 pb-2.5">
+          <View>
+            <Text className="font-inter-regular text-gray-07 text-[10px] leading-[13px]">
+              Starts at
+            </Text>
+            <Text className="font-jakarta-bold text-gray-12 text-[14px] leading-[19px] tabular-nums">
+              ₹{startingPrice}
+            </Text>
           </View>
-        </View>
-      </View>
-    </TouchableOpacity>
+          <View
+            accessibilityElementsHidden
+            className="bg-blue-01 h-7 w-7 items-center justify-center rounded-full"
+          >
+            <Ionicons name="arrow-forward" size={14} color={BRAND_BLUE} />
+          </View>
+        </Card.Footer>
+      </Card>
+    </PressableFeedback>
   )
 }
 
-// ─── Bundle Card (Horizontal) ───────────────────────────────────
+// ─── Bundle Card — white, no border/shadow ────────────────────────
 
 function BundleCard({
   bundle,
@@ -357,19 +355,24 @@ function BundleCard({
   const isKitchen =
     bundle.name.toLowerCase().includes("cook") ||
     bundle.name.toLowerCase().includes("kitchen")
-  const accentColor = isKitchen ? "#FF5722" : "#2a9cff"
+  const accentColor = isKitchen ? "#FF5722" : BRAND_BLUE
 
   return (
-    <TouchableOpacity activeOpacity={0.9} onPress={onPress}>
+    <PressableFeedback
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${bundle.name}, from rupees ${bundle.bundlePrice}`}
+      style={{ width: "100%" }}
+    >
       <View style={styles.bundleCard}>
-        {/* Collage image — 35% */}
         <View style={styles.bundleImageWrap}>
           <Image
             source={getBundleImage(bundle.name, bundle.image)}
             style={StyleSheet.absoluteFillObject}
             contentFit="cover"
+            accessibilityElementsHidden
           />
-          {discount && (
+          {discount ? (
             <View
               className="absolute top-2 left-2 rounded px-1.5 py-0.5"
               style={{ backgroundColor: accentColor }}
@@ -381,10 +384,8 @@ function BundleCard({
                 {discount}% OFF
               </Text>
             </View>
-          )}
+          ) : null}
         </View>
-
-        {/* Content — 65% */}
         <View style={styles.bundleContent}>
           <View style={{ flex: 1, justifyContent: "space-between" }}>
             <View>
@@ -395,7 +396,6 @@ function BundleCard({
               >
                 {bundle.name}
               </Text>
-
               {bundle.description && (
                 <Text
                   className="font-inter-regular text-gray-07"
@@ -406,7 +406,6 @@ function BundleCard({
                 </Text>
               )}
             </View>
-
             <View style={styles.bundleMetaRow}>
               <Ionicons name="layers-outline" size={13} color="#7E869A" />
               <Text
@@ -416,28 +415,26 @@ function BundleCard({
                 {servicesCount} Services
               </Text>
             </View>
-
             <View style={styles.bundleFooter}>
               <Text
-                className="font-jakarta-bold text-gray-12"
+                className="font-jakarta-bold text-gray-12 tabular-nums"
                 style={styles.bundlePriceText}
               >
                 From ₹{bundle.bundlePrice}
               </Text>
-
               <View style={styles.bundleAction}>
                 <Text style={styles.bundleActionText}>View Bundle</Text>
-                <Ionicons name="arrow-forward" size={12} color="#2a9cff" />
+                <Ionicons name="arrow-forward" size={12} color={BRAND_BLUE} />
               </View>
             </View>
           </View>
         </View>
       </View>
-    </TouchableOpacity>
+    </PressableFeedback>
   )
 }
 
-// ─── Why Choose Us ──────────────────────────────────────────────
+// ─── Why Choose Us — white cards, pastel icon dots ───────────────
 
 const WHY_CHOOSE_US = [
   {
@@ -445,7 +442,7 @@ const WHY_CHOOSE_US = [
     subtitle: "Background checked professionals",
     icon: "shield-checkmark" as keyof typeof Ionicons.glyphMap,
     bg: "#F0F4FE",
-    iconColor: "#2a9cff",
+    iconColor: BRAND_BLUE,
   },
   {
     title: "On-time Service",
@@ -470,7 +467,7 @@ const WHY_CHOOSE_US = [
   },
 ]
 
-// ─── Main Home Screen ───────────────────────────────────────────
+// ─── Main Home Screen ─────────────────────────────────────────────
 
 export default function HomeScreen() {
   const { user } = useAuthStore()
@@ -534,7 +531,7 @@ export default function HomeScreen() {
     })
   }
 
-  // Flatten all listings, deduplicated
+  // Flatten all listings, deduplicated (unchanged)
   const allListings = useMemo(() => {
     const list: Listing[] = []
     const seen = new Set<string>()
@@ -551,7 +548,7 @@ export default function HomeScreen() {
     return list
   }, [categories])
 
-  // Filtered listings by selected category
+  // Filtered listings by selected category (unchanged)
   const filteredListings = useMemo(() => {
     if (selectedCategory === "All") return allListings
     const cat = categories.find(
@@ -560,28 +557,29 @@ export default function HomeScreen() {
     return cat ? cat.listings || [] : []
   }, [selectedCategory, categories, allListings])
 
-  // Category names for the chip selector
-  const categoryNames = useMemo(() => {
-    const names = ["All"]
-    for (const cat of categories) {
-      if (!names.includes(cat.name)) names.push(cat.name)
+  // Chunk grid into rows of 2 — guarantees both columns align + stretch
+  // to identical height (flexWrap alone can't do this reliably in RN).
+  const serviceRows = useMemo(() => {
+    const rows: Listing[][] = []
+    for (let i = 0; i < filteredListings.length; i += 2) {
+      rows.push(filteredListings.slice(i, i + 2))
     }
-    for (const extra of [
-      "Cleaning",
-      "Plumbing",
-      "Electrical",
-      "Painting",
-      "Cooking",
-      "AC Service",
-    ]) {
-      if (!names.find((n) => n.toLowerCase() === extra.toLowerCase())) {
-        names.push(extra)
+    return rows
+  }, [filteredListings])
+
+  // Required pills first, then any extra backend categories (preserves data)
+  const categoryNames = useMemo(() => {
+    const required = ["All", "Cleaning", "Plumbing", "Electrical", "Painting"]
+    const names = [...required]
+    for (const cat of categories) {
+      if (!names.find((n) => n.toLowerCase() === cat.name.toLowerCase())) {
+        names.push(cat.name)
       }
     }
     return names
   }, [categories])
 
-  // Bundles to display
+  // Bundles to display (unchanged)
   const displayBundles = useMemo(() => {
     const homeClean = bundles.find(
       (b) =>
@@ -595,40 +593,49 @@ export default function HomeScreen() {
   }, [bundles])
 
   if (isLoading && categories.length === 0) {
-    return <Spinner style={{ flex: 1, justifyContent: "center" }} />
+    return (
+      <View style={{ flex: 1, backgroundColor: PAGE_BG, justifyContent: "center" }}>
+        <Spinner />
+      </View>
+    )
   }
-
-  const whyCardWidth = (SCREEN_WIDTH - SECTION_PADDING * 2 - 12) / 2
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: "#FFFFFF" }}
+      style={{ flex: 1, backgroundColor: PAGE_BG }}
       edges={["top"]}
     >
-      {/* ── Header ─────────────────────────────────────────── */}
+      {/* ── Header — same page background, no white block ── */}
       <View
-        className="flex-row items-center justify-between bg-white"
+        className="flex-row items-center justify-between"
         style={{
+          backgroundColor: PAGE_BG,
           paddingHorizontal: SECTION_PADDING,
           paddingTop: 12,
           paddingBottom: 8,
         }}
       >
         <AddressSelector />
-        <View className="flex-row items-center gap-3">
+        <View className="flex-row items-center gap-2">
           <TouchableOpacity
-            className="h-10 w-10 items-center justify-center rounded-full bg-white"
-            style={styles.headerIconBtn}
+            className="h-11 w-11 items-center justify-center rounded-full bg-white"
             onPress={() => router.push("/(screens)/notifications")}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Notifications"
+            hitSlop={4}
           >
             <Ionicons name="notifications-outline" size={20} color="#1F2228" />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => router.push("/(tabs)/profile")}
             activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Open profile"
+            hitSlop={4}
+            style={{ minHeight: 44, justifyContent: "center" }}
           >
-            <Avatar size="md" className="border-gray-02 rounded-full border">
+            <Avatar size="md" className="rounded-full">
               {user?.profileImage ? (
                 <Avatar.Image source={{ uri: user.profileImage }} />
               ) : null}
@@ -640,19 +647,22 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* ── Search Bar ────────────────────────────────────── */}
+      {/* ── Search Bar — same page background, white field ── */}
       <View
-        className="bg-white"
         style={{
+          backgroundColor: PAGE_BG,
           paddingHorizontal: SECTION_PADDING,
-          paddingBottom: 14,
-          paddingTop: 6,
+          paddingBottom: 4,
+          paddingTop: 4,
         }}
       >
         <TouchableOpacity
           activeOpacity={0.9}
           onPress={() => router.push("/(screens)/search")}
-          className="bg-gray-01 border-gray-02 h-11 flex-row items-center rounded-xl border"
+          accessibilityRole="search"
+          accessibilityLabel="Search for services"
+          accessibilityHint="Opens search screen"
+          className="h-12 flex-row items-center rounded-xl border-0 bg-white"
           style={{ paddingHorizontal: 14 }}
         >
           <Ionicons name="search" size={18} color="#9EA2AD" />
@@ -662,29 +672,32 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* ── Scrollable Content ──────────────────────────────── */}
+      {/* ── One consistent background for all scroll content ── */}
       <ScrollView
-        style={{ flex: 1 }}
+        style={{ flex: 1, backgroundColor: PAGE_BG }}
+        contentContainerStyle={{ paddingBottom: 24, backgroundColor: PAGE_BG }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["#2a9cff"]}
+            colors={[BRAND_BLUE]}
           />
         }
       >
-        {/* ── Marketing Banner ──────────────────────────────── */}
+        {/* ── Hero banner ── */}
         <MarketingBanner onBookPress={() => router.push("/(screens)/search")} />
 
-        {/* ── Categories (horizontal pill chips) ────────────── */}
-        <View style={{ marginTop: 20, marginBottom: 4 }}>
+        {/* ── Categories — clear 16px gap below banner ── */}
+        <View style={{ marginTop: 16 }}>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{
               paddingHorizontal: SECTION_PADDING,
-              gap: 10,
+              paddingVertical: 2,
+              gap: GRID_GAP,
+              alignItems: "center",
             }}
           >
             {categoryNames.map((name) => (
@@ -698,29 +711,39 @@ export default function HomeScreen() {
           </ScrollView>
         </View>
 
-        {/* ── Popular Services ──────────────────────────────── */}
+        {/* ── Popular Services — compact 2-col rows, equal height ── */}
         <SectionHeader
           title="Popular Services"
           showSeeAll
           seeAllText="See all"
+          onSeeAllPress={() => router.push("/(screens)/search")}
         />
         {filteredListings.length > 0 ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{
+          <View
+            style={{
               paddingHorizontal: SECTION_PADDING,
-              gap: 12,
+              gap: GRID_GAP,
             }}
           >
-            {filteredListings.map((listing) => (
-              <ServiceCard
-                key={listing.id}
-                listing={listing}
-                onPress={() => handleServicePress(listing)}
-              />
+            {serviceRows.map((row, rowIndex) => (
+              <View
+                key={rowIndex}
+                className="flex-row items-stretch"
+                style={{ gap: GRID_GAP }}
+              >
+                {row.map((listing) => (
+                  <View key={listing.id} style={{ flex: 1 }}>
+                    <ServiceCard
+                      listing={listing}
+                      onPress={() => handleServicePress(listing)}
+                    />
+                  </View>
+                ))}
+                {/* Keep single last card at half width, left aligned */}
+                {row.length === 1 && <View style={{ flex: 1 }} />}
+              </View>
             ))}
-          </ScrollView>
+          </View>
         ) : (
           <View
             style={[styles.emptyState, { marginHorizontal: SECTION_PADDING }]}
@@ -732,15 +755,16 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* ── Best Value Bundles ─────────────────────────────── */}
+        {/* ── Best Value Bundles ── */}
         {displayBundles.length > 0 && (
           <>
             <SectionHeader
               title="Best Value Bundles"
               showSeeAll
               seeAllText="All bundles"
+              onSeeAllPress={() => router.push("/(screens)/bundles")}
             />
-            <View style={{ paddingHorizontal: SECTION_PADDING, gap: 12 }}>
+            <View style={{ paddingHorizontal: SECTION_PADDING, gap: GRID_GAP }}>
               {displayBundles.map((bundle) => (
                 <BundleCard
                   key={bundle.id}
@@ -752,183 +776,129 @@ export default function HomeScreen() {
           </>
         )}
 
-        {/* ── Why Choose Us ─────────────────────────────────── */}
+        {/* ── Why Choose Us ── */}
         <SectionHeader title="Why Choose Us" />
         <View
           style={{
             paddingHorizontal: SECTION_PADDING,
-            flexDirection: "row",
-            flexWrap: "wrap",
-            gap: 12,
+            gap: GRID_GAP,
           }}
         >
-          {WHY_CHOOSE_US.map((item, idx) => (
-            <View
-              key={idx}
-              className="flex-row items-center"
-              style={[
-                styles.whyChooseCard,
-                { backgroundColor: item.bg, width: whyCardWidth },
-              ]}
-            >
-              <View style={styles.whyChooseIconWrap}>
-                <Ionicons name={item.icon} size={17} color={item.iconColor} />
+          {(() => {
+            const rows = []
+            for (let i = 0; i < WHY_CHOOSE_US.length; i += 2) {
+              rows.push(WHY_CHOOSE_US.slice(i, i + 2))
+            }
+            return rows.map((row, ri) => (
+              <View
+                key={ri}
+                className="flex-row items-stretch"
+                style={{ gap: GRID_GAP }}
+              >
+                {row.map((item, idx) => (
+                  <View
+                    key={idx}
+                    className="flex-row items-center bg-white rounded-2xl border-0"
+                    style={[styles.whyChooseCard, { flex: 1 }]}
+                  >
+                    <View
+                      style={[
+                        styles.whyChooseIconWrap,
+                        { backgroundColor: item.bg },
+                      ]}
+                    >
+                      <Ionicons
+                        name={item.icon}
+                        size={16}
+                        color={item.iconColor}
+                      />
+                    </View>
+                    <View style={{ marginLeft: 8, flex: 1 }}>
+                      <Text
+                        className="font-jakarta-bold text-gray-12"
+                        style={{ fontSize: 11, lineHeight: 15 }}
+                        numberOfLines={1}
+                      >
+                        {item.title}
+                      </Text>
+                      <Text
+                        className="font-inter-regular text-gray-07"
+                        style={{ fontSize: 10, lineHeight: 13, marginTop: 1 }}
+                        numberOfLines={2}
+                      >
+                        {item.subtitle}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+                {row.length === 1 && <View style={{ flex: 1 }} />}
               </View>
-              <View style={{ marginLeft: 10, flex: 1 }}>
-                <Text
-                  className="font-jakarta-bold text-gray-12"
-                  style={{ fontSize: 12 }}
-                  numberOfLines={1}
-                >
-                  {item.title}
-                </Text>
-                <Text
-                  className="font-inter-regular text-gray-07"
-                  style={{ fontSize: 10, marginTop: 2 }}
-                  numberOfLines={2}
-                >
-                  {item.subtitle}
-                </Text>
-              </View>
-            </View>
-          ))}
+            ))
+          })()}
         </View>
-
-        {/* Bottom spacing */}
-        <View style={{ height: 32 }} />
       </ScrollView>
     </SafeAreaView>
   )
 }
 
-// ─── Styles ─────────────────────────────────────────────────────
+// ─── Styles — no visible shadows, no structural borders ───────────
 
 const styles = StyleSheet.create({
-  // Header
-  headerIconBtn: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-
-  // Banner button
-  bannerBtn: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-
-  // Category Chips
-  categoryChip: {
-    height: 40,
-    paddingLeft: 6,
-    paddingRight: 14,
-    gap: 8,
-    alignItems: "center",
-    justifyContent: "center",
+  // Banner
+  bannerGradient: {
+    height: BANNER_HEIGHT,
     borderRadius: 20,
-  },
-  categoryChipNoImage: {
-    paddingLeft: 14,
-  },
-  categoryChipShadow: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  categoryChipImage: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-  },
-
-  // Service Card
-  serviceCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#F1F2F4",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 2,
     overflow: "hidden",
+    flexDirection: "row",
   },
-  serviceImageWrap: {
-    height: 100,
-    width: "100%",
-    overflow: "hidden",
+  bannerContent: {
+    flex: 1,
+    justifyContent: "center",
+    padding: 20,
+    paddingRight: 140,
+    zIndex: 20,
   },
-  serviceCardBody: {
-    padding: 10,
-  },
-  serviceCardTitle: {
-    fontSize: 14,
-    fontFamily: "PlusJakartaSans_600SemiBold",
-    color: "#1F2228",
-  },
-  serviceCardDesc: {
-    fontSize: 11,
-    lineHeight: 15,
-    fontFamily: "Inter_400Regular",
-    color: "#7E869A",
-    marginTop: 2,
-  },
-  serviceCardBottom: {
+  bannerCta: {
+    marginTop: 12,
+    alignSelf: "flex-start",
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 8,
+    gap: 6,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
   },
-  priceContainer: {
-    flexDirection: "column",
-  },
-  priceLabel: {
-    fontSize: 9,
-    fontFamily: "Inter_400Regular",
-    color: "#7E869A",
-  },
-  priceValue: {
-    fontSize: 14,
-    fontFamily: "PlusJakartaSans_700Bold",
-    color: "#1F2228",
-  },
-  bookBtn: {
-    backgroundColor: "#EAF4FF",
-    borderColor: "#2a9cff",
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  bookBtnText: {
-    color: "#2a9cff",
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
+  bannerImage: {
+    position: "absolute",
+    bottom: 0,
+    right: -6,
+    width: 152,
+    height: BANNER_HEIGHT + 4,
+    zIndex: 30,
   },
 
-  // Bundle Card
+  // Service card — white on page gray, no border, no shadow
+  serviceCard: {
+    flex: 1,
+  },
+  serviceImage: {
+    width: "100%",
+    height: CARD_IMAGE_HEIGHT,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    overflow: "hidden",
+  },
+  serviceDesc: {
+    minHeight: 30, // reserve exactly 2 lines so rows stay equal
+  },
+
+  // Bundle Card — white, no border/shadow
   bundleCard: {
     backgroundColor: "#FFFFFF",
     flexDirection: "row",
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#F1F2F4",
-    height: 135,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 2,
+    height: 128,
     overflow: "hidden",
   },
   bundleImageWrap: {
@@ -942,6 +912,7 @@ const styles = StyleSheet.create({
   },
   bundleTitle: {
     fontSize: 14,
+    lineHeight: 20,
     fontFamily: "PlusJakartaSans_700Bold",
     color: "#1F2228",
     marginBottom: 2,
@@ -972,6 +943,7 @@ const styles = StyleSheet.create({
   },
   bundlePriceText: {
     fontSize: 15,
+    lineHeight: 20,
     fontFamily: "PlusJakartaSans_700Bold",
     color: "#1F2228",
   },
@@ -983,31 +955,20 @@ const styles = StyleSheet.create({
   bundleActionText: {
     fontSize: 12,
     fontFamily: "Inter_600SemiBold",
-    color: "#2a9cff",
+    color: BRAND_BLUE,
   },
 
-  // Why Choose Us
+  // Why Choose Us — white cards
   whyChooseCard: {
-    padding: 12,
-    borderRadius: 14,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 1,
+    padding: 10,
+    borderRadius: 16,
   },
   whyChooseIconWrap: {
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
     borderRadius: 10,
-    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
   },
 
   // Empty State
@@ -1017,7 +978,5 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
     backgroundColor: "#FFFFFF",
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#EAEAEA",
   },
 })

@@ -7,6 +7,7 @@ import {
   RefreshControl,
   Dimensions,
   ActivityIndicator,
+  TextInput,
 } from "react-native"
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { router } from "expo-router"
@@ -150,6 +151,10 @@ const formatRecurringSchedule = (cart: any) => {
   return `Every ${typeLabel} • ${timeLabel}`
 }
 
+// ─── Compact horizontal cart item ───────────────────────────────
+// [72px image] Title + price / desc (2-line) / stepper + delete.
+// No rating row, no heavy shadow — dense and scannable.
+
 function CartItemCard({
   item,
   onIncrement,
@@ -164,87 +169,91 @@ function CartItemCard({
   return (
     <Card
       variant="default"
-      className="relative mb-4 rounded-[24px] border-0 bg-white p-3 shadow-sm"
+      className="rounded-2xl border border-gray-02 bg-white p-2.5"
     >
-      <View className="flex-row items-start gap-3">
-        {/* Image Thumbnail with subtle pure black outline for depth */}
+      <View className="flex-row gap-2.5">
         <Image
           source={getItemImageSource(item)}
-          style={{ width: 88, height: 88 }}
-          className="bg-gray-01 rounded-xl border border-black/10"
+          style={{ width: 72, height: 72 }}
+          className="bg-gray-01 rounded-xl"
           contentFit="cover"
         />
 
-        {/* Content Details */}
-        <View className="flex-1 pr-6">
-          <Typography
-            numberOfLines={1}
-            className="font-jakarta-bold text-body-s text-gray-12"
-          >
-            {item.catalog?.name || "Service"}
-          </Typography>
+        <View className="flex-1">
+          <View className="flex-row items-start justify-between gap-2">
+            <Typography
+              numberOfLines={1}
+              className="font-jakarta-bold text-gray-12 flex-1 text-[13px] leading-[18px]"
+            >
+              {item.catalog?.name || "Service"}
+            </Typography>
+            <Typography className="font-jakarta-bold text-gray-12 text-[15px] tabular-nums">
+              ₹{item.totalPrice}
+            </Typography>
+          </View>
           <Typography
             numberOfLines={2}
-            className="font-inter-regular text-caption-l text-gray-07 mt-1 leading-relaxed"
+            className="font-inter-regular text-gray-07 mt-0.5 text-[11px] leading-[15px]"
           >
             {item.catalog?.description || "Professional service"}
           </Typography>
 
-          <View className="mt-1.5 flex-row items-center gap-1">
-            <Ionicons name="star" size={12} color="#F48E2F" />
-            <Typography className="font-inter-medium text-caption-m text-gray-08">
-              4.8 (200+)
-            </Typography>
-          </View>
-
-          <Typography className="font-jakarta-bold text-body-m text-blue-03 mt-2 tabular-nums">
-            ₹{item.totalPrice}
-          </Typography>
-
-          {/* Compact Quantity Selector */}
-          <View className="bg-gray-01 border-gray-02 mt-3 flex-row items-center self-start rounded-lg border">
+          <View className="mt-2 flex-row items-center justify-between">
+            <View className="border-gray-02 flex-row items-center rounded-full border">
+              <TouchableOpacity
+                className="px-2.5 py-1.5 transition-transform active:scale-[0.96]"
+                onPress={onDecrement}
+                activeOpacity={0.7}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Decrease quantity"
+              >
+                <Ionicons
+                  name="remove"
+                  size={13}
+                  color="#1D54E2"
+                  className="text-blue-03"
+                />
+              </TouchableOpacity>
+              <Typography className="font-inter-bold text-gray-12 min-w-[20px] text-center text-[13px] tabular-nums">
+                {item.quantity}
+              </Typography>
+              <TouchableOpacity
+                className="px-2.5 py-1.5 transition-transform active:scale-[0.96]"
+                onPress={onIncrement}
+                activeOpacity={0.7}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Increase quantity"
+              >
+                <Ionicons
+                  name="add"
+                  size={13}
+                  color="#1D54E2"
+                  className="text-blue-03"
+                />
+              </TouchableOpacity>
+            </View>
             <TouchableOpacity
-              className="px-2.5 py-1.5 transition-transform active:scale-[0.96]"
-              onPress={onDecrement}
+              onPress={onRemove}
               activeOpacity={0.7}
+              hitSlop={8}
+              className="p-1.5 transition-transform active:scale-[0.96]"
+              accessibilityRole="button"
+              accessibilityLabel="Remove item"
             >
-              <Ionicons
-                name="remove"
-                size={14}
-                color="#1D54E2"
-                className="text-blue-03"
-              />
-            </TouchableOpacity>
-            <Typography className="font-inter-bold text-body-s text-gray-12 px-1 tabular-nums">
-              {item.quantity}
-            </Typography>
-            <TouchableOpacity
-              className="px-2.5 py-1.5 transition-transform active:scale-[0.96]"
-              onPress={onIncrement}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name="add"
-                size={14}
-                color="#1D54E2"
-                className="text-blue-03"
-              />
+              <Ionicons name="trash-outline" size={17} color="#E6483D" />
             </TouchableOpacity>
           </View>
         </View>
-
-        {/* Trash Icon top right */}
-        <TouchableOpacity
-          onPress={onRemove}
-          activeOpacity={0.7}
-          className="absolute top-1 right-1 p-1.5 transition-transform active:scale-[0.96]"
-        >
-          <Ionicons name="trash-outline" size={18} color="#E6483D" />
-        </TouchableOpacity>
       </View>
     </Card>
   )
 }
+
+// ─── Price Details ──────────────────────────────────────────────
+// Single breakdown: Service Amount / Platform Fee / Total.
+// Total appears here + sticky bar only — nowhere else.
 
 function PricingSummary({
   subtotal,
@@ -261,52 +270,125 @@ function PricingSummary({
   return (
     <Card
       variant="default"
-      className="rounded-[24px] border-0 bg-white p-3 shadow-sm"
+      className="rounded-2xl border border-gray-02 bg-white p-3"
     >
-      <Typography className="font-jakarta-bold text-body-m text-gray-12 mb-3">
-        Payment Details
+      <Typography className="font-jakarta-bold text-gray-12 mb-2.5 text-[15px]">
+        Price Details
       </Typography>
 
-      <View className="mb-2.5 flex-row items-center justify-between">
-        <Typography className="font-inter-regular text-body-s text-gray-08">
-          Service Charge
+      <View className="mb-2 flex-row items-center justify-between">
+        <Typography className="font-inter-regular text-gray-08 text-[13px]">
+          Service Amount
         </Typography>
-        <Typography className="font-inter-medium text-body-s text-gray-12 tabular-nums">
+        <Typography className="font-inter-medium text-gray-12 text-[13px] tabular-nums">
           ₹{subtotal}
         </Typography>
       </View>
 
-      <View className="mb-2.5 flex-row items-center justify-between">
-        <Typography className="font-inter-regular text-body-s text-gray-08">
-          Tax
-        </Typography>
-        <Typography className="font-inter-medium text-body-s text-gray-12 tabular-nums">
+      <View className="mb-2 flex-row items-center justify-between">
+        <View className="flex-row items-center gap-1">
+          <Typography className="font-inter-regular text-gray-08 text-[13px]">
+            Platform Fee
+          </Typography>
+          <Ionicons
+            name="information-circle-outline"
+            size={13}
+            color="#9EA2AD"
+          />
+        </View>
+        <Typography className="font-inter-medium text-gray-12 text-[13px] tabular-nums">
           ₹{gst}
         </Typography>
       </View>
 
       {discountVal > 0 && (
-        <View className="mb-2.5 flex-row items-center justify-between">
-          <Typography className="font-inter-regular text-green-08">
+        <View className="mb-2 flex-row items-center justify-between">
+          <Typography className="font-inter-regular text-green-08 text-[13px]">
             Discount
           </Typography>
-          <Typography className="font-inter-semibold text-green-08 tabular-nums">
+          <Typography className="font-inter-semibold text-green-08 text-[13px] tabular-nums">
             -₹{discount}
           </Typography>
         </View>
       )}
 
-      <Separator className="bg-gray-02 my-2" />
+      <Separator className="bg-gray-02 my-2.5" />
 
-      <View className="mt-1 flex-row items-center justify-between">
-        <Typography className="font-jakarta-bold text-body-m text-gray-12">
-          Amount to Pay
+      <View className="flex-row items-center justify-between">
+        <Typography className="font-jakarta-bold text-gray-12 text-[15px]">
+          Total Amount
         </Typography>
-        <Typography className="font-jakarta-bold text-blue-03 text-[20px] tabular-nums">
+        <Typography className="font-jakarta-bold text-gray-12 text-[17px] tabular-nums">
           ₹{total}
         </Typography>
       </View>
     </Card>
+  )
+}
+
+// ─── Notes — compact tappable row, expands inline ───────────────
+// Local UI state only; no cart/API change.
+
+function NotesRow() {
+  const [expanded, setExpanded] = useState(false)
+  const [note, setNote] = useState("")
+
+  return (
+    <TouchableOpacity
+      onPress={() => setExpanded((v) => !v)}
+      activeOpacity={0.9}
+      accessibilityRole="button"
+      accessibilityLabel="Add a note for the partner"
+      accessibilityState={{ expanded }}
+    >
+      <View className="rounded-2xl border border-gray-02 bg-white p-3">
+        <View className="flex-row items-center gap-3">
+          <View className="bg-blue-01 h-10 w-10 items-center justify-center rounded-full">
+            <Ionicons
+              name="document-text-outline"
+              size={20}
+              color="#1D54E2"
+              className="text-blue-03"
+            />
+          </View>
+          <View className="flex-1">
+            <Typography className="font-inter-semibold text-gray-12 text-[13px]">
+              Add a note (optional)
+            </Typography>
+            <Typography
+              numberOfLines={expanded ? undefined : 1}
+              className="font-inter-regular text-gray-07 mt-0.5 text-[11px] leading-[15px]"
+            >
+              {note || "Any special instructions for the partner..."}
+            </Typography>
+          </View>
+          <Ionicons
+            name={expanded ? "chevron-down" : "chevron-forward"}
+            size={20}
+            color="#7E869A"
+          />
+        </View>
+
+        {expanded && (
+          <TouchableOpacity activeOpacity={1} onPress={() => {}}>
+            <TextInput
+              value={note}
+              onChangeText={setNote}
+              placeholder="e.g. Gate code, pet at home, call on arrival..."
+              placeholderTextColor="#9EA2AD"
+              multiline
+              numberOfLines={3}
+              autoFocus
+              textAlignVertical="top"
+              returnKeyType="done"
+              onSubmitEditing={() => setExpanded(false)}
+              className="font-inter-regular text-gray-12 border-gray-02 mt-2.5 rounded-xl border px-3 py-2.5 text-[13px]"
+              style={{ minHeight: 72 }}
+            />
+          </TouchableOpacity>
+        )}
+      </View>
+    </TouchableOpacity>
   )
 }
 
@@ -352,7 +434,7 @@ function RecommendedAddonCard({
   return (
     <Card
       variant="default"
-      className="border-gray-03 mr-3 w-[150px] rounded-[20px] border bg-white p-3"
+      className="border-gray-02 mr-2.5 w-[150px] rounded-2xl border bg-white p-3"
     >
       <View className="bg-gray-01 h-9 w-9 items-center justify-center rounded-lg">
         <Ionicons name={addon.icon as any} size={20} color="#5E636E" />
@@ -561,7 +643,7 @@ export default function CartScreen() {
               <Ionicons name="arrow-back" size={24} color="#14151a" />
             </TouchableOpacity>
           )}
-          <Typography className="font-jakarta-bold text-gray-12 text-[24px]">
+          <Typography className="font-jakarta-bold text-gray-12 text-[20px]">
             Cart
           </Typography>
         </View>
@@ -572,14 +654,14 @@ export default function CartScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      {/* Header */}
+      {/* Compact Header */}
       <View style={styles.header}>
         {router.canGoBack() && (
           <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
             <Ionicons name="arrow-back" size={24} color="#14151a" />
           </TouchableOpacity>
         )}
-        <Typography className="font-jakarta-bold text-gray-12 flex-1 text-[24px]">
+        <Typography className="font-jakarta-bold text-gray-12 flex-1 text-[20px]">
           Cart
         </Typography>
       </View>
@@ -596,15 +678,15 @@ export default function CartScreen() {
           />
         }
       >
-        <View className="gap-5">
-          {/* Address Section */}
+        <View className="gap-4">
+          {/* Service Address */}
           <View>
-            <Typography className="font-jakarta-bold text-body-m text-gray-12 mb-2">
+            <Typography className="font-jakarta-bold text-gray-12 mb-2 text-[15px]">
               Service Address
             </Typography>
             <Card
               variant="default"
-              className="flex-row items-center gap-3 rounded-[24px] border-0 bg-white p-3 shadow-sm"
+              className="flex-row items-center gap-3 rounded-2xl border border-gray-02 bg-white p-3"
             >
               <View className="bg-blue-01 h-10 w-10 items-center justify-center rounded-full">
                 <Ionicons
@@ -615,12 +697,12 @@ export default function CartScreen() {
                 />
               </View>
               <View className="flex-1">
-                <Typography className="font-jakarta-bold text-body-s text-gray-12">
+                <Typography className="font-jakarta-bold text-gray-12 text-[13px]">
                   Home
                 </Typography>
                 <Typography
                   numberOfLines={2}
-                  className="font-inter-regular text-caption-l text-gray-07 mt-0.5 leading-relaxed"
+                  className="font-inter-regular text-gray-07 mt-0.5 text-[12px] leading-[17px]"
                 >
                   {selectedAddress
                     ? `${selectedAddress.addressLine1}${selectedAddress.addressLine2 ? ", " + selectedAddress.addressLine2 : ""}`
@@ -639,17 +721,17 @@ export default function CartScreen() {
             </Card>
           </View>
 
-          {/* Booking Option Tabs & Configuration */}
+          {/* Booking Options */}
           <View>
-            <Typography className="font-jakarta-bold text-body-m text-gray-12 mb-2">
-              Booking Option
+            <Typography className="font-jakarta-bold text-gray-12 mb-2 text-[15px]">
+              Booking Options
             </Typography>
             <Tabs
               value={bookingType}
               onValueChange={handleBookingTypeChange}
               variant="primary"
             >
-              <Tabs.List className="bg-gray-01 border-gray-02 mb-3 rounded-xl border p-1">
+              <Tabs.List className="bg-gray-01 border-gray-02 rounded-xl border p-1">
                 <Tabs.Indicator className="bg-blue-03 rounded-lg" />
                 <Tabs.Trigger value="INSTANT" className="flex-1 py-2.5">
                   {({ isSelected }) => (
@@ -681,91 +763,64 @@ export default function CartScreen() {
               </Tabs.List>
             </Tabs>
 
-            {/* Configured slot detail cards */}
-            {bookingType === "INSTANT" && (
-              <Card
-                variant="default"
-                className="border-blue-03 flex-row items-center gap-3 rounded-[24px] border bg-white p-3"
-              >
-                <View className="bg-blue-01 h-10 w-10 items-center justify-center rounded-full">
-                  <Ionicons
-                    name="flash"
-                    size={20}
-                    color="#1D54E2"
-                    className="text-blue-03"
-                  />
-                </View>
-                <View className="flex-1">
-                  <Typography className="font-jakarta-bold text-body-s text-gray-12">
-                    Instant Booking
-                  </Typography>
-                  <Typography className="font-inter-regular text-caption-l text-gray-07 mt-0.5 leading-relaxed">
-                    No time slot needed. Pay now and we&apos;ll connect you
-                    right away.
-                  </Typography>
-                </View>
-              </Card>
-            )}
-
+            {/* Single tappable slot row — clear action, not a big card */}
             {bookingType === "SCHEDULED" && (
               <TouchableOpacity
                 onPress={() => setShowScheduledSheet(true)}
                 activeOpacity={0.9}
-                className="transition-transform active:scale-[0.96]"
+                accessibilityRole="button"
+                accessibilityLabel="Select date and time slot"
+                className="mt-2.5 transition-transform active:scale-[0.99]"
               >
                 {cart.timeSlot?.time?.[0]?.start &&
                 cart.bookingType === "SCHEDULED" ? (
-                  <Card
-                    variant="default"
-                    className="flex-row items-center justify-between rounded-[24px] border-0 bg-white p-3 shadow-sm"
-                  >
-                    <View className="flex-row items-center gap-3">
-                      <View className="bg-blue-01 h-10 w-10 items-center justify-center rounded-full">
-                        <Ionicons
-                          name="time"
-                          size={20}
-                          color="#1D54E2"
-                          className="text-blue-03"
-                        />
-                      </View>
-                      <View>
-                        <Typography className="font-jakarta-bold text-body-s text-gray-12">
-                          Selected Slot
-                        </Typography>
-                        <Typography className="font-inter-medium text-caption-l text-blue-03 mt-0.5">
-                          {formatSelectedSlot(cart.timeSlot.time[0].start)}
-                        </Typography>
-                      </View>
+                  <View className="flex-row items-center gap-3 rounded-2xl border border-gray-02 bg-white p-3">
+                    <View className="bg-blue-01 h-10 w-10 items-center justify-center rounded-full">
+                      <Ionicons
+                        name="calendar"
+                        size={20}
+                        color="#1D54E2"
+                        className="text-blue-03"
+                      />
+                    </View>
+                    <View className="flex-1">
+                      <Typography className="font-jakarta-bold text-gray-12 text-[13px]">
+                        Selected Slot
+                      </Typography>
+                      <Typography className="font-inter-medium text-blue-03 mt-0.5 text-[12px]">
+                        {formatSelectedSlot(cart.timeSlot.time[0].start)}
+                      </Typography>
                     </View>
                     <Ionicons
                       name="chevron-forward"
                       size={20}
                       color="#7E869A"
                     />
-                  </Card>
+                  </View>
                 ) : (
-                  <Card
-                    variant="default"
-                    className="border-gray-03 flex-row items-center justify-between rounded-[24px] border border-dashed bg-white p-3"
-                  >
-                    <View className="flex-row items-center gap-3">
-                      <View className="bg-gray-01 h-10 w-10 items-center justify-center rounded-full">
-                        <Ionicons
-                          name="time-outline"
-                          size={20}
-                          color="#7E869A"
-                        />
-                      </View>
-                      <View>
-                        <Typography className="font-jakarta-bold text-body-s text-gray-12">
-                          Select Slot
-                        </Typography>
-                        <Typography className="font-inter-regular text-caption-l text-gray-07 mt-0.5">
-                          Choose date & time for service
-                        </Typography>
-                      </View>
+                  <View className="border-gray-03 flex-row items-center gap-3 rounded-2xl border border-dashed bg-white p-3">
+                    <View className="bg-blue-01 h-10 w-10 items-center justify-center rounded-full">
+                      <Ionicons
+                        name="calendar-outline"
+                        size={20}
+                        color="#1D54E2"
+                        className="text-blue-03"
+                      />
                     </View>
-                  </Card>
+                    <View className="flex-1">
+                      <Typography className="font-jakarta-bold text-gray-12 text-[13px]">
+                        Select Slot
+                      </Typography>
+                      <Typography className="font-inter-regular text-gray-07 mt-0.5 text-[12px]">
+                        Choose date & time for service
+                      </Typography>
+                    </View>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={20}
+                      color="#7E869A"
+                    />
+                  </View>
                 )}
               </TouchableOpacity>
             )}
@@ -774,85 +829,114 @@ export default function CartScreen() {
               <TouchableOpacity
                 onPress={() => setShowRecurringSheet(true)}
                 activeOpacity={0.9}
-                className="transition-transform active:scale-[0.96]"
+                accessibilityRole="button"
+                accessibilityLabel="Set recurring schedule"
+                className="mt-2.5 transition-transform active:scale-[0.99]"
               >
                 {cart.timeSlot?.time?.[0]?.start &&
                 cart.bookingType === "RECURRING" ? (
-                  <Card
-                    variant="default"
-                    className="flex-row items-center justify-between rounded-[24px] border-0 bg-white p-3 shadow-sm"
-                  >
-                    <View className="flex-row items-center gap-3">
-                      <View className="bg-blue-01 h-10 w-10 items-center justify-center rounded-full">
-                        <Ionicons
-                          name="repeat"
-                          size={20}
-                          color="#1D54E2"
-                          className="text-blue-03"
-                        />
-                      </View>
-                      <View>
-                        <Typography className="font-jakarta-bold text-body-s text-gray-12">
-                          Active Schedule
-                        </Typography>
-                        <Typography className="font-inter-medium text-caption-l text-blue-03 mt-0.5">
-                          {formatRecurringSchedule(cart)}
-                        </Typography>
-                      </View>
+                  <View className="flex-row items-center gap-3 rounded-2xl border border-gray-02 bg-white p-3">
+                    <View className="bg-blue-01 h-10 w-10 items-center justify-center rounded-full">
+                      <Ionicons
+                        name="repeat"
+                        size={20}
+                        color="#1D54E2"
+                        className="text-blue-03"
+                      />
+                    </View>
+                    <View className="flex-1">
+                      <Typography className="font-jakarta-bold text-gray-12 text-[13px]">
+                        Active Schedule
+                      </Typography>
+                      <Typography className="font-inter-medium text-blue-03 mt-0.5 text-[12px]">
+                        {formatRecurringSchedule(cart)}
+                      </Typography>
                     </View>
                     <Ionicons
                       name="chevron-forward"
                       size={20}
                       color="#7E869A"
                     />
-                  </Card>
+                  </View>
                 ) : (
-                  <Card
-                    variant="default"
-                    className="border-gray-03 flex-row items-center justify-between rounded-[24px] border border-dashed bg-white p-3"
-                  >
-                    <View className="flex-row items-center gap-3">
-                      <View className="bg-gray-01 h-10 w-10 items-center justify-center rounded-full">
-                        <Ionicons
-                          name="repeat-outline"
-                          size={20}
-                          color="#7E869A"
-                        />
-                      </View>
-                      <View>
-                        <Typography className="font-jakarta-bold text-body-s text-gray-12">
-                          Set Schedule
-                        </Typography>
-                        <Typography className="font-inter-regular text-caption-l text-gray-07 mt-0.5">
-                          Choose recurring frequency & slot
-                        </Typography>
-                      </View>
+                  <View className="border-gray-03 flex-row items-center gap-3 rounded-2xl border border-dashed bg-white p-3">
+                    <View className="bg-blue-01 h-10 w-10 items-center justify-center rounded-full">
+                      <Ionicons
+                        name="repeat-outline"
+                        size={20}
+                        color="#1D54E2"
+                        className="text-blue-03"
+                      />
                     </View>
-                  </Card>
+                    <View className="flex-1">
+                      <Typography className="font-jakarta-bold text-gray-12 text-[13px]">
+                        Set Schedule
+                      </Typography>
+                      <Typography className="font-inter-regular text-gray-07 mt-0.5 text-[12px]">
+                        Choose recurring frequency & slot
+                      </Typography>
+                    </View>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={20}
+                      color="#7E869A"
+                    />
+                  </View>
                 )}
               </TouchableOpacity>
             )}
           </View>
 
-          {/* Service Cards (Cart Items) */}
+          {/* Cart Items */}
           <View>
-            {cart.items.map((item) => (
-              <CartItemCard
-                key={item.id}
-                item={item}
-                onIncrement={() => handleIncrement(item)}
-                onDecrement={() => handleDecrement(item)}
-                onRemove={() => handleRemove(item)}
-              />
-            ))}
+            <View className="mb-2 flex-row items-center justify-between">
+              <Typography className="font-jakarta-bold text-gray-12 text-[15px]">
+                Cart Items
+              </Typography>
+              <Typography className="font-inter-regular text-gray-07 text-[12px]">
+                {cart.items.length} item{cart.items.length > 1 ? "s" : ""}
+              </Typography>
+            </View>
+            <View className="gap-2">
+              {cart.items.map((item) => (
+                <CartItemCard
+                  key={item.id}
+                  item={item}
+                  onIncrement={() => handleIncrement(item)}
+                  onDecrement={() => handleDecrement(item)}
+                  onRemove={() => handleRemove(item)}
+                />
+              ))}
+            </View>
           </View>
 
-          {/* Coupon / Promo Section */}
+          {/* Enhance Your Service */}
+          <View>
+            <Typography className="font-jakarta-bold text-gray-12 mb-2 text-[15px]">
+              Enhance Your Service
+            </Typography>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              className="flex-row"
+            >
+              {ADDONS.map((addon) => (
+                <RecommendedAddonCard
+                  key={addon.id}
+                  addon={addon}
+                  onAdd={() => handleAddAddon(addon)}
+                  isAdding={addingAddonId === addon.id}
+                />
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* Coupon / Promo */}
           <View>
             {cart.coupon ? (
               <Card
                 variant="default"
-                className="bg-green-01 border-green-03 flex-row items-center justify-between rounded-[24px] border p-3"
+                className="bg-green-01 border-green-03 flex-row items-center justify-between rounded-2xl border p-3"
               >
                 <View className="flex-row items-center gap-3">
                   <Typography className="text-xl">🏷️</Typography>
@@ -879,11 +963,11 @@ export default function CartScreen() {
               <TouchableOpacity
                 onPress={() => setShowCouponSheet(true)}
                 activeOpacity={0.9}
-                className="transition-transform active:scale-[0.96]"
+                className="transition-transform active:scale-[0.99]"
               >
                 <Card
                   variant="default"
-                  className="flex-row items-center justify-between rounded-[24px] border-0 bg-white p-3 shadow-sm"
+                  className="flex-row items-center justify-between rounded-2xl border border-gray-02 bg-white p-3"
                 >
                   <View className="flex-row items-center gap-3">
                     <Typography className="text-xl">🏷️</Typography>
@@ -897,7 +981,7 @@ export default function CartScreen() {
             )}
           </View>
 
-          {/* Pricing Details */}
+          {/* Price Details */}
           <PricingSummary
             subtotal={cart.totalPrice}
             discount={cart.discountAmount}
@@ -905,57 +989,40 @@ export default function CartScreen() {
             total={cart.finalTotalAmount}
           />
 
-          {/* Recommended Add-ons Section */}
-          <View className="gap-3">
-            <Typography className="font-jakarta-bold text-body-m text-gray-12">
-              Enhance Your Service
-            </Typography>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              className="flex-row"
-            >
-              {ADDONS.map((addon) => (
-                <RecommendedAddonCard
-                  key={addon.id}
-                  addon={addon}
-                  onAdd={() => handleAddAddon(addon)}
-                  isAdding={addingAddonId === addon.id}
-                />
-              ))}
-            </ScrollView>
-          </View>
+          {/* Notes */}
+          <NotesRow />
         </View>
       </ScrollView>
 
-      {/* Sticky Bottom Bar */}
+      {/* Compact Sticky Checkout Bar */}
       <View
         style={[
           styles.stickyFooter,
-          { paddingBottom: Math.max(insets.bottom, spacing[5]) },
+          { paddingBottom: Math.max(insets.bottom, spacing[4]) },
         ]}
       >
         <View>
           <Typography className="text-caption-l text-gray-07 font-inter-regular">
-            Amount
+            Total Amount
           </Typography>
-          <Typography className="text-blue-03 font-jakarta-bold mt-0.5 text-[22px] tabular-nums">
+          <Typography className="text-blue-03 font-jakarta-bold mt-0.5 text-[20px] tabular-nums">
             ₹{cart.finalTotalAmount}
           </Typography>
         </View>
 
         <Button
           variant="primary"
-          className="bg-blue-03 ml-6 h-[52px] flex-1 justify-center rounded-xl transition-transform active:scale-[0.96]"
+          className="bg-blue-03 ml-4 h-[48px] flex-1 flex-row items-center justify-center rounded-xl transition-transform active:scale-[0.96]"
           onPress={handleCheckout}
         >
-          <Button.Label>Checkout</Button.Label>
+          <Button.Label>Proceed to Checkout</Button.Label>
+          <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
         </Button>
       </View>
 
-      {/* Coupon Selector Bottom Sheet */}
-      {showCouponSheet && (
-        <BottomSheet isOpen={showCouponSheet} onOpenChange={setShowCouponSheet}>
+      {/* Coupon Selector Bottom Sheet — always mounted, driven by isOpen.
+          Mounting it already-open skips the snap animation and leaves a sliver. */}
+      <BottomSheet isOpen={showCouponSheet} onOpenChange={setShowCouponSheet}>
           <BottomSheet.Portal>
             <BottomSheet.Overlay />
             <BottomSheet.Content
@@ -1034,11 +1101,9 @@ export default function CartScreen() {
             </BottomSheet.Content>
           </BottomSheet.Portal>
         </BottomSheet>
-      )}
 
-      {/* Scheduled Time Selector Bottom Sheet */}
-      {showScheduledSheet && (
-        <ScheduledSheet
+      {/* Scheduled Time Selector Bottom Sheet — always mounted, see above */}
+      <ScheduledSheet
           isVisible={showScheduledSheet}
           onClose={() => setShowScheduledSheet(false)}
           onConfirm={handleScheduledConfirm}
@@ -1061,11 +1126,9 @@ export default function CartScreen() {
           addressLat={addressLat}
           addressLng={addressLng}
         />
-      )}
 
-      {/* Recurring Schedule Selector Bottom Sheet */}
-      {showRecurringSheet && (
-        <RecurringSheet
+      {/* Recurring Schedule Selector Bottom Sheet — always mounted, see above */}
+      <RecurringSheet
           isVisible={showRecurringSheet}
           onClose={() => setShowRecurringSheet(false)}
           onConfirm={handleRecurringConfirm}
@@ -1089,7 +1152,6 @@ export default function CartScreen() {
           addressLat={addressLat}
           addressLng={addressLng}
         />
-      )}
     </SafeAreaView>
   )
 }
@@ -1103,7 +1165,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: spacing[4],
-    paddingVertical: spacing[4],
+    paddingVertical: spacing[2],
     backgroundColor: "white",
   },
   scroll: {
@@ -1125,13 +1187,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: spacing[5],
-    paddingTop: spacing[4],
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 8,
+    paddingHorizontal: spacing[4],
+    paddingTop: spacing[3],
   },
   emptyState: {
     flex: 1,
