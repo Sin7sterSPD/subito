@@ -108,14 +108,16 @@ export default function HelpScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: semantic.backgroundSecondary }} edges={["bottom"]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
-          <Typography
-            type="h6"
-            weight="semibold"
-            style={[styles.sectionTitle, { color: semantic.textPrimary }]}
-          >
+            <Typography
+              weight="bold"
+              style={[
+                styles.sectionTitle,
+                { color: semantic.textPrimary, fontSize: 15 },
+              ]}
+            >
             Contact Us
           </Typography>
-          <Card variant="default" style={{ padding: 0, overflow: "hidden" }}>
+          <Card variant="default" style={{ padding: 0, overflow: "hidden" }} className="rounded-2xl border-gray-02 border">
             <HelpItem
               icon="call"
               title="Call Support"
@@ -140,14 +142,16 @@ export default function HelpScreen() {
         </View>
 
         <View style={styles.section}>
-          <Typography
-            type="h6"
-            weight="semibold"
-            style={[styles.sectionTitle, { color: semantic.textPrimary }]}
-          >
+            <Typography
+              weight="bold"
+              style={[
+                styles.sectionTitle,
+                { color: semantic.textPrimary, fontSize: 15 },
+              ]}
+            >
             Frequently Asked Questions
           </Typography>
-          <Card variant="default" style={{ padding: 0, overflow: "hidden" }}>
+          <Card variant="default" style={{ padding: 0, overflow: "hidden" }} className="rounded-2xl border-gray-02 border">
             {faqs.map((faq, idx) => (
               <React.Fragment key={idx}>
                 <FAQItem question={faq.question} answer={faq.answer} />
@@ -158,14 +162,16 @@ export default function HelpScreen() {
         </View>
 
         <View style={styles.section}>
-          <Typography
-            type="h6"
-            weight="semibold"
-            style={[styles.sectionTitle, { color: semantic.textPrimary }]}
-          >
+            <Typography
+              weight="bold"
+              style={[
+                styles.sectionTitle,
+                { color: semantic.textPrimary, fontSize: 15 },
+              ]}
+            >
             Legal
           </Typography>
-          <Card variant="default" style={{ padding: 0, overflow: "hidden" }}>
+          <Card variant="default" style={{ padding: 0, overflow: "hidden" }} className="rounded-2xl border-gray-02 border">
             <HelpItem
               icon="document-text"
               title="Terms of Service"

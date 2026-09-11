@@ -42,13 +42,13 @@ function AddressCard({
   return (
     <TouchableOpacity onPress={onSelect} activeOpacity={0.9}>
       <Card
-        className={`mb-3 p-4 rounded-sm border ${
-          isSelected ? "border-blue-03 border-2 bg-blue-01/10" : "border-gray-03 bg-white"
+        className={`mb-2.5 p-3.5 rounded-2xl border ${
+          isSelected ? "border-blue-03 bg-blue-01/30" : "border-gray-02 bg-white"
         }`}
         variant="default"
       >
         <View className="flex-row items-center mb-3">
-          <View className={`w-9 h-9 items-center justify-center rounded-sm ${
+          <View className={`w-10 h-10 items-center justify-center rounded-full ${
             isSelected ? "bg-blue-03" : "bg-blue-01"
           }`}>
             <Ionicons
@@ -62,10 +62,10 @@ function AddressCard({
               {address.name}
             </Typography>
             {address.isDefault && (
-              <Chip size="sm" variant="soft" className="bg-blue-01 border border-blue-03/20">
-                <Typography className="text-blue-03 font-inter-semibold text-caption-s">
+              <Chip size="sm" variant="soft" className="bg-blue-01">
+                <Chip.Label className="text-blue-03 font-inter-semibold text-caption-s">
                   Default
-                </Typography>
+                </Chip.Label>
               </Chip>
             )}
           </View>
@@ -240,10 +240,10 @@ export default function AddressesScreen() {
         ListEmptyComponent={<EmptyState />}
       />
 
-      <View className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-03">
+      <View className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-02">
         <Button
           onPress={handleAddNew}
-          className="w-full bg-blue-03 rounded-sm py-3.5 transition-transform active:scale-[0.96]"
+          className="w-full bg-blue-03 rounded-xl py-3.5 transition-transform active:scale-[0.96]"
         >
           <Button.Label className="text-white font-inter-bold text-body-s">
             Add New Address

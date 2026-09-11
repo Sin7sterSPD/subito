@@ -67,6 +67,7 @@ partnersRouter.post(
 
 partnersRouter.post(
   "/assign",
+  requireAuth,
   requireAdmin,
   zValidator("json", assignPartnerSchema),
   async (c) => {
@@ -80,7 +81,7 @@ partnersRouter.post(
   }
 )
 
-partnersRouter.get("/me/bookings", requirePartner, async (c) => {
+partnersRouter.get("/me/bookings", requireAuth, requirePartner, async (c) => {
   const userId = c.get("userId")!
   const page = Math.max(1, parseInt(c.req.query("page") || "1", 10) || 1)
   const limit = Math.min(
@@ -99,7 +100,7 @@ partnersRouter.get("/me/bookings", requirePartner, async (c) => {
   })
 })
 
-partnersRouter.get("/me", requirePartner, async (c) => {
+partnersRouter.get("/me", requireAuth, requirePartner, async (c) => {
   const userId = c.get("userId")!
   const partner = await partnersService.getPartnerByUserId(userId)
 
@@ -111,6 +112,7 @@ partnersRouter.get("/me", requirePartner, async (c) => {
 
 partnersRouter.patch(
   "/me/kyc",
+  requireAuth,
   requirePartner,
   zValidator("json", updateKycSchema),
   async (c) => {
@@ -132,6 +134,7 @@ const updateAvailabilitySchema = z.object({
 
 partnersRouter.put(
   "/me/availability",
+  requireAuth,
   requirePartner,
   zValidator("json", updateAvailabilitySchema),
   async (c) => {
@@ -155,6 +158,7 @@ const acknowledgeReleaseSchema = z.object({
 
 partnersRouter.post(
   "/:id/acknowledge-release",
+  requireAuth,
   requirePartner,
   zValidator("json", acknowledgeReleaseSchema),
   async (c) => {
@@ -187,6 +191,7 @@ partnersRouter.get("/:id", requireAuth, async (c) => {
 
 partnersRouter.put(
   "/:id/status",
+  requireAuth,
   requirePartner,
   zValidator("json", updateStatusSchema),
   async (c) => {
@@ -214,6 +219,7 @@ partnersRouter.put(
 
 partnersRouter.put(
   "/:id/location",
+  requireAuth,
   requirePartner,
   zValidator("json", updateLocationSchema),
   async (c) => {
