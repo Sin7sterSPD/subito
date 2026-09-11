@@ -70,7 +70,7 @@ export default function ReferralsScreen() {
         <View className="p-4">
           
           {/* Referral Code Card */}
-          <Card className="items-center mb-4 p-4 rounded-sm border border-gray-03 bg-white" variant="default">
+          <Card className="items-center mb-4 p-4 rounded-2xl border border-gray-02 bg-white" variant="default">
             <Typography type="body" color="muted" align="center">
               Your Referral Code
             </Typography>
@@ -79,7 +79,7 @@ export default function ReferralsScreen() {
                 {referralCode}
               </Typography>
               <TouchableOpacity
-                className="ml-3 p-2 bg-blue-01 rounded-sm border border-blue-03/20"
+                className="ml-3 p-2 bg-blue-01 rounded-xl border border-blue-03/20"
                 onPress={handleCopyCode}
                 disabled={!hasReferralCode}
                 activeOpacity={0.8}
@@ -91,7 +91,7 @@ export default function ReferralsScreen() {
 
           {/* Stats Grid */}
           <View className="flex-row gap-3 mb-4">
-            <Card className="flex-1 items-center p-4 rounded-sm border border-gray-03 bg-white" variant="secondary">
+            <Card className="flex-1 items-center p-4 rounded-2xl border border-gray-02 bg-white" variant="secondary">
               <Typography type="h4" weight="bold" className="text-blue-03">
                 {referralSummary?.totalReferrals || 0}
               </Typography>
@@ -99,7 +99,7 @@ export default function ReferralsScreen() {
                 Total Referrals
               </Typography>
             </Card>
-            <Card className="flex-1 items-center p-4 rounded-sm border border-gray-03 bg-white" variant="secondary">
+            <Card className="flex-1 items-center p-4 rounded-2xl border border-gray-02 bg-white" variant="secondary">
               <Typography type="h4" weight="bold" className="text-success">
                 {referralSummary?.successfulReferrals || 0}
               </Typography>
@@ -107,7 +107,7 @@ export default function ReferralsScreen() {
                 Successful
               </Typography>
             </Card>
-            <Card className="flex-1 items-center p-4 rounded-sm border border-gray-03 bg-white" variant="secondary">
+            <Card className="flex-1 items-center p-4 rounded-2xl border border-gray-02 bg-white" variant="secondary">
               <Typography type="h4" weight="bold" className="text-warning">
                 {referralSummary?.pendingReferrals || 0}
               </Typography>
@@ -120,8 +120,8 @@ export default function ReferralsScreen() {
           {/* Earnings Card */}
           {referralSummary?.totalEarnings &&
             parseFloat(referralSummary.totalEarnings) > 0 && (
-              <Card className="mb-6 p-4 rounded-sm border border-gray-03 bg-white flex-row items-center" variant="default">
-                <View className="w-12 h-12 rounded-sm bg-green-01 items-center justify-center mr-4">
+              <Card className="mb-6 p-4 rounded-2xl border border-gray-02 bg-white flex-row items-center" variant="default">
+                <View className="w-12 h-12 rounded-xl bg-green-01 items-center justify-center mr-4">
                   <Ionicons name="wallet" size={24} color="#26bd6c" />
                 </View>
                 <View>
@@ -146,7 +146,7 @@ export default function ReferralsScreen() {
             </Typography>
             
             <View className="flex-row items-start mb-4">
-              <View className="w-7 h-7 rounded-sm bg-blue-03 items-center justify-center mr-3 mt-0.5">
+              <View className="w-7 h-7 rounded-full bg-blue-03 items-center justify-center mr-3 mt-0.5">
                 <Typography type="body-sm" weight="bold" className="text-white">
                   1
                 </Typography>
@@ -162,7 +162,7 @@ export default function ReferralsScreen() {
             </View>
 
             <View className="flex-row items-start mb-4">
-              <View className="w-7 h-7 rounded-sm bg-blue-03 items-center justify-center mr-3 mt-0.5">
+              <View className="w-7 h-7 rounded-full bg-blue-03 items-center justify-center mr-3 mt-0.5">
                 <Typography type="body-sm" weight="bold" className="text-white">
                   2
                 </Typography>
@@ -178,7 +178,7 @@ export default function ReferralsScreen() {
             </View>
 
             <View className="flex-row items-start mb-4">
-              <View className="w-7 h-7 rounded-sm bg-blue-03 items-center justify-center mr-3 mt-0.5">
+              <View className="w-7 h-7 rounded-full bg-blue-03 items-center justify-center mr-3 mt-0.5">
                 <Typography type="body-sm" weight="bold" className="text-white">
                   3
                 </Typography>
@@ -201,7 +201,7 @@ export default function ReferralsScreen() {
         <Button
           onPress={handleShare}
           isDisabled={!hasReferralCode}
-          className="w-full bg-blue-03 rounded-sm py-3.5 transition-transform active:scale-[0.96]"
+          className="w-full bg-blue-03 rounded-xl py-3.5 transition-transform active:scale-[0.96]"
         >
           <Button.Label className="text-white font-inter-bold text-body-s">Share with Friends</Button.Label>
         </Button>
@@ -216,11 +216,13 @@ const styles = StyleSheet.create({
     paddingVertical: spacing[6],
     paddingHorizontal: spacing[4],
     backgroundColor: colors.orange[1],
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
   },
   headerIcon: {
     width: 80,
     height: 80,
-    borderRadius: 4,
+    borderRadius: 24,
     backgroundColor: colors.orange[8],
     alignItems: "center",
     justifyContent: "center",

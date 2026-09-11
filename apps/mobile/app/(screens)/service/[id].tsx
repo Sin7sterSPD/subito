@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useMemo, useState } from "react"
 import {
   View,
   StyleSheet,
@@ -6,21 +6,22 @@ import {
   TouchableOpacity,
   Dimensions,
   ActivityIndicator,
+  Share,
 } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context"
 import { router, useLocalSearchParams, Stack } from "expo-router"
 import { Image } from "expo-image"
 import {
   Typography,
   Card,
   Button,
-  Chip,
   Spinner,
-  Separator,
-  Avatar,
 } from "heroui-native"
 import { colors, semantic } from "../../../src/theme/colors"
-import { spacing, borderRadius } from "../../../src/theme/spacing"
+import { spacing } from "../../../src/theme/spacing"
 import { useListingsStore, useCartStore } from "../../../src/store"
 import { Catalog, Listing, AddOn } from "../../../src/types/api"
 import { Ionicons } from "@expo/vector-icons"
@@ -70,6 +71,18 @@ const resolveImage = (img: string | undefined) => {
     return require("../../../assets/home/main/painting.jpg")
 
   return require("../../../assets/home/main/vaccum-floor.jpg")
+}
+
+// Distinct photographic thumbnails for add-on cards.
+const resolveAddonImage = (name: string) => {
+  const n = name.toLowerCase()
+  if (n.includes("balcony"))
+    return require("../../../assets/home/main/floor-cleaning.jpg")
+  if (n.includes("kitchen") || n.includes("sink"))
+    return require("../../../assets/home/main/cook-preview.jpg")
+  if (n.includes("window"))
+    return require("../../../assets/home/main/vaccum-floor.jpg")
+  return resolveImage(name)
 }
 
 const getWhatsIncluded = (listingName: string): string[] => {
@@ -150,148 +163,122 @@ const getWhatsIncluded = (listingName: string): string[] => {
   ]
 }
 
-const getWhatsNotIncluded = (listingName: string): string[] => {
-  const name = listingName.toLowerCase()
-  if (name.includes("floor")) {
-    return [
-      "Heavy furniture shifting",
-      "Chemical stain removal",
-      "Wall scraping & washing",
-      "Carpet vacuuming / shampooing",
-    ]
-  }
-  if (name.includes("bathroom") || name.includes("toilet")) {
-    return [
-      "Deep tile water stain guarantee",
-      "Ceiling repair & painting",
-      "Wall scrubbing outside bathroom",
-      "Drain pipe line unclogging",
-    ]
-  }
-  if (name.includes("cupboard") || name.includes("organis")) {
-    return [
-      "Heavy wardrobe shifting",
-      "Inside cabinet painting",
-      "Laundry / washing clothes",
-      "Ironing & steaming services",
-    ]
-  }
-  if (name.includes("utensil") || name.includes("sink")) {
-    return [
-      "Chimney filter deep clean",
-      "Kitchen exhaust degreasing",
-      "Buying dishwashing soap/liquid",
-      "Out-of-kitchen waste disposal",
-    ]
-  }
-  if (
-    name.includes("ac") ||
-    name.includes("repair") ||
-    name.includes("filter")
-  ) {
-    return [
-      "AC spare parts replacement",
-      "Gas top-up (charged extra)",
-      "Wall plastering & drilling",
-      "Outdoor unit mounting bracket",
-    ]
-  }
-  if (name.includes("plumbing") || name.includes("tap")) {
-    return [
-      "Main drainage line repairs",
-      "Wall breakdown / masonry",
-      "Buying expensive fixtures",
-      "External sewage clearing",
-    ]
-  }
-  if (name.includes("paint")) {
-    return [
-      "Severe wall damp treatment",
-      "Packing household items",
-      "Ceiling plaster repairs",
-      "Exterior building wall painting",
-    ]
-  }
-  return [
-    "Heavy furniture shifting",
-    "Severe stain guarantee",
-    "External area cleaning",
-    "Sourcing expensive raw materials",
-  ]
+// Deterministic pseudo-rating so related cards vary like the reference.
+const relatedRating = (id: string) => {
+  let h = 0
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0
+  return (4.5 + (h % 4) / 10).toFixed(1)
 }
 
-const REVIEWS = [
+const TRUST_BADGES = [
   {
-    id: "rev-1",
-    name: "Rohan Sharma",
-    rating: 5,
-    date: "Yesterday",
-    comment: "Excellent cleaning service. Very professional.",
-    avatar:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+    icon: "shield-checkmark" as keyof typeof Ionicons.glyphMap,
+    color: "#26BD6C",
+    label: "Verified Professionals",
   },
   {
-    id: "rev-2",
-    name: "Priya Patel",
-    rating: 4.8,
-    date: "3 days ago",
-    comment: "House looked brand new after cleaning.",
-    avatar:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+    icon: "leaf" as keyof typeof Ionicons.glyphMap,
+    color: "#26BD6C",
+    label: "Safe Cleaning Products",
+  },
+  {
+    icon: "time" as keyof typeof Ionicons.glyphMap,
+    color: "#2a9cff",
+    label: "On-time Service",
   },
 ]
 
-// Reusable Sub-components
-function ServiceHero({ imageSource }: { imageSource: any }) {
+// ─── Gallery with counter badge ───────────────────────────────────
+
+function ServiceGallery({ images }: { images: any[] }) {
+  const [active, setActive] = useState(0)
+
   return (
     <View style={styles.heroContainer}>
-      <Image source={imageSource} style={styles.heroImage} contentFit="cover" />
+      <ScrollView
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={(e) => {
+          setActive(
+            Math.round(e.nativeEvent.contentOffset.x / width)
+          )
+        }}
+      >
+        {images.map((src, i) => (
+          <Image
+            key={i}
+            source={src}
+            style={{ width, height: 260 }}
+            contentFit="cover"
+          />
+        ))}
+      </ScrollView>
+      {images.length > 1 && (
+        <View style={styles.counterBadge}>
+          <Typography className="font-inter-semibold text-white text-[11px] tabular-nums">
+            {active + 1}/{images.length}
+          </Typography>
+        </View>
+      )}
     </View>
   )
 }
+
+// ─── What's Included — lightweight bordered list ──────────────────
 
 function IncludedList({ items }: { items: string[] }) {
-  return (
-    <View className="gap-3">
-      <Typography className="font-jakarta-bold text-gray-12 text-[20px]">
-        What&apos;s Included
-      </Typography>
-      <Card
-        variant="default"
-        className="gap-3 rounded-2xl border-0 bg-white p-4 shadow-sm"
-      >
-        {items.map((item, idx) => (
-          <View key={idx} className="flex-row items-center gap-3">
-            <Ionicons name="checkmark-circle" size={20} color="#26BD6C" />
-            <Typography className="font-inter-regular text-body-s text-gray-09 flex-1">
-              {item}
-            </Typography>
-          </View>
-        ))}
-      </Card>
-    </View>
-  )
-}
+  const [expanded, setExpanded] = useState(false)
+  const visible = expanded ? items : items.slice(0, 6)
+  const rows: string[][] = []
+  for (let i = 0; i < visible.length; i += 2) {
+    rows.push(visible.slice(i, i + 2))
+  }
 
-function ExcludedList({ items }: { items: string[] }) {
   return (
-    <View className="gap-3">
-      <Typography className="font-jakarta-bold text-gray-12 text-[20px]">
-        What&apos;s Not Included
-      </Typography>
-      <Card
-        variant="default"
-        className="gap-3 rounded-2xl border-0 bg-white p-4 shadow-sm"
-      >
-        {items.map((item, idx) => (
-          <View key={idx} className="flex-row items-center gap-3">
-            <Ionicons name="close-circle" size={20} color="#E6483D" />
-            <Typography className="font-inter-regular text-body-s text-gray-09 flex-1">
-              {item}
+    <View>
+      <View className="mb-2 flex-row items-center justify-between">
+        <Typography className="font-jakarta-bold text-gray-12 text-[17px]">
+          What&apos;s Included
+        </Typography>
+        {items.length > 6 && (
+          <TouchableOpacity
+            onPress={() => setExpanded((v) => !v)}
+            activeOpacity={0.7}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={expanded ? "Show fewer items" : "View all items"}
+            className="flex-row items-center gap-0.5"
+          >
+            <Typography className="font-inter-semibold text-blue-03 text-[13px]">
+              {expanded ? "Show less" : "View all"}
             </Typography>
+            <Ionicons
+              name="arrow-forward"
+              size={14}
+              color="#2a9cff"
+            />
+          </TouchableOpacity>
+        )}
+      </View>
+      <View className="rounded-2xl border border-gray-02 bg-white p-3">
+        {rows.map((row, ri) => (
+          <View
+            key={ri}
+            className={`flex-row items-start gap-2 ${ri > 0 ? "mt-2.5" : ""}`}
+          >
+            {row.map((item) => (
+              <View key={item} className="flex-1 flex-row items-center gap-2">
+                <Ionicons name="checkmark-circle" size={18} color="#26BD6C" />
+                <Typography className="font-inter-regular text-gray-09 flex-1 text-[12px] leading-[16px]">
+                  {item}
+                </Typography>
+              </View>
+            ))}
+            {row.length === 1 && <View className="flex-1" />}
           </View>
         ))}
-      </Card>
+      </View>
     </View>
   )
 }
@@ -313,11 +300,11 @@ function PackageSelector({
   onSelect: (id: string) => void
 }) {
   return (
-    <View className="gap-3">
-      <Typography className="font-jakarta-bold text-gray-12 text-[20px]">
+    <View>
+      <Typography className="font-jakarta-bold text-gray-12 mb-2 text-[17px]">
         Choose Service Package
       </Typography>
-      <View className="flex-row gap-3">
+      <View className="flex-row items-stretch gap-2">
         {packages.map((pkg) => {
           const isSelected = selectedId === pkg.id
           return (
@@ -325,22 +312,28 @@ function PackageSelector({
               key={pkg.id}
               onPress={() => onSelect(pkg.id)}
               activeOpacity={0.8}
-              className={`flex-1 rounded-xl border p-4 ${
+              style={styles.packageCard}
+              className={`flex-1 rounded-2xl border p-3 ${
                 isSelected
                   ? "bg-blue-01 border-blue-03"
-                  : "border-gray-03 bg-white"
+                  : "border-gray-02 bg-white"
               }`}
             >
+              {isSelected && (
+                <View style={styles.packageCheck}>
+                  <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                </View>
+              )}
               <Typography
-                className={`font-jakarta-semibold text-body-s ${isSelected ? "text-blue-03" : "text-gray-12"}`}
+                className={`font-jakarta-semibold text-[13px] ${isSelected ? "text-blue-03" : "text-gray-12"}`}
               >
                 {pkg.title}
               </Typography>
-              <Typography className="font-inter-regular text-caption-m text-gray-07 mt-1">
+              <Typography className="font-inter-regular text-gray-07 mt-0.5 text-[11px]">
                 {pkg.desc}
               </Typography>
               <Typography
-                className={`font-jakarta-bold text-body-m mt-3 ${isSelected ? "text-blue-03" : "text-gray-12"}`}
+                className={`font-jakarta-bold text-[15px] mt-2 tabular-nums ${isSelected ? "text-blue-03" : "text-gray-12"}`}
               >
                 ₹{pkg.price}
               </Typography>
@@ -371,83 +364,112 @@ function AddonCard({
   return (
     <Card
       variant="default"
-      className={`mr-3 w-[160px] rounded-xl border p-4 ${isAdded ? "bg-blue-01 border-blue-03" : "border-gray-03 bg-white"}`}
+      className={`mr-2.5 w-[152px] overflow-hidden rounded-2xl border bg-white ${isAdded ? "border-blue-03" : "border-gray-02"}`}
     >
-      <View className="bg-gray-01 h-10 w-10 items-center justify-center rounded-lg">
-        <Ionicons
-          name={item.icon as any}
-          size={24}
-          color={isAdded ? "#2a9cff" : "#5E636E"}
-        />
-      </View>
-      <Typography
-        numberOfLines={2}
-        className="font-inter-semibold text-caption-l text-gray-12 mt-3 h-[40px] leading-tight"
-      >
-        {item.name}
-      </Typography>
-      <Typography className="font-jakarta-bold text-body-s text-blue-03 mt-1">
-        +₹{item.price}
-      </Typography>
-
-      <TouchableOpacity
-        onPress={onToggle}
-        activeOpacity={0.8}
-        className={`mt-3 w-full items-center justify-center rounded-lg py-2 ${
-          isAdded ? "bg-blue-03" : "bg-gray-01 border-gray-03 border"
-        }`}
-      >
+      <Image
+        source={resolveAddonImage(item.name)}
+        style={styles.addonImage}
+        contentFit="cover"
+      />
+      <View className="p-2.5">
         <Typography
-          className={`font-inter-semibold text-caption-m ${isAdded ? "text-white" : "text-gray-12"}`}
+          numberOfLines={2}
+          style={styles.addonTitle}
+          className="font-inter-semibold text-gray-12 text-[13px] leading-[18px]"
         >
-          {isAdded ? "Added ✓" : "Add"}
+          {item.name}
         </Typography>
-      </TouchableOpacity>
+        <Typography className="font-jakarta-bold text-blue-03 mt-1 text-[13px] tabular-nums">
+          +₹{item.price}
+        </Typography>
+
+        <TouchableOpacity
+          onPress={onToggle}
+          activeOpacity={0.8}
+          className={`mt-2 w-full items-center justify-center rounded-lg py-2 ${
+            isAdded ? "bg-blue-03" : "bg-gray-01 border-gray-02 border"
+          }`}
+        >
+          <Typography
+            className={`font-inter-semibold text-[12px] ${isAdded ? "text-white" : "text-gray-12"}`}
+          >
+            {isAdded ? "Added ✓" : "Add"}
+          </Typography>
+        </TouchableOpacity>
+      </View>
     </Card>
   )
 }
 
-interface ReviewType {
-  id: string
-  name: string
-  rating: number
-  date: string
-  comment: string
-  avatar: string
-}
+// ─── Related service card — plus button is a sibling overlay so the
+// card press and the quick-add press never double-fire. ───────────
 
-function ReviewCard({ review }: { review: ReviewType }) {
+function RelatedCard({
+  listing,
+  onOpen,
+  onQuickAdd,
+  isAdding,
+}: {
+  listing: Listing
+  onOpen: () => void
+  onQuickAdd: () => void
+  isAdding: boolean
+}) {
+  const price = listing.catalogs?.[0]?.price || listing.basePrice || "399"
+
   return (
-    <Card
-      variant="default"
-      className="mb-3 rounded-2xl border-0 bg-white p-4 shadow-sm"
-    >
-      <View className="flex-row items-center gap-3">
-        <Avatar size="sm">
-          <Avatar.Image source={{ uri: review.avatar }} />
-          <Avatar.Fallback>
-            {review.name
-              .split(" ")
-              .map((n) => n[0])
-              .join("")}
-          </Avatar.Fallback>
-        </Avatar>
-        <View className="flex-1">
-          <Typography className="font-inter-semibold text-body-s text-gray-12">
-            {review.name}
+    <View className="mr-2.5 w-[184px] rounded-2xl border border-gray-02 bg-white">
+      <TouchableOpacity onPress={onOpen} activeOpacity={0.9}>
+        <Image
+          source={resolveImage(
+            (listing as any).images?.[0] || listing.image || listing.name
+          )}
+          style={styles.relatedImage}
+          contentFit="cover"
+        />
+        <View className="p-2.5 pr-10">
+          <Typography
+            numberOfLines={2}
+            style={styles.relatedTitle}
+            className="font-jakarta-bold text-gray-12 text-[13px] leading-[18px]"
+          >
+            {listing.name}
           </Typography>
-          <View className="mt-0.5 flex-row items-center gap-1">
-            <Ionicons name="star" size={14} color="#F48E2F" />
-            <Typography className="font-inter-medium text-caption-m text-gray-08">
-              {review.rating} • {review.date}
+          <Typography
+            numberOfLines={2}
+            style={styles.relatedDesc}
+            className="font-inter-regular text-gray-07 mt-0.5 text-[11px] leading-[15px]"
+          >
+            {listing.shortDescription || "Professional service"}
+          </Typography>
+          <View className="mt-1.5 flex-row items-center gap-1.5">
+            <Typography className="font-jakarta-bold text-gray-12 text-[15px] tabular-nums">
+              ₹{price}
+            </Typography>
+            <Ionicons name="star" size={11} color="#F48E2F" />
+            <Typography className="font-inter-medium text-gray-07 text-[11px] tabular-nums">
+              {relatedRating(listing.id)}
             </Typography>
           </View>
         </View>
-      </View>
-      <Typography className="font-inter-regular text-body-s text-gray-09 mt-3 leading-relaxed">
-        &quot;{review.comment}&quot;
-      </Typography>
-    </Card>
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={onQuickAdd}
+        disabled={isAdding}
+        activeOpacity={0.8}
+        hitSlop={6}
+        accessibilityRole="button"
+        accessibilityLabel={`Quick add ${listing.name} to cart`}
+        style={styles.relatedAddBtn}
+        className="bg-blue-01 h-7 w-7 items-center justify-center rounded-full"
+      >
+        {isAdding ? (
+          <ActivityIndicator size="small" color="#2a9cff" />
+        ) : (
+          <Ionicons name="add" size={16} color="#2a9cff" />
+        )}
+      </TouchableOpacity>
+    </View>
   )
 }
 
@@ -460,13 +482,20 @@ function StickyBookingBar({
   onBook: () => void
   isLoading: boolean
 }) {
+  const insets = useSafeAreaInsets()
+
   return (
-    <View style={styles.stickyFooter}>
+    <View
+      style={[
+        styles.stickyFooter,
+        { paddingBottom: Math.max(insets.bottom, spacing[4]) },
+      ]}
+    >
       <View>
         <Typography className="text-caption-l text-gray-07 font-inter-regular">
           Total Price
         </Typography>
-        <Typography className="text-gray-12 font-jakarta-bold mt-0.5 text-2xl">
+        <Typography className="text-blue-03 font-jakarta-bold mt-0.5 text-[20px] tabular-nums">
           ₹{price}
         </Typography>
       </View>
@@ -474,13 +503,13 @@ function StickyBookingBar({
         onPress={onBook}
         disabled={isLoading}
         activeOpacity={0.9}
-        className="bg-blue-03 h-[48px] flex-row items-center justify-center rounded-xl px-8 shadow-md"
+        className="bg-blue-03 ml-4 h-12 flex-1 flex-row items-center justify-center rounded-xl"
       >
         {isLoading ? (
           <ActivityIndicator color="white" size="small" className="mr-2" />
         ) : null}
-        <Typography className="font-jakarta-bold text-body-s text-white">
-          {isLoading ? "Booking..." : "Book Now"}
+        <Typography className="font-jakarta-bold text-white text-[15px]">
+          {isLoading ? "Adding..." : "Add to Cart"}
         </Typography>
       </TouchableOpacity>
     </View>
@@ -489,20 +518,47 @@ function StickyBookingBar({
 
 export default function ServiceDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
-  const { selectedListing, fetchServiceById, isLoading } = useListingsStore()
+  const { selectedListing, fetchServiceById, isLoading, categories } =
+    useListingsStore()
   const { addItem } = useCartStore()
 
   const [isBooking, setIsBooking] = useState(false)
+  const [isFav, setIsFav] = useState(false)
   const [selectedPackage, setSelectedPackage] = useState<
     "standard" | "premium" | "complete"
   >("standard")
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([])
+  const [addingRelatedId, setAddingRelatedId] = useState<string | null>(null)
+  const insets = useSafeAreaInsets()
 
   useEffect(() => {
     if (id) {
       fetchServiceById(id)
     }
   }, [id, fetchServiceById])
+
+  useEffect(() => {
+    setSelectedPackage("standard")
+    setSelectedAddOns([])
+    setIsFav(false)
+  }, [id])
+
+  const relatedServices = useMemo(() => {
+    const out: Listing[] = []
+    const seen = new Set<string>()
+    if (selectedListing) seen.add(selectedListing.id)
+    for (const cat of categories) {
+      for (const l of cat.listings || []) {
+        if (!seen.has(l.id)) {
+          seen.add(l.id)
+          out.push(l)
+          if (out.length >= 6) break
+        }
+      }
+      if (out.length >= 6) break
+    }
+    return out
+  }, [categories, selectedListing?.id])
 
   if (isLoading) {
     return <Spinner style={{ flex: 1, justifyContent: "center" }} />
@@ -562,6 +618,13 @@ export default function ServiceDetailScreen() {
   const originalPrice = selectedPrice + 200
   const savingsAmount = 200
 
+  const gallery =
+    listing.images && listing.images.length > 0
+      ? listing.images.map((img: string) =>
+          img.startsWith("http") ? { uri: img } : resolveImage(img)
+        )
+      : [resolveImage(listing.image)]
+
   // Combine DB addons and mock enhancements
   const dbAddOns = listing.addOns || []
   const defaultAddOns = [
@@ -615,6 +678,42 @@ export default function ServiceDetailScreen() {
     )
   }
 
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: `${listing.name} — ₹${selectedPrice} on Subito`,
+      })
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const handleQuickAdd = async (rel: Listing) => {
+    const catalog = rel.catalogs?.[0]
+    if (!catalog) {
+      router.push({
+        pathname: "/(screens)/service/[id]",
+        params: { id: rel.id },
+      })
+      return
+    }
+    setAddingRelatedId(rel.id)
+    try {
+      await addItem(catalog.id, 1, {
+        propertyConfig: {
+          mockName: rel.name,
+          mockDesc: rel.shortDescription || "Professional service",
+          mockPrice: parseInt(rel.basePrice || "399", 10),
+        },
+      })
+      router.push("/(tabs)/cart")
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setAddingRelatedId(null)
+    }
+  }
+
   const handleBookNow = async () => {
     setIsBooking(true)
     try {
@@ -654,129 +753,95 @@ export default function ServiceDetailScreen() {
   }
 
   const whatsIncludedData = getWhatsIncluded(listing.name)
-  const whatsNotIncludedData = getWhatsNotIncluded(listing.name)
 
   return (
     <>
-      <Stack.Screen options={{ title: listing.name }} />
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: "white" }}
-        edges={["bottom"]}
-      >
+      <Stack.Screen options={{ headerShown: false }} />
+      <View style={{ flex: 1, backgroundColor: "white" }}>
         <View style={{ flex: 1 }}>
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollContainer}
           >
-            {/* 1. Hero Image Section */}
-            <ServiceHero
-              imageSource={
-                listing.images && listing.images.length > 0
-                  ? listing.images[0].startsWith("http")
-                    ? { uri: listing.images[0] }
-                    : resolveImage(listing.images[0])
-                  : resolveImage(listing.image)
-              }
-            />
+            {/* Hero gallery */}
+            <ServiceGallery images={gallery} />
 
-            {/* Content Body */}
-            <View className="mt-4 gap-6 px-4">
-              {/* 2. Service Information Card */}
-              <Card
-                variant="default"
-                className="rounded-2xl border-0 bg-white p-5 shadow-sm"
-              >
-                <Typography className="font-jakarta-bold text-gray-12 text-[28px] leading-tight">
+            {/* Continuous detail body — not boxed cards */}
+            <View className="gap-4 px-4 pt-3">
+              {/* Service information */}
+              <View>
+                <Typography className="font-jakarta-bold text-gray-12 text-[22px] leading-[28px]">
                   {listing.name}
                 </Typography>
-                <View className="mt-3 flex-row items-baseline">
-                  <Typography className="text-blue-03 font-jakarta-bold text-2xl">
+                <View className="mt-1.5 flex-row items-center gap-2">
+                  <Typography className="text-blue-03 font-jakarta-bold text-[24px] tabular-nums">
                     ₹{selectedPrice}
                   </Typography>
-                  <Typography className="text-gray-06 font-inter-regular text-body-s ml-2 line-through">
+                  <Typography className="text-gray-06 font-inter-regular text-[15px] line-through tabular-nums">
                     ₹{originalPrice}
                   </Typography>
+                  <View className="bg-green-01 rounded-md px-1.5 py-0.5">
+                    <Typography className="font-inter-semibold text-green-08 text-[11px]">
+                      Save ₹{savingsAmount}
+                    </Typography>
+                  </View>
                 </View>
-                <Typography className="text-green-08 font-inter-semibold text-caption-l mt-1">
-                  Save ₹{savingsAmount}
-                </Typography>
-                <Typography className="text-gray-08 font-inter-regular text-body-s mt-3 leading-relaxed">
+                <View className="mt-1.5 flex-row items-center gap-1.5">
+                  <Ionicons name="star" size={14} color="#F48E2F" />
+                  <Typography className="font-jakarta-bold text-gray-12 text-[13px] tabular-nums">
+                    4.8
+                  </Typography>
+                  <Typography className="font-inter-regular text-gray-07 text-[12px]">
+                    (200+ reviews)
+                  </Typography>
+                </View>
+                <Typography className="text-gray-08 font-inter-regular mt-1.5 text-[13px] leading-[19px]">
                   {listing.description || listing.shortDescription}
                 </Typography>
-              </Card>
-
-              {/* 3. Trust Badges */}
-              <View>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  className="flex-row gap-2"
-                >
-                  <Chip
-                    size="sm"
-                    variant="soft"
-                    color="default"
-                    className="bg-gray-01 border-gray-02 border"
-                  >
-                    <Chip.Label className="text-gray-08 font-inter-semibold text-caption-m">
-                      ✓ Verified Professionals
-                    </Chip.Label>
-                  </Chip>
-                  <Chip
-                    size="sm"
-                    variant="soft"
-                    color="default"
-                    className="bg-gray-01 border-gray-02 border"
-                  >
-                    <Chip.Label className="text-gray-08 font-inter-semibold text-caption-m">
-                      ✓ Safe Cleaning Products
-                    </Chip.Label>
-                  </Chip>
-                  <Chip
-                    size="sm"
-                    variant="soft"
-                    color="default"
-                    className="bg-gray-01 border-gray-02 border"
-                  >
-                    <Chip.Label className="text-gray-08 font-inter-semibold text-caption-m">
-                      ⭐ 4.8 Rating
-                    </Chip.Label>
-                  </Chip>
-                  <Chip
-                    size="sm"
-                    variant="soft"
-                    color="default"
-                    className="bg-gray-01 border-gray-02 border"
-                  >
-                    <Chip.Label className="text-gray-08 font-inter-semibold text-caption-m">
-                      ✓ Instant Booking
-                    </Chip.Label>
-                  </Chip>
-                </ScrollView>
               </View>
 
-              {/* 4. What's Included Section */}
-              <IncludedList items={whatsIncludedData} />
+              {/* Trust badges — lightweight 3-col mini cards */}
+              <View className="flex-row items-stretch gap-2">
+                {TRUST_BADGES.map((badge) => (
+                  <View
+                    key={badge.label}
+                    style={styles.trustBadge}
+                    className="flex-1 flex-row items-center gap-1.5 rounded-2xl border border-gray-02 bg-white p-2.5"
+                  >
+                    <Ionicons
+                      name={badge.icon}
+                      size={20}
+                      color={badge.color}
+                    />
+                    <Typography className="font-inter-semibold text-gray-12 flex-1 text-[11px] leading-[14px]">
+                      {badge.label}
+                    </Typography>
+                  </View>
+                ))}
+              </View>
 
-              {/* 5. What's Not Included Section */}
-              <ExcludedList items={whatsNotIncludedData} />
-
-              {/* 6. Service Options Section */}
+              {/* Service packages */}
               <PackageSelector
                 packages={packages}
                 selectedId={selectedPackage}
                 onSelect={(id) => setSelectedPackage(id as any)}
               />
 
-              {/* 7. Add-ons Section */}
-              <View className="gap-3">
-                <Typography className="font-jakarta-bold text-gray-12 text-[20px]">
+              {/* What's Included */}
+              <IncludedList items={whatsIncludedData} />
+
+              {/* Add-ons */}
+              <View>
+                <Typography className="font-jakarta-bold text-gray-12 text-[17px]">
                   Enhance Your Service
+                </Typography>
+                <Typography className="font-inter-regular text-gray-07 mt-0.5 text-[12px]">
+                  Add more services to get a cleaner, healthier home.
                 </Typography>
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
-                  className="flex-row"
+                  className="mt-2 flex-row"
                 >
                   {addOnItems.map((item) => (
                     <AddonCard
@@ -789,52 +854,199 @@ export default function ServiceDetailScreen() {
                 </ScrollView>
               </View>
 
-              {/* 8. Customer Reviews Preview */}
-              <View className="gap-3">
-                <View className="flex-row items-center justify-between">
-                  <Typography className="font-jakarta-bold text-gray-12 text-[20px]">
-                    Customer Reviews
-                  </Typography>
-                  <Typography className="font-inter-semibold text-caption-l text-gray-08">
-                    ⭐ 4.8 (2,394 reviews)
-                  </Typography>
-                </View>
+              {/* Related services — the one justified horizontal carousel */}
+              {relatedServices.length > 0 && (
                 <View>
-                  {REVIEWS.map((rev) => (
-                    <ReviewCard key={rev.id} review={rev} />
-                  ))}
+                  <View className="mb-2 flex-row items-center justify-between">
+                    <Typography className="font-jakarta-bold text-gray-12 text-[17px]">
+                      You May Also Like
+                    </Typography>
+                    <TouchableOpacity
+                      onPress={() => router.push("/(screens)/search")}
+                      activeOpacity={0.7}
+                      hitSlop={8}
+                      accessibilityRole="button"
+                      accessibilityLabel="See all services"
+                      className="flex-row items-center gap-0.5"
+                    >
+                      <Typography className="font-inter-semibold text-blue-03 text-[13px]">
+                        See all
+                      </Typography>
+                      <Ionicons
+                        name="arrow-forward"
+                        size={14}
+                        color="#2a9cff"
+                      />
+                    </TouchableOpacity>
+                  </View>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    className="flex-row"
+                  >
+                    {relatedServices.map((rel) => (
+                      <RelatedCard
+                        key={rel.id}
+                        listing={rel}
+                        onOpen={() =>
+                          router.push({
+                            pathname: "/(screens)/service/[id]",
+                            params: { id: rel.id },
+                          })
+                        }
+                        onQuickAdd={() => handleQuickAdd(rel)}
+                        isAdding={addingRelatedId === rel.id}
+                      />
+                    ))}
+                  </ScrollView>
                 </View>
-              </View>
+              )}
             </View>
           </ScrollView>
 
-          {/* 9. Sticky Bottom Booking Bar */}
+          {/* Floating header over the gallery */}
+          <View style={[styles.overlayHeader, { paddingTop: insets.top + 8 }]}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              activeOpacity={0.8}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              style={styles.overlayBtn}
+            >
+              <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+            <View className="flex-row items-center gap-2">
+              <TouchableOpacity
+                onPress={() => setIsFav((v) => !v)}
+                activeOpacity={0.8}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  isFav ? "Remove from favourites" : "Add to favourites"
+                }
+                accessibilityState={{ selected: isFav }}
+                style={styles.overlayBtn}
+              >
+                <Ionicons
+                  name={isFav ? "heart" : "heart-outline"}
+                  size={20}
+                  color="#FFFFFF"
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleShare}
+                activeOpacity={0.8}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Share this service"
+                style={styles.overlayBtn}
+              >
+                <Ionicons
+                  name="share-social-outline"
+                  size={20}
+                  color="#FFFFFF"
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Sticky bottom action */}
           <StickyBookingBar
             price={totalPrice}
             onBook={handleBookNow}
             isLoading={isBooking}
           />
         </View>
-      </SafeAreaView>
+      </View>
     </>
   )
 }
 
 const styles = StyleSheet.create({
   scrollContainer: {
-    paddingBottom: 120, // ensure content is scrollable above sticky bar
+    paddingBottom: 140, // clear the sticky bar on all devices
     backgroundColor: "white",
+  },
+  overlayHeader: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    zIndex: 10,
+  },
+  overlayBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   heroContainer: {
     width: "100%",
-    height: 280,
+    height: 260,
     overflow: "hidden",
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.gray[2],
+    backgroundColor: colors.gray[1],
   },
-  heroImage: {
+  counterBadge: {
+    position: "absolute",
+    right: 16,
+    bottom: 12,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  relatedImage: {
     width: "100%",
-    height: "100%",
+    height: 100,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    overflow: "hidden",
+  },
+  relatedTitle: {
+    minHeight: 36, // reserve 2 lines so cards stay equal
+  },
+  relatedDesc: {
+    minHeight: 30, // reserve 2 lines so cards stay equal
+  },
+  trustBadge: {
+    minHeight: 60, // equal heights, text wraps instead of clipping
+  },
+  packageCard: {
+    minHeight: 108, // equal heights across all three options
+  },
+  packageCheck: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "#2a9cff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  addonImage: {
+    width: "100%",
+    height: 84,
+  },
+  addonTitle: {
+    minHeight: 36, // reserve 2 lines — never truncate the name
+  },
+  relatedAddBtn: {
+    position: "absolute",
+    right: 10,
+    bottom: 10,
   },
   center: {
     flex: 1,
@@ -852,13 +1064,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: spacing[5],
-    paddingTop: spacing[4],
-    paddingBottom: spacing[5], // covers bottom safe area padding
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 8,
+    paddingHorizontal: spacing[4],
+    paddingTop: spacing[3],
   },
 })

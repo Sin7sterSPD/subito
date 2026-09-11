@@ -119,9 +119,9 @@ export default function EditProfileScreen() {
             onPress={handlePickImage}
             activeOpacity={0.9}
           >
-            <Avatar className="w-[100px] h-[100px] rounded-sm">
+            <Avatar className="w-[100px] h-[100px] rounded-full">
               {profileImage ? (
-                <Avatar.Image source={{ uri: profileImage }} className="w-full h-full rounded-sm" />
+                <Avatar.Image source={{ uri: profileImage }} className="w-full h-full rounded-full" />
               ) : null}
               <Avatar.Fallback />
             </Avatar>
@@ -142,7 +142,7 @@ export default function EditProfileScreen() {
                     setErrors({ ...errors, firstName: undefined })
                 }}
                 autoCapitalize="words"
-                className="h-12 rounded-sm border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
+                className="h-12 rounded-xl border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
               />
               {errors.firstName ? <FieldError className="mt-1.5">{errors.firstName}</FieldError> : null}
             </TextField>
@@ -155,7 +155,7 @@ export default function EditProfileScreen() {
                   value={lastName}
                   onChangeText={setLastName}
                   autoCapitalize="words"
-                  className="h-12 rounded-sm border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
+                  className="h-12 rounded-xl border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
                 />
               </TextField>
             </View>
@@ -172,7 +172,7 @@ export default function EditProfileScreen() {
                   }}
                   keyboardType="email-address"
                   autoCapitalize="none"
-                  className="h-12 rounded-sm border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
+                  className="h-12 rounded-xl border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
                 />
                 {errors.email ? <FieldError className="mt-1.5">{errors.email}</FieldError> : null}
               </TextField>
@@ -184,7 +184,7 @@ export default function EditProfileScreen() {
                 <Input
                   value={`+91 ${user?.phone || ""}`}
                   editable={false}
-                  className="h-12 rounded-sm border border-gray-02 bg-gray-01 px-3 text-body-s text-gray-07"
+                  className="h-12 rounded-xl border border-gray-02 bg-gray-01 px-3 text-body-s text-gray-07"
                 />
               </TextField>
               <TouchableOpacity
@@ -204,7 +204,7 @@ export default function EditProfileScreen() {
           <Button
             onPress={handleSave}
             isDisabled={isLoading || !firstName.trim()}
-            className="w-full bg-blue-03 rounded-sm py-3.5 transition-transform active:scale-[0.96]"
+            className="w-full bg-blue-03 rounded-xl py-3.5 transition-transform active:scale-[0.96]"
           >
             {isLoading ? (
               <Spinner size="sm" color="white" />
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
     right: 0,
     width: 32,
     height: 32,
-    borderRadius: 4,
+    borderRadius: 16,
     backgroundColor: "#2a9cff",
     alignItems: "center",
     justifyContent: "center",

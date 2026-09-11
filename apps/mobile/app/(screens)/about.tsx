@@ -2,7 +2,7 @@ import React from "react"
 import { View, StyleSheet, ScrollView, Linking } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Image } from "expo-image"
-import { Typography, Card, Separator } from "heroui-native"
+import { Typography, Card, Separator, Chip } from "heroui-native"
 import { colors, semantic } from "../../src/theme/colors"
 import { spacing } from "../../src/theme/spacing"
 import { useAppStore } from "../../src/store"
@@ -42,7 +42,11 @@ export default function AboutScreen() {
             skilled partners for cleaning, maintenance, and more.
           </Typography>
 
-          <Card style={styles.statsCard} variant="secondary">
+          <Card
+            style={styles.statsCard}
+            variant="default"
+            className="rounded-2xl border border-gray-02 bg-white"
+          >
             <View style={styles.stat}>
               <Typography type="h4" weight="bold" className="text-accent">
                 50K+
@@ -90,11 +94,11 @@ export default function AboutScreen() {
                 "Party Cleanup",
                 "Office Cleaning",
               ].map((service, idx) => (
-                <View key={idx} style={styles.serviceTag}>
-                  <Typography type="body" className="text-accent">
+                <Chip key={idx} size="sm" variant="soft" className="bg-blue-01">
+                  <Chip.Label className="font-inter-medium text-blue-03 text-[13px]">
                     {service}
-                  </Typography>
-                </View>
+                  </Chip.Label>
+                </Chip>
               ))}
             </View>
           </View>

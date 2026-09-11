@@ -175,6 +175,9 @@ const styles = StyleSheet.create({
   },
   paymentCard: {
     marginBottom: spacing[3],
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.gray[2],
   },
   cardContent: {
     flexDirection: "row",

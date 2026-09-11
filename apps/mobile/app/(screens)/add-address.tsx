@@ -257,10 +257,10 @@ export default function AddAddressScreen() {
         >
           
           {/* Location Autocomplete & Geolocation Section */}
-          <View style={{ padding: spacing[4], borderBottomWidth: 1, borderBottomColor: "#dee0e3" }}>
+          <View style={{ padding: spacing[4], borderBottomWidth: 1, borderBottomColor: "#E9EAEC" }}>
             <TextField>
               <Label className="mb-1.5 font-inter-medium text-body-s text-gray-12">Search Location</Label>
-              <InputGroup className="border border-gray-03 rounded-sm bg-white overflow-hidden h-12 flex-row items-center">
+              <InputGroup className="border border-gray-03 rounded-xl bg-white overflow-hidden h-12 flex-row items-center">
                 <InputGroup.Prefix isDecorative className="pl-3 justify-center items-center">
                   <Ionicons name="search" size={20} color="#7E869A" />
                 </InputGroup.Prefix>
@@ -276,7 +276,7 @@ export default function AddAddressScreen() {
             {isSearching && <Spinner size="sm" style={{ marginVertical: spacing[2] }} />}
             
             {searchResults.length > 0 && (
-              <Card className="mt-2 max-h-52 p-0 overflow-hidden border border-gray-03 rounded-sm bg-white" variant="default">
+              <Card className="mt-2 max-h-52 p-0 overflow-hidden border border-gray-02 rounded-2xl bg-white" variant="default">
                 {searchResults.map((result) => (
                   <TouchableOpacity
                     key={result.id}
@@ -305,7 +305,7 @@ export default function AddAddressScreen() {
               onPress={handleUseCurrentLocation}
               activeOpacity={0.8}
             >
-              <View className="w-9 h-9 rounded-sm bg-blue-01 items-center justify-center mr-2">
+              <View className="w-9 h-9 rounded-full bg-blue-01 items-center justify-center mr-2">
                 <Ionicons name="navigate" size={18} color="#2a9cff" />
               </View>
               <Typography type="body-sm" className="text-blue-03" weight="semibold">
@@ -316,7 +316,7 @@ export default function AddAddressScreen() {
           </View>
 
           {/* Address Type Section */}
-          <View style={{ padding: spacing[4], borderBottomWidth: 1, borderBottomColor: "#dee0e3" }}>
+          <View style={{ padding: spacing[4], borderBottomWidth: 1, borderBottomColor: "#E9EAEC" }}>
             <Typography
               type="body"
               weight="semibold"
@@ -328,7 +328,7 @@ export default function AddAddressScreen() {
               {ADDRESS_TYPES.map((type) => (
                 <TouchableOpacity
                   key={type.key}
-                  className={`flex-1 flex-row items-center justify-center gap-2 py-3 rounded-sm border ${
+                  className={`flex-1 flex-row items-center justify-center gap-2 py-3 rounded-xl border ${
                     formData.type === type.key
                       ? "bg-blue-03 border-blue-03"
                       : "bg-white border-gray-03"
@@ -368,7 +368,7 @@ export default function AddAddressScreen() {
                   setFormData((prev) => ({ ...prev, name: text }))
                   if (errors.name) setErrors({ ...errors, name: "" })
                 }}
-                className="h-12 rounded-sm border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
+                className="h-12 rounded-xl border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
               />
               {errors.name ? <FieldError className="mt-1.5">{errors.name}</FieldError> : null}
             </TextField>
@@ -385,7 +385,7 @@ export default function AddAddressScreen() {
                       setErrors({ ...errors, addressLine1: "" })
                   }}
                   multiline
-                  className="rounded-sm border border-gray-03 focus:border-blue-03 bg-white p-3 min-h-[80px] leading-relaxed text-body-s text-gray-12"
+                  className="rounded-xl border border-gray-03 focus:border-blue-03 bg-white p-3 min-h-[80px] leading-relaxed text-body-s text-gray-12"
                 />
                 {errors.addressLine1 ? <FieldError className="mt-1.5">{errors.addressLine1}</FieldError> : null}
               </TextField>
@@ -400,7 +400,7 @@ export default function AddAddressScreen() {
                   onChangeText={(text) =>
                     setFormData((prev) => ({ ...prev, houseNo: text }))
                   }
-                  className="h-12 rounded-sm border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
+                  className="h-12 rounded-xl border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
                 />
               </TextField>
             </View>
@@ -414,7 +414,7 @@ export default function AddAddressScreen() {
                   onChangeText={(text) =>
                     setFormData((prev) => ({ ...prev, buildingName: text }))
                   }
-                  className="h-12 rounded-sm border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
+                  className="h-12 rounded-xl border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
                 />
               </TextField>
             </View>
@@ -430,7 +430,7 @@ export default function AddAddressScreen() {
                     if (errors.floor) setErrors({ ...errors, floor: "" })
                   }}
                   keyboardType="number-pad"
-                  className="h-12 rounded-sm border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
+                  className="h-12 rounded-xl border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
                 />
                 {errors.floor ? <FieldError className="mt-1.5">{errors.floor}</FieldError> : null}
               </TextField>
@@ -445,7 +445,7 @@ export default function AddAddressScreen() {
                   onChangeText={(text) =>
                     setFormData((prev) => ({ ...prev, landmark: text }))
                   }
-                  className="h-12 rounded-sm border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
+                  className="h-12 rounded-xl border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
                 />
               </TextField>
             </View>
@@ -461,7 +461,7 @@ export default function AddAddressScreen() {
                       setFormData((prev) => ({ ...prev, city: text }))
                       if (errors.city) setErrors({ ...errors, city: "" })
                     }}
-                    className="h-12 rounded-sm border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
+                    className="h-12 rounded-xl border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
                   />
                   {errors.city ? <FieldError className="mt-1.5">{errors.city}</FieldError> : null}
                 </TextField>
@@ -477,7 +477,7 @@ export default function AddAddressScreen() {
                       setFormData((prev) => ({ ...prev, state: text }))
                       if (errors.state) setErrors({ ...errors, state: "" })
                     }}
-                    className="h-12 rounded-sm border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
+                    className="h-12 rounded-xl border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
                   />
                   {errors.state ? <FieldError className="mt-1.5">{errors.state}</FieldError> : null}
                 </TextField>
@@ -496,7 +496,7 @@ export default function AddAddressScreen() {
                   }}
                   keyboardType="number-pad"
                   maxLength={6}
-                  className="h-12 rounded-sm border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
+                  className="h-12 rounded-xl border border-gray-03 focus:border-blue-03 bg-white px-3 text-body-s text-gray-12"
                 />
                 {errors.pincode ? <FieldError className="mt-1.5">{errors.pincode}</FieldError> : null}
               </TextField>
@@ -509,7 +509,7 @@ export default function AddAddressScreen() {
           <Button
             onPress={handleSave}
             isDisabled={isSaving}
-            className="w-full bg-blue-03 rounded-sm py-3.5 transition-transform active:scale-[0.96]"
+            className="w-full bg-blue-03 rounded-xl py-3.5 transition-transform active:scale-[0.96]"
           >
             {isSaving ? (
               <Spinner size="sm" color="white" />
